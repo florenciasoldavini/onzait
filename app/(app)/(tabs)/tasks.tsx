@@ -1,9 +1,9 @@
 import { Text, View } from "react-native";
 
-export default function Home() {
+export default function Tasks() {
   return (
     <View>
-      <Text>Here is the home page</Text>
+      <Text>Here is the to-do list</Text>
     </View>
   );
 }

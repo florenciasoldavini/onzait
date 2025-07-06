@@ -1,14 +1,19 @@
-import { useSession } from "@/contexts/auth";
+import { supabase } from "@/lib/supabase";
+import { Session } from "@supabase/supabase-js";
 import { Redirect, Stack } from "expo-router";
-import { Text } from "react-native";
+import { useEffect, useState } from "react";
 
 export default function AppLayout() {
-  const { session, isLoading } = useSession();
+  const [session, setSession] = useState<Session | null>(null);
 
-  // You can keep the splash screen open, or render a loading screen like we do here.
-  if (isLoading) {
-    return <Text>Loading...</Text>;
-  }
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+  }, []);
 
   // Only require authentication within the (app) group's layout as users
   // need to be able to access the (auth) group and sign in again.
