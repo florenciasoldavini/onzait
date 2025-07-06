@@ -11,9 +11,9 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="to-do"
+        name="tasks"
         options={{
-          title: "To-Do",
+          title: "Tasks",
           tabBarIcon: ({ color, size }) => (
             <ToDoIcon color={color} size={size} />
           )

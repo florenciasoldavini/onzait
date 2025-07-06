@@ -1,9 +1,5 @@
-import { Text, View } from "react-native";
+import TasksScreen from "@/screens/tasks";
 
 export default function Tasks() {
-  return (
-    <View>
-      <Text>Here is the to-do list</Text>
-    </View>
-  );
+  return <TasksScreen />;
 }
