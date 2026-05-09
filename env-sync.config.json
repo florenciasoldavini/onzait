@@ -1,0 +1,81 @@
+{
+  "sourceFile": ".env.local",
+  "variables": {
+    "EXPO_PUBLIC_SUPABASE_URL": {
+      "section": "Frontend / Public",
+      "example": "https://your-project-ref.supabase.co",
+      "vercel": {
+        "environments": ["development", "preview", "production"]
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "plaintext"
+      }
+    },
+    "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": {
+      "example": "sb_publishable_your_publishable_key",
+      "vercel": {
+        "environments": ["development", "preview", "production"]
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "plaintext"
+      }
+    },
+    "EXPO_PUBLIC_SENTRY_DSN": {
+      "example": "https://public-key@o0000000000000000.ingest.us.sentry.io/0000000000000000",
+      "vercel": {
+        "environments": ["development", "preview", "production"]
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "plaintext"
+      }
+    },
+    "SENTRY_ORG": {
+      "section": "Sentry / Optional Build-Time Source Maps",
+      "comment": "Optional build-time Sentry settings for native/web sourcemap uploads.",
+      "example": "your-sentry-org-slug",
+      "vercel": {
+        "environments": ["development", "preview", "production"]
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "plaintext"
+      }
+    },
+    "SENTRY_PROJECT": {
+      "example": "your-sentry-project-slug",
+      "vercel": {
+        "environments": ["development", "preview", "production"]
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "plaintext"
+      }
+    },
+    "SENTRY_AUTH_TOKEN": {
+      "example": "sntrys_your_auth_token",
+      "vercel": {
+        "environments": ["preview", "production"],
+        "sensitive": true
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "sensitive"
+      }
+    },
+    "EXPO_PUBLIC_APP_ENV": {
+      "section": "Runtime / Optional",
+      "comment": "Optional helper to distinguish development/preview/production in runtime telemetry.",
+      "example": "development"
+    },
+    "DATABASE_URL": {
+      "section": "Backend / Prisma",
+      "example": "postgresql://postgres.your-project-ref:[YOUR-PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+    },
+    "DIRECT_URL": {
+      "example": "postgresql://postgres.your-project-ref:[YOUR-PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres"
+    }
+  }
+}

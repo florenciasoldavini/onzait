@@ -5,7 +5,10 @@
   "scripts": {
     "start": "expo start",
     "build": "expo export --platform web",
+    "env:example": "node ./scripts/generate-env-example.js",
+    "env:check": "node ./scripts/generate-env-example.js --check",
     "reset-project": "node ./scripts/reset-project.js",
+    "sync:env": "node ./scripts/sync-env.js",
     "android": "DARK_MODE=media expo start --android",
     "ios": "DARK_MODE=media expo start --ios",
     "web": "DARK_MODE=media expo start --web",
