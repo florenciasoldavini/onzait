@@ -1,101 +1,213 @@
-import { supabase } from "@/lib/supabase";
-import { User } from "@/types/models/user";
-import { Session } from "@supabase/supabase-js";
-import { useRouter } from "expo-router";
+import { supabase, getSupabaseErrorMessage, isSupabaseConfigured } from "@/lib/supabase";
+import type { User } from "@/types/models/user";
+import type { Session } from "@supabase/supabase-js";
 import { createContext, useEffect, useState } from "react";
 
 interface AuthContextType {
+  authError: string | null;
+  createUser: (session: Session, profile?: Partial<User>) => Promise<User | null>;
+  isLoading: boolean;
+  logOut: () => Promise<void>;
+  session: Session | null;
   user: User | null;
-  logOut: () => void;
-  createUser: (userData: User) => Promise<void>;
-  getUser: (session: Session) => Promise<void>;
 }
 
+const defaultAuthError = isSupabaseConfigured
+  ? null
+  : "Supabase is not configured yet. Add your new project URL and publishable key to .env.local and restart Expo.";
+
 export const AuthContext = createContext<AuthContextType>({
-  user: null,
-  logOut: () => {},
-  createUser: async () => {},
-  getUser: async () => {}
+  authError: defaultAuthError,
+  createUser: async () => null,
+  isLoading: true,
+  logOut: async () => {},
+  session: null,
+  user: null
 });
 
+const getFallbackProfile = (
+  session: Session,
+  profile?: Partial<User>
+): Omit<User, "id" | "created_at" | "updated_at" | "deleted_at"> => {
+  const metadata = session.user.user_metadata ?? {};
+  const email = session.user.email ?? profile?.email ?? "";
+  const emailName = email.split("@")[0] ?? "User";
+
+  return {
+    avatar: profile?.avatar ?? null,
+    email,
+    first_name:
+      profile?.first_name ??
+      metadata.first_name ??
+      metadata.given_name ??
+      emailName,
+    last_name:
+      profile?.last_name ?? metadata.last_name ?? metadata.family_name ?? "",
+    phone_number: profile?.phone_number ?? null,
+    role: profile?.role ?? "user"
+  };
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const router = useRouter();
+  const [authError, setAuthError] = useState<string | null>(defaultAuthError);
+  const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
 
-  /**
-   * @function createUser
-   * @param {User} userData - The user data to create
-   * @description Creates a new user in the database
-   * @returns {Promise<void>} void
-   */
-  const createUser = async (userData: User) => {
-    const { data, error } = await supabase
-      .from("users")
-      .insert({
-        ...userData,
-        email: userData.email
-      })
-      .select();
+  const createUser = async (
+    nextSession: Session,
+    profile?: Partial<User>
+  ): Promise<User | null> => {
+    if (!supabase) {
+      return null;
+    }
+
+    const payload = getFallbackProfile(nextSession, profile);
+    const { data, error } = await supabase.from("users").insert(payload).select().single();
 
     if (error) {
-      return console.error(error);
-    }
+      const isDuplicate =
+        (typeof error === "object" &&
+          error &&
+          "code" in error &&
+          String(error.code) === "23505") ||
+        getSupabaseErrorMessage(error).toLowerCase().includes("duplicate");
 
-    const user = data?.[0] as User;
-    setUser(user);
-  };
+      if (isDuplicate) {
+        const { data: existingUser } = await supabase
+          .from("users")
+          .select("*")
+          .eq("email", payload.email)
+          .maybeSingle();
 
-  /**
-   * @function getUser
-   * @param {Session} session - The session object
-   * @description Gets the user data for a session
-   * @returns {Promise<{user: User | null, docId: string | null}>} user and docId or null if not found
-   */
-  const getUser = async (session: Session) => {
-    if (session) {
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("email", session.user.email);
-
-      if (error) {
-        return console.error(error);
+        if (existingUser) {
+          const nextUser = existingUser as User;
+          setUser(nextUser);
+          setAuthError(null);
+          return nextUser;
+        }
       }
 
-      const user = data?.[0] as User;
-      setUser(user);
-
-      router.push("/(app)/(tabs)");
+      setAuthError(getSupabaseErrorMessage(error));
+      return null;
     }
+
+    const nextUser = data as User;
+    setUser(nextUser);
+    setAuthError(null);
+    return nextUser;
   };
 
-  /**
-   * @function logOut
-   * @description Logs out the user and redirects to the sign-in page
-   * @returns {Promise<void>} void
-   */
+  const hydrateUser = async (nextSession: Session | null) => {
+    if (!supabase || !nextSession?.user.email) {
+      setSession(nextSession);
+      setUser(null);
+      return;
+    }
+
+    setSession(nextSession);
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", nextSession.user.email)
+      .maybeSingle();
+
+    if (error) {
+      setAuthError(getSupabaseErrorMessage(error));
+      setUser(null);
+      return;
+    }
+
+    if (!data) {
+      await createUser(nextSession);
+      return;
+    }
+
+    setUser(data as User);
+    setAuthError(null);
+  };
+
   const logOut = async () => {
-    await supabase.auth.signOut();
+    if (!supabase) {
+      setSession(null);
+      setUser(null);
+      return;
+    }
+
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      setAuthError(getSupabaseErrorMessage(error));
+      return;
+    }
+
+    setSession(null);
     setUser(null);
-    router.push("/(auth)/sign-in");
-  };``
+    setAuthError(null);
+  };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        getUser(session);
+    if (!supabase) {
+      setIsLoading(false);
+      return;
+    }
+
+    const supabaseClient = supabase;
+    let isMounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        const { data, error } = await supabaseClient.auth.getSession();
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (error) {
+          setAuthError(getSupabaseErrorMessage(error));
+          setSession(null);
+          setUser(null);
+          return;
+        }
+
+        await hydrateUser(data.session);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setAuthError(getSupabaseErrorMessage(error));
+        setSession(null);
+        setUser(null);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
+    };
+
+    initializeAuth();
+
+    const {
+      data: { subscription }
+    } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
+      void hydrateUser(nextSession).finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
     });
-    supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        getUser(session);
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, logOut, createUser, getUser }}>
+    <AuthContext.Provider
+      value={{ authError, createUser, isLoading, logOut, session, user }}
+    >
       {children}
     </AuthContext.Provider>
   );

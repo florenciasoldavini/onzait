@@ -1,36 +1,55 @@
 import { ScreenLayout } from "@/components/ScreenLayout";
 import { Button, ButtonText } from "@/components/ui/button";
 import {
-    FormControl,
-    FormControlError,
-    FormControlErrorText,
-    FormControlLabel,
-    FormControlLabelText
+  FormControl,
+  FormControlError,
+  FormControlErrorText,
+  FormControlLabel,
+  FormControlLabelText
 } from "@/components/ui/form-control";
 import { Input, InputField } from "@/components/ui/input";
 import { VStack } from "@/components/ui/vstack";
-import { supabase } from "@/lib/supabase";
+import { AuthContext } from "@/contexts/auth";
+import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
 import { Link, useRouter } from "expo-router";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Alert, Text } from "react-native";
 
 export default function SignInScreen() {
   const router = useRouter();
+  const { authError } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function signInWithEmail() {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password
-    });
-    if (error) {
-      Alert.alert(error.message);
-    } else {
-      router.push("/");
+    if (!supabase) {
+      setErrorMessage(getSupabaseErrorMessage("Supabase is not configured."));
+      return;
     }
+
+    if (!email || !password) {
+      setErrorMessage("Enter both your email and password.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage(null);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      const message = getSupabaseErrorMessage(error);
+      setErrorMessage(message);
+      Alert.alert("Sign in failed", message);
+    } else {
+      router.replace("/");
+    }
+
     setLoading(false);
   }
 
@@ -38,7 +57,10 @@ export default function SignInScreen() {
     <ScreenLayout>
       <VStack className="w-full flex-1 items-center justify-center gap-4">
         <Text className="w-full text-2xl font-bold">Sign In</Text>
-        <FormControl className="w-full">
+        {authError ? (
+          <Text className="w-full text-sm text-red-600">{authError}</Text>
+        ) : null}
+        <FormControl className="w-full" isInvalid={Boolean(errorMessage)}>
           <VStack className="w-full gap-4">
             <VStack className="w-full">
               <FormControlLabel>
@@ -46,15 +68,15 @@ export default function SignInScreen() {
               </FormControlLabel>
               <Input className="my-1 rounded-full">
                 <InputField
-                  type="text"
-                  placeholder="jhondoe@gmail.com"
+                  autoCapitalize="none"
                   autoComplete="email"
-                  //   {...register("email")}
+                  keyboardType="email-address"
+                  onChangeText={setEmail}
+                  placeholder="johndoe@gmail.com"
+                  type="text"
+                  value={email}
                 />
               </Input>
-              <FormControlError>
-                <FormControlErrorText>Email error</FormControlErrorText>
-              </FormControlError>
             </VStack>
             <VStack>
               <FormControlLabel>
@@ -62,22 +84,28 @@ export default function SignInScreen() {
               </FormControlLabel>
               <Input className="my-1 rounded-full">
                 <InputField
-                  type="password"
-                  placeholder="password"
+                  autoCapitalize="none"
                   autoComplete="password"
-                  //   {...register("password")}
+                  onChangeText={setPassword}
+                  placeholder="password"
+                  type="password"
+                  value={password}
                 />
               </Input>
-              <FormControlError>
-                <FormControlErrorText>
-                  Invalid email address.
-                </FormControlErrorText>
-              </FormControlError>
             </VStack>
-            <Button onPress={() => {}} className="w-full rounded-full">
-              <ButtonText>Sign In</ButtonText>
+            {errorMessage ? (
+              <FormControlError>
+                <FormControlErrorText>{errorMessage}</FormControlErrorText>
+              </FormControlError>
+            ) : null}
+            <Button
+              className="w-full rounded-full"
+              onPress={() => {
+                void signInWithEmail();
+              }}
+            >
+              <ButtonText>{loading ? "Signing In..." : "Sign In"}</ButtonText>
             </Button>
-            {/* {errors.root && <Text>{errors.root.message}</Text>} */}
           </VStack>
         </FormControl>
         <Link href="/reset-password">Forgot password?</Link>
@@ -91,7 +119,7 @@ export default function SignInScreen() {
           </Button>
         </VStack>
         <Text>
-          Don't have an account?<Link href="/sign-up">Sign up</Link>
+          Don&apos;t have an account? <Link href="/sign-up">Sign up</Link>
         </Text>
       </VStack>
     </ScreenLayout>

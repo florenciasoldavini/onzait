@@ -1,11 +1,11 @@
 // app/_layout.tsx
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import { AuthProvider } from "@/contexts/auth";
+import { AuthContext, AuthProvider } from "@/contexts/auth";
 import "@/global.css";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function RootLayout() {
@@ -43,12 +43,16 @@ export default function RootLayout() {
 }
 
 function RootNavigator() {
-  // const { session } = useSession();
+  const { isLoading, session } = useContext(AuthContext);
+
+  if (isLoading) {
+    return null;
+  }
 
   return (
-    <Stack screenOptions={{ headerShown: true }}>
-      <Stack.Protected guard={false}>
-        <Stack.Screen name="(app)" options={{ headerShown: true }} />
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={Boolean(session)}>
+        <Stack.Screen name="(app)" options={{ headerShown: false }} />
       </Stack.Protected>
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
     </Stack>
