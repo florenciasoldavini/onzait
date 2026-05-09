@@ -39,6 +39,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5f0575eb-9367-4384-ba99-97ebfe117afb"
+      }
+    },
+    "owner": "florenciasoldavini"
   }
 }
