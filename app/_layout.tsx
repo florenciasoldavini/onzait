@@ -1,14 +1,15 @@
 // app/_layout.tsx
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { AuthContext, AuthProvider } from "@/contexts/auth";
+import { navigationIntegration, Sentry } from "@/lib/sentry";
 import "@/global.css";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, useNavigationContainerRef } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useContext, useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-export default function RootLayout() {
+function RootLayout() {
   const [loaded, error] = useFonts({
     "Satoshi-Black": require("../assets/fonts/Satoshi-Black.otf"),
     "Satoshi-BlackItalic": require("../assets/fonts/Satoshi-BlackItalic.otf"),
@@ -44,6 +45,11 @@ export default function RootLayout() {
 
 function RootNavigator() {
   const { isLoading, session } = useContext(AuthContext);
+  const navigationRef = useNavigationContainerRef();
+
+  useEffect(() => {
+    navigationIntegration.registerNavigationContainer(navigationRef);
+  }, [navigationRef]);
 
   if (isLoading) {
     return null;
@@ -58,3 +64,5 @@ function RootNavigator() {
     </Stack>
   );
 }
+
+export default Sentry.wrap(RootLayout);

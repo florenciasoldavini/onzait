@@ -1,4 +1,5 @@
 import { supabase, getSupabaseErrorMessage, isSupabaseConfigured } from "@/lib/supabase";
+import { Sentry } from "@/lib/sentry";
 import type { User } from "@/types/models/user";
 import type { Session } from "@supabase/supabase-js";
 import { createContext, useEffect, useState } from "react";
@@ -145,6 +146,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setAuthError(null);
   };
+
+  useEffect(() => {
+    if (!session && !user) {
+      Sentry.setUser(null);
+      return;
+    }
+
+    Sentry.setUser({
+      email: user?.email ?? session?.user.email,
+      id: user?.id ?? session?.user.id,
+      username: [user?.first_name, user?.last_name].filter(Boolean).join(" ") || undefined
+    });
+    Sentry.setTag("auth_state", session ? "authenticated" : "anonymous");
+    Sentry.setTag("user_role", user?.role ?? "unknown");
+  }, [session, user]);
 
   useEffect(() => {
     if (!supabase) {
