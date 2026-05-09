@@ -1,16 +1,39 @@
 import { ScreenLayout } from "@/components/ScreenLayout";
 import { Button, ButtonText } from "@/components/ui/button";
 import {
-    FormControl,
-    FormControlLabel,
-    FormControlLabelText,
+  FormControl,
+  FormControlError,
+  FormControlErrorText,
+  FormControlLabel,
+  FormControlLabelText
 } from "@/components/ui/form-control";
 import { Input, InputField } from "@/components/ui/input";
 import { VStack } from "@/components/ui/vstack";
-import { Link } from "expo-router";
-import { Text } from "react-native";
+import { supabase } from "@/lib/supabase";
+import { Link, useRouter } from "expo-router";
+import { useState } from "react";
+import { Alert, Text } from "react-native";
 
-export default function SignIn() {
+export default function SignUpScreen() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function signUpWithEmail() {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password
+    });
+    if (error) {
+      Alert.alert(error.message);
+    } else {
+      router.push("/");
+    }
+    setLoading(false);
+  }
+
   return (
     <ScreenLayout>
       <VStack className="w-full flex-1 items-center justify-center gap-4">
@@ -29,7 +52,9 @@ export default function SignIn() {
                   //   {...register("email")}
                 />
               </Input>
-              {/* {errors.email && <Text>{errors.email.message}</Text>} */}
+              <FormControlError>
+                <FormControlErrorText>Email error</FormControlErrorText>
+              </FormControlError>
             </VStack>
             <VStack>
               <FormControlLabel>
@@ -43,7 +68,11 @@ export default function SignIn() {
                   //   {...register("password")}
                 />
               </Input>
-              {/* {errors.password && <Text>{errors.password.message}</Text>} */}
+              <FormControlError>
+                <FormControlErrorText>
+                  Invalid email address.
+                </FormControlErrorText>
+              </FormControlError>
             </VStack>
             <Button onPress={() => {}} className="w-full rounded-full">
               <ButtonText>Sign In</ButtonText>

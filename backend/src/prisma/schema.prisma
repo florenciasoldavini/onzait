@@ -1,0 +1,335 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Models
+model User {
+  id           String    @id @default(uuid())
+  first_name   String
+  last_name    String
+  avatar       String?
+  email        String    @unique
+  phone_number String?
+  role         String
+  created_at   DateTime  @default(now())
+  updated_at   DateTime? @updatedAt
+  deleted_at   DateTime?
+
+  // Relations
+  clients             Client[]
+  contractors         Contractor[]
+  suppliers           Supplier[]
+  workers             Worker[]
+  photos              Photo[]
+  todos               Todo[]
+  projectParticipants ProjectParticipant[]
+  userMaterials       UserMaterial[]
+
+  @@map("users")
+}
+
+model Project {
+  id                   String    @id @default(uuid())
+  name                 String
+  description          String
+  cover_image          String?
+  address              String
+  coordinates          Json // { lat: number, lng: number }
+  building_type        String
+  project_type         String
+  status               String
+  phase                String
+  progress_percentage  Int       @default(0)
+  estimated_start_date DateTime?
+  start_date           DateTime?
+  estimated_end_date   DateTime?
+  end_date             DateTime?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime? @updatedAt
+  deleted_at           DateTime?
+
+  // Relations
+  attendances         Attendance[]
+  photos              Photo[]
+  projectMaterials    ProjectMaterial[]
+  projectParticipants ProjectParticipant[]
+  purchases           Purchase[]
+  workerContracts     WorkerContract[]
+  laborEstimates      LaborEstimate[]
+
+  @@map("projects")
+}
+
+model Client {
+  id           String    @id @default(uuid())
+  user_id      String
+  first_name   String
+  last_name    String?
+  avatar       String?
+  email        String?
+  phone_number String?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime? @updatedAt
+  deleted_at   DateTime?
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("clients")
+}
+
+model Contractor {
+  id           String    @id @default(uuid())
+  user_id      String
+  first_name   String
+  last_name    String?
+  avatar       String?
+  phone_number String?
+  email        String?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime? @updatedAt
+  deleted_at   DateTime?
+
+  user    User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  workers Worker[]
+
+  @@map("contractors")
+}
+
+model Worker {
+  id            String    @id @default(uuid())
+  user_id       String
+  contractor_id String
+  first_name    String
+  last_name     String?
+  avatar        String?
+  phone_number  String?
+  email         String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime? @updatedAt
+  deleted_at    DateTime?
+
+  user            User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  contractor      Contractor       @relation(fields: [contractor_id], references: [id], onDelete: Cascade)
+  attendances     Attendance[]
+  workerContracts WorkerContract[]
+
+  @@map("workers")
+}
+
+model Attendance {
+  id           String    @id @default(uuid())
+  date         DateTime  @db.Date
+  project_id   String
+  worker_id    String
+  present      Boolean   @default(false)
+  hours_worked Float?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime? @updatedAt
+  deleted_at   DateTime?
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  worker  Worker  @relation(fields: [worker_id], references: [id], onDelete: Cascade)
+
+  @@map("attendances")
+}
+
+model Material {
+  id              String    @id @default(uuid())
+  name            String
+  photo           String?
+  description     String?
+  unit_of_measure String
+  created_at      DateTime  @default(now())
+  updated_at      DateTime? @updatedAt
+  deleted_at      DateTime?
+
+  // Relations
+  projectMaterials ProjectMaterial[]
+  purchaseItems    PurchaseItem[]
+  userMaterials    UserMaterial[]
+
+  @@map("materials")
+}
+
+model Photo {
+  id         String    @id @default(uuid())
+  user_id    String
+  project_id String
+  url        String
+  category   String
+  notes      String?
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
+
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("photos")
+}
+
+model ProjectMaterial {
+  id                String    @id @default(uuid())
+  project_id        String
+  material_id       String
+  quantity          Float
+  unit_price        Float
+  purchase_due_date DateTime?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime? @updatedAt
+  deleted_at        DateTime?
+
+  project  Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  material Material @relation(fields: [material_id], references: [id], onDelete: Cascade)
+
+  @@map("project_materials")
+}
+
+model ProjectParticipant {
+  id         String    @id @default(uuid())
+  project_id String
+  user_id    String
+  role       String
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, user_id])
+  @@map("project_participants")
+}
+
+model Supplier {
+  id            String    @id @default(uuid())
+  user_id       String
+  name          String
+  website       String?
+  phone_number  String?
+  address       String?
+  coordinates   Json? // { lat: number | null, lng: number | null }
+  opening_hours String[]  @default([])
+  notes         String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime? @updatedAt
+  deleted_at    DateTime?
+
+  user      User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  purchases Purchase[]
+
+  @@map("suppliers")
+}
+
+model Purchase {
+  id           String    @id @default(uuid())
+  project_id   String
+  supplier_id  String?
+  total_amount Float
+  receipt_url  String?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime? @updatedAt
+  deleted_at   DateTime?
+
+  project       Project        @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  supplier      Supplier?      @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  purchaseItems PurchaseItem[]
+
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id          String    @id @default(uuid())
+  purchase_id String
+  material_id String
+  quantity    Float?
+  unit_price  Float?
+  total_price Float?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime? @updatedAt
+  deleted_at  DateTime?
+
+  purchase Purchase @relation(fields: [purchase_id], references: [id], onDelete: Cascade)
+  material Material @relation(fields: [material_id], references: [id], onDelete: Cascade)
+
+  @@map("purchase_items")
+}
+
+model Todo {
+  id         String    @id @default(uuid())
+  user_id    String
+  name       String
+  is_done    Boolean   @default(false)
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("todos")
+}
+
+model Trade {
+  id          String    @id @default(uuid())
+  name        String
+  description String
+  created_at  DateTime  @default(now())
+  updated_at  DateTime? @updatedAt
+  deleted_at  DateTime?
+
+  laborEstimates LaborEstimate[]
+
+  @@map("trades")
+}
+
+model UserMaterial {
+  id              String    @id @default(uuid())
+  user_id         String
+  material_id     String
+  estimated_price Float
+  notes           String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime? @updatedAt
+  deleted_at      DateTime?
+
+  user     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  material Material @relation(fields: [material_id], references: [id], onDelete: Cascade)
+
+  @@map("user_materials")
+}
+
+model WorkerContract {
+  id           String    @id @default(uuid())
+  worker_id    String
+  project_id   String
+  payment_type String
+  rate         Float
+  created_at   DateTime  @default(now())
+  updated_at   DateTime? @updatedAt
+  deleted_at   DateTime?
+
+  worker  Worker  @relation(fields: [worker_id], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("worker_contracts")
+}
+
+model LaborEstimate {
+  id         String    @id @default(uuid())
+  project_id String
+  trade_id   String
+  cost       Float
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  trade   Trade   @relation(fields: [trade_id], references: [id], onDelete: Cascade)
+
+  @@map("labor_estimates")
+}

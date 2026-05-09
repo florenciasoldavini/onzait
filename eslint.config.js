@@ -6,33 +6,33 @@ module.exports = defineConfig([
   expoConfig,
   eslintPluginPrettierRecommended,
   {
-    ignores: ["dist/*"],
+    ignores: ["dist/*"]
   },
   {
     files: ["components/ui/**/*"],
     rules: {
-      "prettier/prettier": "off",
-    },
+      "prettier/prettier": "off"
+    }
   },
   {
     files: ["app/**/*"],
     rules: {
-      "prettier/prettier": ["error", { tabWidth: 2 }],
-    },
+      "prettier/prettier": ["error", { tabWidth: 2 }]
+    }
   },
   {
     rules: {
-      "react/no-unescaped-entities": "off",
-    },
+      "react/no-unescaped-entities": "off"
+    }
   },
   {
     settings: {
       "import/resolver": {
         typescript: {
           alwaysTryTypes: true,
-          project: "./tsconfig.json",
-        },
-      },
-    },
-  },
+          project: "./tsconfig.json"
+        }
+      }
+    }
+  }
 ]);

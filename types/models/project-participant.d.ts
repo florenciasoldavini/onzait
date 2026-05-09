@@ -1,11 +1,11 @@
-export type ProjectRole =
-  | "creator" // Dueño o creador del proyecto
-  | "site_manager" // Jefe de obra, encargado de la gestión diaria en el sitio
-  | "project_manager" // Responsable de la planificación y seguimiento global
-  | "architect" // Arquitecto o diseñador
-  | "engineer" // Ingeniero o técnico
-  | "designer"; // Diseñador o artista
-
+export enum ProjectRole {
+  CREATOR = "creator",
+  SITE_MANAGER = "site_manager",
+  PROJECT_MANAGER = "project_manager",
+  ARCHITECT = "architect",
+  ENGINEER = "engineer",
+  DESIGNER = "designer"
+}
 export interface ProjectParticipant {
   id: string;
   project_id: string;

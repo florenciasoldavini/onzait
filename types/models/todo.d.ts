@@ -5,4 +5,5 @@ export interface Todo {
   is_done: boolean;
   created_at: Date;
   updated_at: Date | null;
+  deleted_at: Date | null;
 }

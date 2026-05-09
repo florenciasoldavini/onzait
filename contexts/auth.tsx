@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .select();
 
     if (error) {
-      console.error(error);
+      return console.error(error);
     }
 
     const user = data?.[0] as User;
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .eq("email", session.user.email);
 
       if (error) {
-        console.error(error);
+        return console.error(error);
       }
 
       const user = data?.[0] as User;
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await supabase.auth.signOut();
     setUser(null);
     router.push("/(auth)/sign-in");
-  };
+  };``
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {

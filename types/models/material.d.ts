@@ -1,20 +1,20 @@
-export type UnitOfMeasure =
-  | "unit"
-  | "kg"
-  | "g"
-  | "m"
-  | "cm"
-  | "mm"
-  | "m2"
-  | "m3"
-  | "l"
-  | "ml"
-  | "bag"
-  | "box"
-  | "roll"
-  | "sheet"
-  | "tube";
-
+export enum UnitOfMeasure {
+  UNIT = "unit",
+  KG = "kg",
+  G = "g",
+  M = "m",
+  CM = "cm",
+  MM = "mm",
+  M2 = "m2",
+  M3 = "m3",
+  L = "l",
+  ML = "ml",
+  BAG = "bag",
+  BOX = "box",
+  ROLL = "roll",
+  SHEET = "sheet",
+  TUBE = "tube"
+}
 export interface Material {
   id: string;
   name: string;
@@ -23,4 +23,5 @@ export interface Material {
   unit_of_measure: UnitOfMeasure;
   created_at: Date;
   updated_at: Date | null;
+  deleted_at: Date | null;
 }

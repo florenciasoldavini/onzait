@@ -7,4 +7,5 @@ export interface ProjectMaterial {
   purchase_due_date: Date | null;
   created_at: Date;
   updated_at: Date | null;
+  deleted_at: Date | null;
 }

@@ -1,46 +1,50 @@
 /**
  * Type of building/construction being worked on
  */
-export type BuildingType =
-  | "residential" // Residential buildings (homes, apartments, condos)
-  | "commercial" // Commercial buildings (offices, retail, hospitality)
-  | "industrial" // Industrial buildings (factories, warehouses, manufacturing)
-  | "infrastructure" // Infrastructure projects (roads, bridges, utilities)
-  | "institutional" // Institutional buildings (schools, hospitals, government offices)
-  | "mixed_use"; // Mixed-use buildings (residential and commercial)
+export enum BuildingType {
+  RESIDENTIAL = "residential",
+  COMMERCIAL = "commercial",
+  INDUSTRIAL = "industrial",
+  INFRASTRUCTURE = "infrastructure",
+  INSTITUTIONAL = "institutional",
+  MIXED_USE = "mixed_use"
+}
 
 /**
  * Type of construction work being performed
  */
-export type ProjectType =
-  | "new_build" // New construction from ground up
-  | "renovation" // Renovation/refurbishment of existing building
-  | "remodel" // Remodel of existing building
-  | "expansion" // Building extensions or additions
-  | "maintenance"; // Maintenance and minor repairs
+export enum ProjectType {
+  NEW_BUILD = "new_build",
+  RENOVATION = "renovation",
+  REMODEL = "remodel",
+  EXPANSION = "expansion",
+  MAINTENANCE = "maintenance"
+}
 
 /**
  * Overall project status (high-level state)
  */
-export type ProjectStatus =
-  | "planned" // Project is planned
-  | "in_progress" // Project is in progress
-  | "on_hold" // Project is on hold
-  | "completed" // Project is completed
-  | "cancelled"; // Project is cancelled
+export enum ProjectStatus {
+  PLANNED = "planned",
+  IN_PROGRESS = "in_progress",
+  ON_HOLD = "on_hold",
+  COMPLETED = "completed",
+  CANCELLED = "cancelled"
+}
 
 /**
  * Specific phase/stage of the project lifecycle
  * (what stage the project is currently in)
  */
-export type ProjectPhase =
-  | "concept" // Initial concept and feasibility
-  | "design" // Design and planning
-  | "permits" // Building permits and approvals
-  | "preconstruction" // Preconstruction setup and site readiness
-  | "procurement" // Material and contractor procurement
-  | "construction" // Active building phase
-  | "post_construction"; // Final reviews, fixes, and handover
+export enum ProjectPhase {
+  CONCEPT = "concept",
+  DESIGN = "design",
+  PERMITS = "permits",
+  PRECONSTRUCTION = "preconstruction",
+  PROCUREMENT = "procurement",
+  CONSTRUCTION = "construction",
+  POST_CONSTRUCTION = "post_construction"
+}
 
 export interface Project {
   id: string;
@@ -63,4 +67,5 @@ export interface Project {
   end_date: Date | null;
   created_at: Date;
   updated_at: Date | null;
+  deleted_at: Date | null;
 }

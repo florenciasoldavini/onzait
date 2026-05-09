@@ -7,4 +7,5 @@ export interface PurchaseItem {
   total_price: number | null;
   created_at: Date;
   updated_at: Date | null;
+  deleted_at: Date | null;
 }

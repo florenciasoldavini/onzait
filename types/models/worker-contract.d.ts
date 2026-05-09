@@ -1,5 +1,9 @@
-export type PaymentType = "hourly" | "daily" | "weekly" | "one_time";
-
+export enum PaymentType {
+  HOURLY = "hourly",
+  DAILY = "daily",
+  WEEKLY = "weekly",
+  ONE_TIME = "one_time"
+}
 export interface WorkerContract {
   id: string;
   worker_id: string;
@@ -8,4 +12,5 @@ export interface WorkerContract {
   rate: number;
   created_at: Date;
   updated_at: Date | null;
+  deleted_at: Date | null;
 }
