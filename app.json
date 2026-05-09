@@ -1,14 +1,15 @@
 {
   "expo": {
-    "name": "on-site",
-    "slug": "on-site",
+    "name": "onzait",
+    "slug": "onzait",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "onsite",
+    "scheme": "onzait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.florenciasoldavini.onzait",
       "supportsTablet": true
     },
     "android": {
@@ -16,6 +17,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "package": "com.florenciasoldavini.onzait",
       "edgeToEdgeEnabled": true
     },
     "web": {
@@ -43,7 +45,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "5f0575eb-9367-4384-ba99-97ebfe117afb"
+        "projectId": "cfe1b670-171b-4fb9-808a-78cbbe47ed33"
       }
     },
     "owner": "florenciasoldavini"
