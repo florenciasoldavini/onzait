@@ -4,6 +4,10 @@ grant select, insert, update on table public.users to authenticated;
 
 alter table public.users enable row level security;
 
+drop policy if exists "users_select_own_profile" on public.users;
+drop policy if exists "users_insert_own_profile" on public.users;
+drop policy if exists "users_update_own_profile" on public.users;
+
 create policy "users_select_own_profile"
 on public.users
 for select

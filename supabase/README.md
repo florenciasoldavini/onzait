@@ -4,9 +4,9 @@ This folder is the starting point for tracked Supabase database changes.
 
 ## Included migrations
 
-- `20260509_000001_initial_schema.sql`
+- `20260510090001_create_users_bootstrap.sql`
   Creates only the auth bootstrap schema: `public.user_role` and `public.users`.
-- `20260509_000002_rls_baseline.sql`
+- `20260510090002_enable_users_rls.sql`
   Enables RLS for `public.users` and grants direct client access only to that table.
 
 Right now, the tracked bootstrap intentionally creates only the `users` table. The rest of the product tables should be added later as feature-specific migrations instead of being front-loaded.
@@ -55,4 +55,4 @@ The app also has the native scheme `onzait`, so if you later add email confirmat
 ## Notes
 
 - The backend uses a service-role path for privileged operations, so server-side flows are not blocked by these client RLS restrictions.
-- The repo currently tracks SQL migrations, but the Supabase CLI is not installed in this environment yet, so `supabase/config.toml` was not bootstrapped here.
+- The repo now expects migrations to be applied via the Supabase CLI after linking the project.
