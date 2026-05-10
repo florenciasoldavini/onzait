@@ -60,7 +60,9 @@ function RootNavigator() {
       <Stack.Protected guard={Boolean(session)}>
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
       </Stack.Protected>
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Protected guard={!session}>
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      </Stack.Protected>
     </Stack>
   );
 }

@@ -60,8 +60,6 @@ export default function SignUpScreen() {
           "Your account was created. Confirm your email, then sign in."
         );
         router.replace("/sign-in");
-      } else {
-        router.replace("/");
       }
     } catch (error) {
       const message = getSupabaseErrorMessage(error);

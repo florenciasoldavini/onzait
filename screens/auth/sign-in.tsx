@@ -12,12 +12,11 @@ import { VStack } from "@/components/ui/vstack";
 import { AuthContext } from "@/contexts/auth";
 import { startOAuthSignIn } from "@/lib/auth";
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
-import { Link, useRouter } from "expo-router";
+import { Link } from "expo-router";
 import { useContext, useState } from "react";
 import { Alert, Platform, Text } from "react-native";
 
 export default function SignInScreen() {
-  const router = useRouter();
   const { authError } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,8 +48,6 @@ export default function SignInScreen() {
       const message = getSupabaseErrorMessage(error);
       setErrorMessage(message);
       Alert.alert("Sign in failed", message);
-    } else {
-      router.replace("/");
     }
 
     setLoadingAction(null);
@@ -62,10 +59,6 @@ export default function SignInScreen() {
 
     try {
       await startOAuthSignIn(provider);
-
-      if (Platform.OS !== "web") {
-        router.replace("/");
-      }
     } catch (error) {
       const message = getSupabaseErrorMessage(error);
       setErrorMessage(message);
