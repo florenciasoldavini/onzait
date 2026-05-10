@@ -36,6 +36,7 @@ const getFallbackProfile = (
 
   return {
     avatar: profile?.avatar ?? null,
+    auth_user_id: session.user.id,
     email,
     first_name:
       profile?.first_name ??
@@ -99,8 +100,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return nextUser;
   };
 
+  const hydrateLegacyUserByEmail = async (nextSession: Session): Promise<User | null> => {
+    const email = nextSession.user.email;
+    if (!supabase || !email) {
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+
+    const legacyUser = data as User;
+
+    if (legacyUser.auth_user_id === nextSession.user.id) {
+      return legacyUser;
+    }
+
+    const { data: updatedUser, error: updateError } = await supabase
+      .from("users")
+      .update({ auth_user_id: nextSession.user.id })
+      .eq("id", legacyUser.id)
+      .select("*")
+      .single();
+
+    if (updateError) {
+      return legacyUser;
+    }
+
+    return updatedUser as User;
+  };
+
   const hydrateUser = async (nextSession: Session | null) => {
-    if (!supabase || !nextSession?.user.email) {
+    if (!supabase || !nextSession) {
       setSession(nextSession);
       setUser(null);
       return;
@@ -111,7 +148,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data, error } = await supabase
       .from("users")
       .select("*")
-      .eq("email", nextSession.user.email)
+      .eq("auth_user_id", nextSession.user.id)
       .maybeSingle();
 
     if (error) {
@@ -121,6 +158,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     if (!data) {
+      const legacyUser = await hydrateLegacyUserByEmail(nextSession);
+      if (legacyUser) {
+        setUser(legacyUser);
+        setAuthError(null);
+        return;
+      }
+
       await createUser(nextSession);
       return;
     }

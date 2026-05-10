@@ -3,6 +3,7 @@ import { User } from '@/types/models/user';
 
 export const UserSchema: z.ZodType<User> = z.object({
   id: z.string(),
+  auth_user_id: z.string().nullable(),
   first_name: z.string(),
   last_name: z.string(),
   avatar: z.string().nullable(),
@@ -13,4 +14,3 @@ export const UserSchema: z.ZodType<User> = z.object({
   updated_at: z.date().nullable(),
   deleted_at: z.date().nullable(),
 });
-

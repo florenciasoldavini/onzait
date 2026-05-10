@@ -11,6 +11,7 @@ datasource db {
 // Models
 model User {
   id           String    @id @default(uuid())
+  auth_user_id String?   @unique @db.Uuid
   first_name   String
   last_name    String
   avatar       String?
