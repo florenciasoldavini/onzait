@@ -32,6 +32,18 @@
         "visibility": "plaintext"
       }
     },
+    "EXPO_PUBLIC_SITE_URL": {
+      "section": "Frontend / Public",
+      "comment": "Public app base URL for auth redirects and hosted web links.",
+      "example": "https://onzait.vercel.app",
+      "vercel": {
+        "environments": ["development", "preview", "production"]
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "plaintext"
+      }
+    },
     "SENTRY_ORG": {
       "section": "Sentry / Optional Build-Time Source Maps",
       "comment": "Optional build-time Sentry settings for native/web sourcemap uploads.",

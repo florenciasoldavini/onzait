@@ -36,6 +36,20 @@ When the app starts exposing more project data directly from the client, the nex
 
 Those policies should probably be participant-based, not global role-based.
 
+## Auth URL configuration
+
+In Supabase Auth, set:
+
+- `Site URL`: `https://onzait.vercel.app`
+- additional redirect URLs for local web: `http://localhost:8081/**` (adjust if Expo web is running on a different port)
+- additional redirect URLs for production web paths: `https://onzait.vercel.app/**`
+
+If you want auth links to work on Vercel preview deploys too, add your preview wildcard once you confirm the account slug. Supabase's current Vercel pattern is:
+
+- `https://*-<your-vercel-account-or-team-slug>.vercel.app/**`
+
+The app also has the native scheme `onzait`, so if you later add email confirmation, password reset, or OAuth flows for iPhone/Android, include native deep-link URLs too.
+
 ## Notes
 
 - The backend uses a service-role path for privileged operations, so server-side flows are not blocked by these client RLS restrictions.
