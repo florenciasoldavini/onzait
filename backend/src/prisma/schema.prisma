@@ -10,8 +10,7 @@ datasource db {
 
 // Models
 model User {
-  id           String    @id @default(uuid())
-  auth_user_id String?   @unique @db.Uuid
+  id           String    @id @db.Uuid
   first_name   String
   last_name    String
   avatar       String?
@@ -69,7 +68,7 @@ model Project {
 
 model Client {
   id           String    @id @default(uuid())
-  user_id      String
+  user_id      String    @db.Uuid
   first_name   String
   last_name    String?
   avatar       String?
@@ -86,7 +85,7 @@ model Client {
 
 model Contractor {
   id           String    @id @default(uuid())
-  user_id      String
+  user_id      String    @db.Uuid
   first_name   String
   last_name    String?
   avatar       String?
@@ -104,7 +103,7 @@ model Contractor {
 
 model Worker {
   id            String    @id @default(uuid())
-  user_id       String
+  user_id       String    @db.Uuid
   contractor_id String
   first_name    String
   last_name     String?
@@ -160,7 +159,7 @@ model Material {
 
 model Photo {
   id         String    @id @default(uuid())
-  user_id    String
+  user_id    String    @db.Uuid
   project_id String
   url        String
   category   String
@@ -195,7 +194,7 @@ model ProjectMaterial {
 model ProjectParticipant {
   id         String    @id @default(uuid())
   project_id String
-  user_id    String
+  user_id    String    @db.Uuid
   role       String
   created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt
@@ -209,7 +208,7 @@ model ProjectParticipant {
 
 model Supplier {
   id            String    @id @default(uuid())
-  user_id       String
+  user_id       String    @db.Uuid
   name          String
   website       String?
   phone_number  String?
@@ -263,7 +262,7 @@ model PurchaseItem {
 
 model Todo {
   id         String    @id @default(uuid())
-  user_id    String
+  user_id    String    @db.Uuid
   name       String
   is_done    Boolean   @default(false)
   created_at DateTime  @default(now())
@@ -290,7 +289,7 @@ model Trade {
 
 model UserMaterial {
   id              String    @id @default(uuid())
-  user_id         String
+  user_id         String    @db.Uuid
   material_id     String
   estimated_price Float
   notes           String?

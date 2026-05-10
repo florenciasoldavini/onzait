@@ -1,8 +1,7 @@
 create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists public.users (
-  id text primary key default (extensions.gen_random_uuid())::text,
-  auth_user_id uuid unique,
+  id uuid primary key,
   first_name text not null,
   last_name text not null,
   avatar text,
@@ -37,7 +36,7 @@ create table if not exists public.projects (
 
 create table if not exists public.clients (
   id text primary key default (extensions.gen_random_uuid())::text,
-  user_id text not null references public.users(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
   first_name text not null,
   last_name text,
   avatar text,
@@ -50,7 +49,7 @@ create table if not exists public.clients (
 
 create table if not exists public.contractors (
   id text primary key default (extensions.gen_random_uuid())::text,
-  user_id text not null references public.users(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
   first_name text not null,
   last_name text,
   avatar text,
@@ -63,7 +62,7 @@ create table if not exists public.contractors (
 
 create table if not exists public.workers (
   id text primary key default (extensions.gen_random_uuid())::text,
-  user_id text not null references public.users(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
   contractor_id text not null references public.contractors(id) on delete cascade,
   first_name text not null,
   last_name text,
@@ -100,7 +99,7 @@ create table if not exists public.materials (
 
 create table if not exists public.photos (
   id text primary key default (extensions.gen_random_uuid())::text,
-  user_id text not null references public.users(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
   project_id text not null references public.projects(id) on delete cascade,
   url text not null,
   category text not null,
@@ -125,7 +124,7 @@ create table if not exists public.project_materials (
 create table if not exists public.project_participants (
   id text primary key default (extensions.gen_random_uuid())::text,
   project_id text not null references public.projects(id) on delete cascade,
-  user_id text not null references public.users(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
   role text not null,
   created_at timestamp(3) not null default current_timestamp,
   updated_at timestamp(3),
@@ -134,7 +133,7 @@ create table if not exists public.project_participants (
 
 create table if not exists public.suppliers (
   id text primary key default (extensions.gen_random_uuid())::text,
-  user_id text not null references public.users(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
   name text not null,
   website text,
   phone_number text,
@@ -172,7 +171,7 @@ create table if not exists public.purchase_items (
 
 create table if not exists public.todos (
   id text primary key default (extensions.gen_random_uuid())::text,
-  user_id text not null references public.users(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
   name text not null,
   is_done boolean not null default false,
   created_at timestamp(3) not null default current_timestamp,
@@ -191,7 +190,7 @@ create table if not exists public.trades (
 
 create table if not exists public.user_materials (
   id text primary key default (extensions.gen_random_uuid())::text,
-  user_id text not null references public.users(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
   material_id text not null references public.materials(id) on delete cascade,
   estimated_price double precision not null,
   notes text,
@@ -221,7 +220,6 @@ create table if not exists public.labor_estimates (
   deleted_at timestamp(3)
 );
 
-create index if not exists users_auth_user_id_idx on public.users(auth_user_id);
 create index if not exists users_email_idx on public.users(email);
 create index if not exists project_participants_user_id_idx on public.project_participants(user_id);
 create index if not exists project_participants_project_id_idx on public.project_participants(project_id);

@@ -20,7 +20,7 @@ So the first policy pass is intentionally narrow:
 
 - every `public` table has RLS enabled
 - direct `authenticated` Data API access is granted only for `public.users`
-- `users` policies are anchored to `auth.uid()` via `users.auth_user_id`
+- `users` policies are anchored directly to `auth.uid() = users.id`
 
 Everything else is denied by default until the app starts reading or writing those tables from the client.
 

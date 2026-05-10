@@ -2,13 +2,6 @@ revoke all on all tables in schema public from anon, authenticated;
 
 grant select, insert, update on table public.users to authenticated;
 
-update public.users u
-set auth_user_id = au.id
-from auth.users au
-where u.auth_user_id is null
-  and au.email is not null
-  and lower(au.email) = lower(u.email);
-
 alter table public.users enable row level security;
 alter table public.projects enable row level security;
 alter table public.clients enable row level security;
@@ -34,7 +27,7 @@ for select
 to authenticated
 using (
   (select auth.uid()) is not null
-  and (select auth.uid()) = auth_user_id
+  and (select auth.uid()) = id
 );
 
 create policy "users_insert_own_profile"
@@ -43,7 +36,7 @@ for insert
 to authenticated
 with check (
   (select auth.uid()) is not null
-  and (select auth.uid()) = auth_user_id
+  and (select auth.uid()) = id
   and (select auth.jwt() ->> 'email') is not null
   and lower(email) = lower((select auth.jwt() ->> 'email'))
 );
@@ -54,11 +47,11 @@ for update
 to authenticated
 using (
   (select auth.uid()) is not null
-  and (select auth.uid()) = auth_user_id
+  and (select auth.uid()) = id
 )
 with check (
   (select auth.uid()) is not null
-  and (select auth.uid()) = auth_user_id
+  and (select auth.uid()) = id
   and (select auth.jwt() ->> 'email') is not null
   and lower(email) = lower((select auth.jwt() ->> 'email'))
 );
