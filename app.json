@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "onzait",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.florenciasoldavini.onzait",
       "supportsTablet": true
