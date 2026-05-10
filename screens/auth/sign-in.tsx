@@ -10,10 +10,11 @@ import {
 import { Input, InputField } from "@/components/ui/input";
 import { VStack } from "@/components/ui/vstack";
 import { AuthContext } from "@/contexts/auth";
+import { startOAuthSignIn } from "@/lib/auth";
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
 import { Link, useRouter } from "expo-router";
 import { useContext, useState } from "react";
-import { Alert, Text } from "react-native";
+import { Alert, Platform, Text } from "react-native";
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -21,7 +22,9 @@ export default function SignInScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<
+    "apple" | "email" | "google" | null
+  >(null);
 
   async function signInWithEmail() {
     if (!supabase) {
@@ -34,7 +37,7 @@ export default function SignInScreen() {
       return;
     }
 
-    setLoading(true);
+    setLoadingAction("email");
     setErrorMessage(null);
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -50,7 +53,26 @@ export default function SignInScreen() {
       router.replace("/");
     }
 
-    setLoading(false);
+    setLoadingAction(null);
+  }
+
+  async function signInWithProvider(provider: "apple" | "google") {
+    setLoadingAction(provider);
+    setErrorMessage(null);
+
+    try {
+      await startOAuthSignIn(provider);
+
+      if (Platform.OS !== "web") {
+        router.replace("/");
+      }
+    } catch (error) {
+      const message = getSupabaseErrorMessage(error);
+      setErrorMessage(message);
+      Alert.alert("Sign in failed", message);
+    } finally {
+      setLoadingAction(null);
+    }
   }
 
   return (
@@ -104,19 +126,43 @@ export default function SignInScreen() {
                 void signInWithEmail();
               }}
             >
-              <ButtonText>{loading ? "Signing In..." : "Sign In"}</ButtonText>
+              <ButtonText>
+                {loadingAction === "email" ? "Signing In..." : "Sign In"}
+              </ButtonText>
             </Button>
           </VStack>
         </FormControl>
         <Link href="/reset-password">Forgot password?</Link>
         <Text>Or</Text>
         <VStack className="w-full gap-4">
-          <Button className="w-full rounded-full" variant="outline">
-            <ButtonText>Sign in with Google</ButtonText>
+          <Button
+            className="w-full rounded-full"
+            onPress={() => {
+              void signInWithProvider("google");
+            }}
+            variant="outline"
+          >
+            <ButtonText>
+              {loadingAction === "google"
+                ? "Redirecting to Google..."
+                : "Sign in with Google"}
+            </ButtonText>
           </Button>
-          <Button className="w-full rounded-full" variant="outline">
-            <ButtonText>Sign in with Apple</ButtonText>
-          </Button>
+          {Platform.OS !== "android" ? (
+            <Button
+              className="w-full rounded-full"
+              onPress={() => {
+                void signInWithProvider("apple");
+              }}
+              variant="outline"
+            >
+              <ButtonText>
+                {loadingAction === "apple"
+                  ? "Redirecting to Apple..."
+                  : "Sign in with Apple"}
+              </ButtonText>
+            </Button>
+          ) : null}
         </VStack>
         <Text>
           Don&apos;t have an account? <Link href="/sign-up">Sign up</Link>

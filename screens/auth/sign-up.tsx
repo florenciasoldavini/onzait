@@ -10,6 +10,7 @@ import {
 import { Input, InputField } from "@/components/ui/input";
 import { VStack } from "@/components/ui/vstack";
 import { AuthContext } from "@/contexts/auth";
+import { getAuthRedirectUrl } from "@/lib/auth";
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
 import { Link, useRouter } from "expo-router";
 import { useContext, useState } from "react";
@@ -37,29 +38,38 @@ export default function SignUpScreen() {
     setLoading(true);
     setErrorMessage(null);
 
-    const {
-      data: { session },
-      error
-    } = await supabase.auth.signUp({
-      email,
-      password
-    });
+    try {
+      const {
+        data: { session },
+        error
+      } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: getAuthRedirectUrl("callback")
+        }
+      });
 
-    if (error) {
+      if (error) {
+        const message = getSupabaseErrorMessage(error);
+        setErrorMessage(message);
+        Alert.alert("Sign up failed", message);
+      } else if (!session) {
+        Alert.alert(
+          "Check your email",
+          "Your account was created. Confirm your email, then sign in."
+        );
+        router.replace("/sign-in");
+      } else {
+        router.replace("/");
+      }
+    } catch (error) {
       const message = getSupabaseErrorMessage(error);
       setErrorMessage(message);
       Alert.alert("Sign up failed", message);
-    } else if (!session) {
-      Alert.alert(
-        "Check your email",
-        "Your account was created. Confirm your email, then sign in."
-      );
-      router.replace("/sign-in");
-    } else {
-      router.replace("/");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   return (

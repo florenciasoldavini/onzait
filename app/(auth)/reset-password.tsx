@@ -1,9 +1,5 @@
-import { Text, View } from "react-native";
+import ResetPasswordScreen from "@/screens/auth/reset-password";
 
 export default function ResetPassword() {
-  return (
-    <View>
-      <Text>Reset Password</Text>
-    </View>
-  );
+  return <ResetPasswordScreen />;
 }

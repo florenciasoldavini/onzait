@@ -1,0 +1,224 @@
+import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
+import type { Session } from "@supabase/supabase-js";
+import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
+import { Platform } from "react-native";
+
+WebBrowser.maybeCompleteAuthSession();
+
+type SupportedOAuthProvider = "apple" | "google";
+
+export interface AuthRedirectResult {
+  session: Session | null;
+  type: string | null;
+}
+
+function getConfiguredSiteUrl() {
+  const configuredSiteUrl = process.env.EXPO_PUBLIC_SITE_URL?.trim();
+
+  if (configuredSiteUrl) {
+    return configuredSiteUrl.replace(/\/+$/, "");
+  }
+
+  if (typeof window !== "undefined" && window.location.origin) {
+    return window.location.origin.replace(/\/+$/, "");
+  }
+
+  return null;
+}
+
+function getBrowserOrigin() {
+  if (typeof window === "undefined" || !window.location.origin) {
+    return null;
+  }
+
+  return window.location.origin.replace(/\/+$/, "");
+}
+
+function getCombinedSearchParams(url: URL) {
+  const searchParams = new URLSearchParams(url.search);
+  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+
+  for (const [key, value] of hashParams.entries()) {
+    if (!searchParams.has(key)) {
+      searchParams.set(key, value);
+    }
+  }
+
+  return searchParams;
+}
+
+export function getAuthRedirectUrl(path: "callback" | "reset-password" = "callback") {
+  if (Platform.OS === "web") {
+    const siteUrl = getBrowserOrigin() ?? getConfiguredSiteUrl();
+
+    if (!siteUrl) {
+      throw new Error(
+        "Missing EXPO_PUBLIC_SITE_URL. Add it to your env vars before using hosted auth redirects."
+      );
+    }
+
+    return `${siteUrl}/${path}`;
+  }
+
+  return Linking.createURL(path);
+}
+
+export function getAuthParamsFromUrl(url: string) {
+  return getCombinedSearchParams(new URL(url));
+}
+
+export function urlHasAuthPayload(url: string) {
+  const params = getAuthParamsFromUrl(url);
+
+  return (
+    params.has("access_token") ||
+    params.has("refresh_token") ||
+    params.has("code") ||
+    params.has("error") ||
+    params.has("error_description") ||
+    params.has("type")
+  );
+}
+
+export function getActiveAuthUrl(linkingUrl: string | null) {
+  if (linkingUrl) {
+    return linkingUrl;
+  }
+
+  if (typeof window !== "undefined") {
+    return window.location.href;
+  }
+
+  return null;
+}
+
+export async function completeAuthSessionFromUrl(url: string): Promise<AuthRedirectResult> {
+  if (!supabase) {
+    throw new Error(getSupabaseErrorMessage("Supabase is not configured."));
+  }
+
+  const params = getAuthParamsFromUrl(url);
+  const authType = params.get("type");
+  const errorDescription = params.get("error_description") ?? params.get("error");
+  const code = params.get("code");
+  const accessToken = params.get("access_token");
+  const refreshToken = params.get("refresh_token");
+
+  if (errorDescription) {
+    throw new Error(errorDescription);
+  }
+
+  if (code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (error) {
+      throw error;
+    }
+
+    return { session: data.session, type: authType };
+  }
+
+  if (accessToken && refreshToken) {
+    const { data, error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return { session: data.session, type: authType };
+  }
+
+  return { session: null, type: authType };
+}
+
+export async function startOAuthSignIn(provider: SupportedOAuthProvider) {
+  if (!supabase) {
+    throw new Error(getSupabaseErrorMessage("Supabase is not configured."));
+  }
+
+  const redirectTo = getAuthRedirectUrl("callback");
+
+  if (Platform.OS === "web") {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo }
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  }
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo,
+      skipBrowserRedirect: true
+    }
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const result = await WebBrowser.openAuthSessionAsync(data?.url ?? "", redirectTo);
+
+  if (result.type !== "success" || !("url" in result) || !result.url) {
+    return null;
+  }
+
+  return completeAuthSessionFromUrl(result.url);
+}
+
+export async function sendPasswordResetEmail(email: string) {
+  if (!supabase) {
+    throw new Error(getSupabaseErrorMessage("Supabase is not configured."));
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: getAuthRedirectUrl("reset-password")
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function updatePassword(password: string) {
+  if (!supabase) {
+    throw new Error(getSupabaseErrorMessage("Supabase is not configured."));
+  }
+
+  const { data, error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export function getPostAuthRedirectPath(authType: string | null) {
+  if (authType === "recovery") {
+    return "/reset-password";
+  }
+
+  return "/";
+}
+
+export function clearWebAuthUrlArtifacts() {
+  const origin = getBrowserOrigin();
+
+  if (typeof window === "undefined" || !origin) {
+    return;
+  }
+
+  const cleanUrl = `${origin}${window.location.pathname}`;
+  window.history.replaceState({}, document.title, cleanUrl);
+}

@@ -84,9 +84,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (existingUser) {
           const nextUser = existingUser as User;
-          setUser(nextUser);
-          setAuthError(null);
-          return nextUser;
+
+          if (nextUser.id === payload.id) {
+            setUser(nextUser);
+            setAuthError(null);
+            return nextUser;
+          }
+
+          setAuthError(
+            "This email is already linked to a different sign-in method. Use the method you signed up with first, then we can add account linking later."
+          );
+          return null;
         }
       }
 
