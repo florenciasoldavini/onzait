@@ -39,6 +39,7 @@ with check (
   and (select auth.uid()) = id
   and (select auth.jwt() ->> 'email') is not null
   and lower(email) = lower((select auth.jwt() ->> 'email'))
+  and role = 'user'
 );
 
 create policy "users_update_own_profile"
@@ -54,4 +55,9 @@ with check (
   and (select auth.uid()) = id
   and (select auth.jwt() ->> 'email') is not null
   and lower(email) = lower((select auth.jwt() ->> 'email'))
+  and role = (
+    select u.role
+    from public.users u
+    where u.id = (select auth.uid())
+  )
 );

@@ -31,7 +31,7 @@ const getFallbackProfile = (
   profile?: Partial<User>
 ): Omit<User, "created_at" | "updated_at" | "deleted_at"> => {
   const metadata = session.user.user_metadata ?? {};
-  const email = session.user.email ?? profile?.email ?? "";
+  const email = (session.user.email ?? profile?.email ?? "").trim().toLowerCase();
   const emailName = email.split("@")[0] ?? "User";
 
   return {
@@ -44,9 +44,9 @@ const getFallbackProfile = (
       metadata.given_name ??
       emailName,
     last_name:
-      profile?.last_name ?? metadata.last_name ?? metadata.family_name ?? "",
+      profile?.last_name ?? metadata.last_name ?? metadata.family_name ?? null,
     phone_number: profile?.phone_number ?? null,
-    role: profile?.role ?? "user"
+    role: "user"
   };
 };
 

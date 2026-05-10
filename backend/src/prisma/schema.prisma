@@ -8,15 +8,20 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum UserRole {
+  admin
+  user
+}
+
 // Models
 model User {
   id           String    @id @db.Uuid
   first_name   String
-  last_name    String
+  last_name    String?
   avatar       String?
   email        String    @unique
   phone_number String?
-  role         String
+  role         UserRole  @default(user)
   created_at   DateTime  @default(now())
   updated_at   DateTime? @updatedAt
   deleted_at   DateTime?
