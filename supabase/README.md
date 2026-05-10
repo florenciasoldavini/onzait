@@ -5,9 +5,11 @@ This folder is the starting point for tracked Supabase database changes.
 ## Included migrations
 
 - `20260509_000001_initial_schema.sql`
-  Creates the current application schema based on the Prisma data model.
+  Creates only the auth bootstrap schema: `public.user_role` and `public.users`.
 - `20260509_000002_rls_baseline.sql`
-  Enables RLS across the exposed `public` schema and grants direct client access only to `public.users`.
+  Enables RLS for `public.users` and grants direct client access only to that table.
+
+Right now, the tracked bootstrap intentionally creates only the `users` table. The rest of the product tables should be added later as feature-specific migrations instead of being front-loaded.
 
 ## Current RLS strategy
 
@@ -18,11 +20,11 @@ The current frontend talks directly to:
 
 So the first policy pass is intentionally narrow:
 
-- every `public` table has RLS enabled
+- only `public.users` exists in the current tracked bootstrap
 - direct `authenticated` Data API access is granted only for `public.users`
 - `users` policies are anchored directly to `auth.uid() = users.id`
 
-Everything else is denied by default until the app starts reading or writing those tables from the client.
+Everything else should be added later with its own schema migration plus its own RLS pass when the app starts reading or writing that table from the client.
 
 ## Next policy wave
 
