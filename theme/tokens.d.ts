@@ -6,7 +6,7 @@ export const designTokens: {
   };
   fonts: {
     web: { sans: string; mono: string };
-    nativeFallback: { sans: string; mono: string };
+    native: { sans: string; mono: string };
   };
   typeScale: Record<string, any>;
   spacing: Record<string, number>;

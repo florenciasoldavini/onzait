@@ -5,11 +5,11 @@ export const fontFamilies = {
   sans:
     Platform.select({
       web: designTokens.fonts.web.sans,
-      default: designTokens.fonts.nativeFallback.sans
-    }) ?? designTokens.fonts.nativeFallback.sans,
+      default: designTokens.fonts.native.sans
+    }) ?? designTokens.fonts.native.sans,
   mono:
     Platform.select({
       web: designTokens.fonts.web.mono,
-      default: designTokens.fonts.nativeFallback.mono
-    }) ?? designTokens.fonts.nativeFallback.mono
+      default: designTokens.fonts.native.mono
+    }) ?? designTokens.fonts.native.mono
 } as const;

@@ -147,9 +147,9 @@ const fontFamilies = {
     sans: "Geist",
     mono: "JetBrains Mono"
   },
-  nativeFallback: {
-    sans: "Satoshi-Regular",
-    mono: "Satoshi-Medium"
+  native: {
+    sans: "Geist",
+    mono: "JetBrains Mono"
   }
 };
 
