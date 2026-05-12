@@ -21,15 +21,24 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install app dependencies
         run: npm ci
+
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
 
       - name: Verify .env.example is up to date
         run: npm run env:check
 
       - name: TypeScript check
         run: npx tsc --noEmit
+
+      - name: Backend compile check
+        run: npm run build --prefix backend
 
       - name: Lint
         run: npm run lint
