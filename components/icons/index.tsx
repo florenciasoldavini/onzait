@@ -2,6 +2,7 @@ import {
   CircleUserRound,
   Eye,
   EyeClosed,
+  FolderKanban,
   House,
   ListTodo
 } from "lucide-react-native";
@@ -22,6 +23,16 @@ export const ProfileIcon = ({
   size: number;
 }) => {
   return <CircleUserRound size={size} color={color} />;
+};
+
+export const ProjectsIcon = ({
+  color,
+  size
+}: {
+  color: string;
+  size: number;
+}) => {
+  return <FolderKanban size={size} color={color} />;
 };
 
 export const OpenEyeIcon = ({

@@ -1,4 +1,8 @@
-import { HomeIcon, ProfileIcon, ToDoIcon } from "@/components/icons";
+import {
+  ProfileIcon,
+  ProjectsIcon,
+  ToDoIcon
+} from "@/components/icons";
 import { getMonoFontStyle } from "@/theme/fonts";
 import { designTokens } from "@/theme/tokens";
 import { Tabs } from "expo-router";
@@ -38,20 +42,20 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
+        name="projects"
+        options={{
+          title: "Projects",
+          tabBarIcon: ({ color, size }) => (
+            <ProjectsIcon color={color} size={Math.min(size, tabIconSize)} />
+          )
+        }}
+      />
+      <Tabs.Screen
         name="tasks"
         options={{
           title: "Tasks",
           tabBarIcon: ({ color, size }) => (
             <ToDoIcon color={color} size={Math.min(size, tabIconSize)} />
-          )
-        }}
-      />
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Preview",
-          tabBarIcon: ({ color, size }) => (
-            <HomeIcon color={color} size={Math.min(size, tabIconSize)} />
           )
         }}
       />
