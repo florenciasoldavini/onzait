@@ -1,16 +1,16 @@
-import gluestackPlugin from '@gluestack-ui/nativewind-utils/tailwind-plugin';
+import gluestackPlugin from "@gluestack-ui/nativewind-utils/tailwind-plugin";
 const { designTokens, tailwindColorScaleRefs } = require("./theme/tokens");
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: "media",
   content: ["app/**/*.{tsx,jsx,ts,js}", "components/**/*.{tsx,jsx,ts,js}"],
-  presets: [require('nativewind/preset')],
+  presets: [require("nativewind/preset")],
   safelist: [
     {
       pattern:
-        /(bg|border|text|stroke|fill)-(primary|secondary|tertiary|error|success|warning|info|typography|outline|background|indicator)-(0|50|100|200|300|400|500|600|700|800|900|950|white|gray|black|error|warning|muted|success|info|light|dark|primary)/,
-    },
+        /(bg|border|text|stroke|fill)-(primary|secondary|tertiary|error|success|warning|info|typography|outline|background|indicator)-(0|50|100|200|300|400|500|600|700|800|900|950|white|gray|black|error|warning|muted|success|info|light|dark|primary)/
+    }
   ],
   theme: {
     extend: {
@@ -25,19 +25,19 @@ module.exports = {
         typography: tailwindColorScaleRefs.typography,
         outline: tailwindColorScaleRefs.outline,
         background: tailwindColorScaleRefs.background,
-        indicator: tailwindColorScaleRefs.indicator,
+        indicator: tailwindColorScaleRefs.indicator
       },
       fontFamily: {
-        heading: [designTokens.fonts.web.sans, 'sans-serif'],
-        body: [designTokens.fonts.web.sans, 'sans-serif'],
-        mono: [designTokens.fonts.web.mono, 'monospace'],
-        roboto: ['Roboto', 'sans-serif'],
+        heading: [designTokens.fonts.web.sans, "sans-serif"],
+        body: [designTokens.fonts.web.sans, "sans-serif"],
+        mono: [designTokens.fonts.web.mono, "monospace"],
+        roboto: ["Roboto", "sans-serif"]
       },
       fontWeight: {
-        extrablack: '950',
+        extrablack: "950"
       },
       fontSize: {
-        '2xs': '10px',
+        "2xs": "10px"
       },
       spacing: {
         1: `${designTokens.spacing[1]}px`,
@@ -51,24 +51,24 @@ module.exports = {
         12: `${designTokens.spacing[12]}px`,
         16: `${designTokens.spacing[16]}px`,
         20: `${designTokens.spacing[20]}px`,
-        24: `${designTokens.spacing[24]}px`,
+        24: `${designTokens.spacing[24]}px`
       },
       borderRadius: {
         sm: `${designTokens.radius.sm}px`,
         md: `${designTokens.radius.md}px`,
         lg: `${designTokens.radius.lg}px`,
-        xl: `${designTokens.radius.xl}px`,
+        xl: `${designTokens.radius.xl}px`
       },
       boxShadow: {
         card: designTokens.shadows.card,
         floating: designTokens.shadows.floating,
-        'hard-1': '-2px 2px 8px 0px rgba(38, 38, 38, 0.20)',
-        'hard-2': '0px 3px 10px 0px rgba(38, 38, 38, 0.20)',
-        'hard-3': '2px 2px 8px 0px rgba(38, 38, 38, 0.20)',
-        'hard-4': '0px -3px 10px 0px rgba(38, 38, 38, 0.20)',
-        'hard-5': '0px 2px 10px 0px rgba(38, 38, 38, 0.10)',
-      },
-    },
+        "hard-1": "-2px 2px 8px 0px rgba(38, 38, 38, 0.20)",
+        "hard-2": "0px 3px 10px 0px rgba(38, 38, 38, 0.20)",
+        "hard-3": "2px 2px 8px 0px rgba(38, 38, 38, 0.20)",
+        "hard-4": "0px -3px 10px 0px rgba(38, 38, 38, 0.20)",
+        "hard-5": "0px 2px 10px 0px rgba(38, 38, 38, 0.10)"
+      }
+    }
   },
-  plugins: [gluestackPlugin],
+  plugins: [gluestackPlugin]
 };

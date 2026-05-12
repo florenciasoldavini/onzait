@@ -1,14 +1,13 @@
-import { ScreenLayout } from "@/components/ScreenLayout";
-import { Button, ButtonText } from "@/components/ui/button";
 import {
-  FormControl,
-  FormControlError,
-  FormControlErrorText,
-  FormControlLabel,
-  FormControlLabelText
-} from "@/components/ui/form-control";
-import { Input, InputField } from "@/components/ui/input";
-import { VStack } from "@/components/ui/vstack";
+  AuthFooterLink,
+  AuthShell
+} from "@/components/auth/AuthShell";
+import {
+  AppButton,
+  PasswordVisibilityToggle,
+  TextField
+} from "@/components/atoms";
+import { atomSpacing } from "@/components/atoms/theme";
 import {
   clearWebAuthUrlArtifacts,
   completeAuthSessionFromUrl,
@@ -19,9 +18,10 @@ import {
 } from "@/lib/auth";
 import { getSupabaseErrorMessage } from "@/lib/supabase";
 import * as Linking from "expo-linking";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
+import { AtSign, Lock } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Alert, Text } from "react-native";
+import { Alert, View } from "react-native";
 
 type ResetMode = "request" | "update";
 
@@ -34,6 +34,8 @@ export default function ResetPasswordScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<ResetMode>("request");
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   useEffect(() => {
     const activeUrl = getActiveAuthUrl(linkingUrl);
@@ -135,98 +137,104 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <ScreenLayout>
-      <VStack className="w-full flex-1 items-center justify-center gap-4">
-        <Text className="w-full text-2xl font-bold">Reset Password</Text>
-        <Text className="w-full text-sm text-typography-700">
-          {mode === "update"
-            ? "Set a new password for your account."
-            : "Enter your email and we'll send you a reset link."}
-        </Text>
-        <FormControl className="w-full" isInvalid={Boolean(errorMessage)}>
-          <VStack className="w-full gap-4">
-            {mode === "request" ? (
-              <VStack className="w-full">
-                <FormControlLabel>
-                  <FormControlLabelText>Email</FormControlLabelText>
-                </FormControlLabel>
-                <Input className="my-1 rounded-full">
-                  <InputField
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    keyboardType="email-address"
-                    onChangeText={setEmail}
-                    placeholder="johndoe@gmail.com"
-                    type="text"
-                    value={email}
+    <AuthShell
+      description={
+        mode === "update"
+          ? "Set a new password for your account."
+          : "Request a secure reset link."
+      }
+      panelTag={mode === "update" ? "Recovery / Update" : "Recovery / Request"}
+      title={mode === "update" ? "Update your password." : "Reset your password."}
+    >
+      <View style={{ gap: atomSpacing[6] }}>
+        <View style={{ gap: atomSpacing[4] }}>
+          {mode === "request" ? (
+            <TextField
+              autoCapitalize="none"
+              autoComplete="email"
+              errorText={errorMessage}
+              helperText={
+                !errorMessage
+                  ? "Enter the email tied to your account."
+                  : null
+              }
+              keyboardType="email-address"
+              label="Email"
+              leftIcon={AtSign}
+              onChangeText={setEmail}
+              placeholder="name@company.com"
+              type="text"
+              value={email}
+            />
+          ) : (
+            <>
+              <TextField
+                autoCapitalize="none"
+                autoComplete="new-password"
+                errorText={errorMessage}
+                helperText={!errorMessage ? "Use at least 8 characters." : null}
+                label="New Password"
+                leftIcon={Lock}
+                onChangeText={setPassword}
+                placeholder="new-password"
+                rightSlot={
+                  <PasswordVisibilityToggle
+                    onPress={() => {
+                      setPasswordVisible((current) => !current);
+                    }}
+                    visible={passwordVisible}
                   />
-                </Input>
-              </VStack>
-            ) : (
-              <>
-                <VStack className="w-full">
-                  <FormControlLabel>
-                    <FormControlLabelText>New Password</FormControlLabelText>
-                  </FormControlLabel>
-                  <Input className="my-1 rounded-full">
-                    <InputField
-                      autoCapitalize="none"
-                      autoComplete="new-password"
-                      onChangeText={setPassword}
-                      placeholder="New password"
-                      type="password"
-                      value={password}
-                    />
-                  </Input>
-                </VStack>
-                <VStack className="w-full">
-                  <FormControlLabel>
-                    <FormControlLabelText>Confirm Password</FormControlLabelText>
-                  </FormControlLabel>
-                  <Input className="my-1 rounded-full">
-                    <InputField
-                      autoCapitalize="none"
-                      autoComplete="new-password"
-                      onChangeText={setConfirmPassword}
-                      placeholder="Confirm password"
-                      type="password"
-                      value={confirmPassword}
-                    />
-                  </Input>
-                </VStack>
-              </>
-            )}
-            {errorMessage ? (
-              <FormControlError>
-                <FormControlErrorText>{errorMessage}</FormControlErrorText>
-              </FormControlError>
-            ) : null}
-            <Button
-              className="w-full rounded-full"
-              onPress={() => {
-                if (mode === "update") {
-                  void handlePasswordUpdate();
-                } else {
-                  void handleResetRequest();
                 }
-              }}
-            >
-              <ButtonText>
-                {isLoading
-                  ? mode === "update"
-                    ? "Updating..."
-                    : "Sending..."
-                  : mode === "update"
-                    ? "Update Password"
-                    : "Send Reset Link"}
-              </ButtonText>
-            </Button>
-          </VStack>
-        </FormControl>
-        <Text>
-          Remembered your password? <Link href="/sign-in">Sign in</Link>
-        </Text>
-      </VStack>
-    </ScreenLayout>
+                type={passwordVisible ? "text" : "password"}
+                value={password}
+              />
+              <TextField
+                autoCapitalize="none"
+                autoComplete="new-password"
+                label="Confirm Password"
+                leftIcon={Lock}
+                onChangeText={setConfirmPassword}
+                placeholder="confirm-password"
+                rightSlot={
+                  <PasswordVisibilityToggle
+                    onPress={() => {
+                      setConfirmPasswordVisible((current) => !current);
+                    }}
+                    visible={confirmPasswordVisible}
+                  />
+                }
+                type={confirmPasswordVisible ? "text" : "password"}
+                value={confirmPassword}
+              />
+            </>
+          )}
+
+          <AppButton
+            loading={isLoading}
+            onPress={() => {
+              if (mode === "update") {
+                void handlePasswordUpdate();
+              } else {
+                void handleResetRequest();
+              }
+            }}
+          >
+            {isLoading
+              ? mode === "update"
+                ? "Updating..."
+                : "Sending..."
+              : mode === "update"
+                ? "Update Password"
+                : "Send Reset Link"}
+          </AppButton>
+        </View>
+
+        <AuthFooterLink
+          actionLabel="Return to Sign In"
+          href="/sign-in"
+          prompt="Remembered your password?"
+        />
+      </View>
+    </AuthShell>
   );
 }

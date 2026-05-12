@@ -130,6 +130,21 @@ const semanticColors = {
     }
   },
   status: {
+    success: {
+      bg: primitiveColors.success[100],
+      text: primitiveColors.success[800],
+      accent: primitiveColors.success[500]
+    },
+    warning: {
+      bg: primitiveColors.warning[100],
+      text: primitiveColors.warning[800],
+      accent: primitiveColors.warning[500]
+    },
+    info: {
+      bg: primitiveColors.info[100],
+      text: primitiveColors.info[800],
+      accent: primitiveColors.info[500]
+    },
     error: {
       bg: primitiveColors.error[100],
       text: primitiveColors.error[700],
@@ -159,28 +174,56 @@ const typeScale = {
     fontSize: 72,
     lineHeight: 79,
     fontWeight: "900",
-    letterSpacing: "-0.04em"
+    letterSpacing: -2.88
   },
   headlineLg: {
     fontFamily: fontFamilies.web.sans,
     fontSize: 48,
     lineHeight: 58,
     fontWeight: "900",
-    letterSpacing: "-0.02em"
+    letterSpacing: -0.96
   },
   headlineLgMobile: {
     fontFamily: fontFamilies.web.sans,
     fontSize: 32,
     lineHeight: 38,
     fontWeight: "900",
-    letterSpacing: "-0.02em"
+    letterSpacing: -0.64
   },
   headlineMd: {
     fontFamily: fontFamilies.web.sans,
     fontSize: 24,
     lineHeight: 31,
     fontWeight: "800",
-    letterSpacing: "-0.01em"
+    letterSpacing: -0.24
+  },
+  hero: {
+    fontFamily: fontFamilies.web.sans,
+    fontSize: 40,
+    lineHeight: 48,
+    fontWeight: "900",
+    letterSpacing: -1
+  },
+  title: {
+    fontFamily: fontFamilies.web.sans,
+    fontSize: 32,
+    lineHeight: 38,
+    fontWeight: "900",
+    letterSpacing: -0.8
+  },
+  section: {
+    fontFamily: fontFamilies.web.sans,
+    fontSize: 24,
+    lineHeight: 31,
+    fontWeight: "800",
+    letterSpacing: -0.4
+  },
+  card: {
+    fontFamily: fontFamilies.web.sans,
+    fontSize: 20,
+    lineHeight: 27,
+    fontWeight: "800",
+    letterSpacing: -0.2
   },
   bodyLg: {
     fontFamily: fontFamilies.web.sans,
@@ -200,19 +243,82 @@ const typeScale = {
     lineHeight: 22,
     fontWeight: "400"
   },
+  caption: {
+    fontFamily: fontFamilies.web.sans,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "500"
+  },
+  meta: {
+    fontFamily: fontFamilies.web.mono,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "500"
+  },
+  eyebrow: {
+    fontFamily: fontFamilies.web.mono,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "500",
+    letterSpacing: 1.08,
+    textTransform: "uppercase"
+  },
+  label: {
+    fontFamily: fontFamilies.web.mono,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "500",
+    letterSpacing: 0.42,
+    textTransform: "uppercase"
+  },
   labelUi: {
     fontFamily: fontFamilies.web.sans,
     fontSize: 14,
     lineHeight: 14,
     fontWeight: "600",
-    letterSpacing: "0.02em"
+    letterSpacing: 0.28
   },
   labelMono: {
     fontFamily: fontFamilies.web.mono,
     fontSize: 12,
     lineHeight: 12,
     fontWeight: "500",
-    letterSpacing: "0.05em"
+    letterSpacing: 0.6
+  },
+  buttonSm: {
+    fontFamily: fontFamilies.web.sans,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "600",
+    letterSpacing: 0.3
+  },
+  buttonMd: {
+    fontFamily: fontFamilies.web.sans,
+    fontSize: 15,
+    lineHeight: 18,
+    fontWeight: "600",
+    letterSpacing: 0.3
+  },
+  buttonLg: {
+    fontFamily: fontFamilies.web.sans,
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: "600",
+    letterSpacing: 0.3
+  },
+  linkMono: {
+    fontFamily: fontFamilies.web.mono,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "500",
+    letterSpacing: 0.96,
+    textTransform: "uppercase"
+  },
+  tabLabel: {
+    fontFamily: fontFamilies.web.sans,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "500"
   }
 };
 
@@ -263,6 +369,10 @@ const radius = {
 
 const layout = {
   maxWidthContent: 1440,
+  maxWidthFormNative: 760,
+  maxWidthFormWeb: 540,
+  breakpointTablet: 768,
+  breakpointDesktop: 1280,
   marginDesktop: 64,
   marginTablet: 40,
   marginMobile: 20,
@@ -296,7 +406,8 @@ const controls = {
   heights: {
     sm: 44,
     md: 52,
-    lg: 58
+    lg: 58,
+    iconLg: 68
   },
   radius: {
     control: radius.lg,

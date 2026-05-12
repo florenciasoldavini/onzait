@@ -1,20 +1,25 @@
-import { ScreenLayout } from "@/components/ScreenLayout";
-import { Button, ButtonText } from "@/components/ui/button";
 import {
-  FormControl,
-  FormControlError,
-  FormControlErrorText,
-  FormControlLabel,
-  FormControlLabelText
-} from "@/components/ui/form-control";
-import { Input, InputField } from "@/components/ui/input";
-import { VStack } from "@/components/ui/vstack";
+  AuthDivider,
+  AuthFooterLink,
+  AuthShell,
+  AuthStatusMessage
+} from "@/components/auth/AuthShell";
+import {
+  AppButton,
+  PasswordVisibilityToggle,
+  TextField
+} from "@/components/atoms";
+import { atomSpacing } from "@/components/atoms/theme";
 import { AuthContext } from "@/contexts/auth";
-import { getAuthRedirectUrl } from "@/lib/auth";
+import { getAuthRedirectUrl, startOAuthSignIn } from "@/lib/auth";
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
+import { AtSign, Lock } from "lucide-react-native";
 import { useContext, useState } from "react";
-import { Alert, Text } from "react-native";
+import { Alert, View } from "react-native";
+
+const googleLogo = require("@/assets/images/auth/google-logo.png");
+const appleLogo = require("@/assets/images/auth/apple-logo.png");
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -22,7 +27,10 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<
+    "apple" | "email" | "google" | null
+  >(null);
 
   async function signUpWithEmail() {
     if (!supabase) {
@@ -35,7 +43,7 @@ export default function SignUpScreen() {
       return;
     }
 
-    setLoading(true);
+    setLoadingAction("email");
     setErrorMessage(null);
 
     try {
@@ -66,69 +74,122 @@ export default function SignUpScreen() {
       setErrorMessage(message);
       Alert.alert("Sign up failed", message);
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
+    }
+  }
+
+  async function signUpWithProvider(provider: "apple" | "google") {
+    try {
+      setLoadingAction(provider);
+      setErrorMessage(null);
+      await startOAuthSignIn(provider);
+    } catch (error) {
+      const message = getSupabaseErrorMessage(error);
+      setErrorMessage(message);
+      Alert.alert("Sign up failed", message);
+    } finally {
+      setLoadingAction(null);
     }
   }
 
   return (
-    <ScreenLayout>
-      <VStack className="w-full flex-1 items-center justify-center gap-4">
-        <Text className="w-full text-2xl font-bold">Sign Up</Text>
+    <AuthShell
+      description="Create your workspace access."
+      panelTag="Access / New Session"
+      title="Create Account"
+    >
+      <View style={{ gap: atomSpacing[6] }}>
         {authError ? (
-          <Text className="w-full text-sm text-red-600">{authError}</Text>
+          <AuthStatusMessage tone="danger">{authError}</AuthStatusMessage>
         ) : null}
-        <FormControl className="w-full" isInvalid={Boolean(errorMessage)}>
-          <VStack className="w-full gap-4">
-            <VStack className="w-full">
-              <FormControlLabel>
-                <FormControlLabelText>Email</FormControlLabelText>
-              </FormControlLabel>
-              <Input className="my-1 rounded-full">
-                <InputField
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  keyboardType="email-address"
-                  onChangeText={setEmail}
-                  placeholder="johndoe@gmail.com"
-                  type="text"
-                  value={email}
-                />
-              </Input>
-            </VStack>
-            <VStack>
-              <FormControlLabel>
-                <FormControlLabelText>Password</FormControlLabelText>
-              </FormControlLabel>
-              <Input className="my-1 rounded-full">
-                <InputField
-                  autoCapitalize="none"
-                  autoComplete="new-password"
-                  onChangeText={setPassword}
-                  placeholder="password"
-                  type="password"
-                  value={password}
-                />
-              </Input>
-            </VStack>
-            {errorMessage ? (
-              <FormControlError>
-                <FormControlErrorText>{errorMessage}</FormControlErrorText>
-              </FormControlError>
-            ) : null}
-            <Button
-              className="w-full rounded-full"
+
+        <View style={{ gap: atomSpacing[4] }}>
+          <View
+            style={{
+              flexDirection: "row",
+              gap: atomSpacing[3],
+              justifyContent: "center"
+            }}
+          >
+            <AppButton
+              accessibilityLabel="Continue with Google"
+              fullWidth={false}
+              imageSource={googleLogo}
+              layout="icon"
+              loading={loadingAction === "google"}
               onPress={() => {
-                void signUpWithEmail();
+                void signUpWithProvider("google");
               }}
-            >
-              <ButtonText>{loading ? "Creating..." : "Sign Up"}</ButtonText>
-            </Button>
-          </VStack>
-        </FormControl>
-        <Text>
-          Already have an account? <Link href="/sign-in">Sign in</Link>
-        </Text>
-      </VStack>
-    </ScreenLayout>
+              shape="pill"
+              size="iconLg"
+              variant="secondary"
+            />
+            <AppButton
+              accessibilityLabel="Continue with Apple"
+              fullWidth={false}
+              imageSource={appleLogo}
+              layout="icon"
+              loading={loadingAction === "apple"}
+              onPress={() => {
+                void signUpWithProvider("apple");
+              }}
+              shape="pill"
+              size="iconLg"
+              variant="secondary"
+            />
+          </View>
+
+          <AuthDivider label="OR CREATE WITH EMAIL" />
+
+          <TextField
+            autoCapitalize="none"
+            autoComplete="email"
+            errorText={errorMessage}
+            keyboardType="email-address"
+            label="Email"
+            leftIcon={AtSign}
+            onChangeText={setEmail}
+            placeholder="name@company.com"
+            type="text"
+            value={email}
+          />
+
+          <TextField
+            autoCapitalize="none"
+            autoComplete="new-password"
+            helperText={!errorMessage ? "Use at least 8 characters." : null}
+            label="Password"
+            leftIcon={Lock}
+            onChangeText={setPassword}
+            placeholder="min 8 characters"
+            rightSlot={
+              <PasswordVisibilityToggle
+                onPress={() => {
+                  setPasswordVisible((current) => !current);
+                }}
+                visible={passwordVisible}
+              />
+            }
+            type={passwordVisible ? "text" : "password"}
+            value={password}
+          />
+
+          <AppButton
+            loading={loadingAction === "email"}
+            onPress={() => {
+              void signUpWithEmail();
+            }}
+          >
+            {loadingAction === "email" ? "Creating..." : "Create Account"}
+          </AppButton>
+        </View>
+
+        <AuthFooterLink
+          actionLabel="Sign In"
+          href="/sign-in"
+          prompt="Already have an account?"
+        />
+      </View>
+    </AuthShell>
   );
 }

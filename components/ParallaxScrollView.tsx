@@ -7,15 +7,14 @@ import Animated, {
   useScrollViewOffset
 } from "react-native-reanimated";
 
-import { ThemedView } from "@/components/ThemedView";
+import { atomPalette, atomSpacing } from "@/components/atoms/theme";
 import { useBottomTabOverflow } from "@/components/ui/TabBarBackground";
-import { useColorScheme } from "@/hooks/useColorScheme";
 
 const HEADER_HEIGHT = 250;
 
 type Props = PropsWithChildren<{
   headerImage: ReactElement;
-  headerBackgroundColor: { dark: string; light: string };
+  headerBackgroundColor: string;
 }>;
 
 export default function ParallaxScrollView({
@@ -23,7 +22,6 @@ export default function ParallaxScrollView({
   headerImage,
   headerBackgroundColor
 }: Props) {
-  const colorScheme = useColorScheme() ?? "light";
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
   const bottom = useBottomTabOverflow();
@@ -49,7 +47,7 @@ export default function ParallaxScrollView({
   });
 
   return (
-    <ThemedView style={styles.container}>
+    <Animated.View style={styles.container}>
       <Animated.ScrollView
         ref={scrollRef}
         scrollEventThrottle={16}
@@ -59,20 +57,21 @@ export default function ParallaxScrollView({
         <Animated.View
           style={[
             styles.header,
-            { backgroundColor: headerBackgroundColor[colorScheme] },
+            { backgroundColor: headerBackgroundColor },
             headerAnimatedStyle
           ]}
         >
           {headerImage}
         </Animated.View>
-        <ThemedView style={styles.content}>{children}</ThemedView>
+        <Animated.View style={styles.content}>{children}</Animated.View>
       </Animated.ScrollView>
-    </ThemedView>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: atomPalette.background,
     flex: 1
   },
   header: {
@@ -81,8 +80,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 32,
-    gap: 16,
+    padding: atomSpacing[8],
+    gap: atomSpacing[4],
     overflow: "hidden"
   }
 });

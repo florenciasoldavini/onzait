@@ -1,26 +1,32 @@
-import { ScreenLayout } from "@/components/ScreenLayout";
-import { Button, ButtonText } from "@/components/ui/button";
 import {
-  FormControl,
-  FormControlError,
-  FormControlErrorText,
-  FormControlLabel,
-  FormControlLabelText
-} from "@/components/ui/form-control";
-import { Input, InputField } from "@/components/ui/input";
-import { VStack } from "@/components/ui/vstack";
+  AuthDivider,
+  AuthFooterLink,
+  AuthStatusMessage,
+  AuthShell
+} from "@/components/auth/AuthShell";
+import {
+  AppButton,
+  AppLink,
+  PasswordVisibilityToggle,
+  TextField
+} from "@/components/atoms";
+import { atomSpacing } from "@/components/atoms/theme";
 import { AuthContext } from "@/contexts/auth";
 import { startOAuthSignIn } from "@/lib/auth";
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
-import { Link } from "expo-router";
+import { AtSign, Lock } from "lucide-react-native";
 import { useContext, useState } from "react";
-import { Alert, Platform, Text } from "react-native";
+import { Alert, View } from "react-native";
+
+const googleLogo = require("@/assets/images/auth/google-logo.png");
+const appleLogo = require("@/assets/images/auth/apple-logo.png");
 
 export default function SignInScreen() {
   const { authError } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [loadingAction, setLoadingAction] = useState<
     "apple" | "email" | "google" | null
   >(null);
@@ -54,10 +60,9 @@ export default function SignInScreen() {
   }
 
   async function signInWithProvider(provider: "apple" | "google") {
-    setLoadingAction(provider);
-    setErrorMessage(null);
-
     try {
+      setLoadingAction(provider);
+      setErrorMessage(null);
       await startOAuthSignIn(provider);
     } catch (error) {
       const message = getSupabaseErrorMessage(error);
@@ -69,98 +74,108 @@ export default function SignInScreen() {
   }
 
   return (
-    <ScreenLayout>
-      <VStack className="w-full flex-1 items-center justify-center gap-4">
-        <Text className="w-full text-2xl font-bold">Sign In</Text>
+    <AuthShell
+      description="Access your workspace."
+      panelTag="Access / Sign In"
+      title="Welcome Back"
+    >
+      <View style={{ gap: atomSpacing[6] }}>
         {authError ? (
-          <Text className="w-full text-sm text-red-600">{authError}</Text>
+          <AuthStatusMessage tone="danger">{authError}</AuthStatusMessage>
         ) : null}
-        <FormControl className="w-full" isInvalid={Boolean(errorMessage)}>
-          <VStack className="w-full gap-4">
-            <VStack className="w-full">
-              <FormControlLabel>
-                <FormControlLabelText>Email</FormControlLabelText>
-              </FormControlLabel>
-              <Input className="my-1 rounded-full">
-                <InputField
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  keyboardType="email-address"
-                  onChangeText={setEmail}
-                  placeholder="johndoe@gmail.com"
-                  type="text"
-                  value={email}
-                />
-              </Input>
-            </VStack>
-            <VStack>
-              <FormControlLabel>
-                <FormControlLabelText>Password</FormControlLabelText>
-              </FormControlLabel>
-              <Input className="my-1 rounded-full">
-                <InputField
-                  autoCapitalize="none"
-                  autoComplete="password"
-                  onChangeText={setPassword}
-                  placeholder="password"
-                  type="password"
-                  value={password}
-                />
-              </Input>
-            </VStack>
-            {errorMessage ? (
-              <FormControlError>
-                <FormControlErrorText>{errorMessage}</FormControlErrorText>
-              </FormControlError>
-            ) : null}
-            <Button
-              className="w-full rounded-full"
-              onPress={() => {
-                void signInWithEmail();
-              }}
-            >
-              <ButtonText>
-                {loadingAction === "email" ? "Signing In..." : "Sign In"}
-              </ButtonText>
-            </Button>
-          </VStack>
-        </FormControl>
-        <Link href="/reset-password">Forgot password?</Link>
-        <Text>Or</Text>
-        <VStack className="w-full gap-4">
-          <Button
-            className="w-full rounded-full"
-            onPress={() => {
-              void signInWithProvider("google");
+
+        <View style={{ gap: atomSpacing[4] }}>
+          <View
+            style={{
+              flexDirection: "row",
+              gap: atomSpacing[3],
+              justifyContent: "center"
             }}
-            variant="outline"
           >
-            <ButtonText>
-              {loadingAction === "google"
-                ? "Redirecting to Google..."
-                : "Sign in with Google"}
-            </ButtonText>
-          </Button>
-          {Platform.OS !== "android" ? (
-            <Button
-              className="w-full rounded-full"
+            <AppButton
+              accessibilityLabel="Continue with Google"
+              fullWidth={false}
+              imageSource={googleLogo}
+              layout="icon"
+              loading={loadingAction === "google"}
+              onPress={() => {
+                void signInWithProvider("google");
+              }}
+              shape="pill"
+              size="iconLg"
+              variant="secondary"
+            />
+            <AppButton
+              accessibilityLabel="Continue with Apple"
+              fullWidth={false}
+              imageSource={appleLogo}
+              layout="icon"
+              loading={loadingAction === "apple"}
               onPress={() => {
                 void signInWithProvider("apple");
               }}
-              variant="outline"
-            >
-              <ButtonText>
-                {loadingAction === "apple"
-                  ? "Redirecting to Apple..."
-                  : "Sign in with Apple"}
-              </ButtonText>
-            </Button>
-          ) : null}
-        </VStack>
-        <Text>
-          Don&apos;t have an account? <Link href="/sign-up">Sign up</Link>
-        </Text>
-      </VStack>
-    </ScreenLayout>
+              shape="pill"
+              size="iconLg"
+              variant="secondary"
+            />
+          </View>
+
+          <AuthDivider label="OR CONTINUE WITH EMAIL" />
+
+          <TextField
+            autoCapitalize="none"
+            autoComplete="email"
+            errorText={errorMessage}
+            keyboardType="email-address"
+            label="Email Address"
+            leftIcon={AtSign}
+            onChangeText={setEmail}
+            placeholder="architect@onzait.com"
+            textContentType="emailAddress"
+            type="text"
+            value={email}
+          />
+
+          <TextField
+            accessory={
+              <AppLink href="/reset-password">Forgot?</AppLink>
+            }
+            autoCapitalize="none"
+            autoComplete="password"
+            label="Secure Password"
+            leftIcon={Lock}
+            onChangeText={setPassword}
+            placeholder="••••••••••••"
+            rightSlot={
+              <PasswordVisibilityToggle
+                onPress={() => {
+                  setPasswordVisible((current) => !current);
+                }}
+                visible={passwordVisible}
+              />
+            }
+            textContentType="password"
+            type={passwordVisible ? "text" : "password"}
+            value={password}
+          />
+
+          <AppButton
+            loading={loadingAction === "email"}
+            onPress={() => {
+              void signInWithEmail();
+            }}
+            size="lg"
+          >
+            {loadingAction === "email" ? "Signing In..." : "Sign In"}
+          </AppButton>
+        </View>
+
+        <AuthFooterLink
+          actionLabel="Create an Account"
+          href="/sign-up"
+          prompt="New to the platform?"
+        />
+      </View>
+    </AuthShell>
   );
 }

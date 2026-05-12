@@ -1,6 +1,9 @@
-import { ScreenLayout } from "@/components/ScreenLayout";
-import { Button, ButtonText } from "@/components/ui/button";
-import { VStack } from "@/components/ui/vstack";
+import { AppButton, AppHeading, AppText } from "@/components/atoms";
+import {
+  AuthStatusMessage,
+  AuthShell
+} from "@/components/auth/AuthShell";
+import { atomSpacing } from "@/components/atoms/theme";
 import {
   clearWebAuthUrlArtifacts,
   completeAuthSessionFromUrl,
@@ -12,7 +15,7 @@ import { getSupabaseErrorMessage } from "@/lib/supabase";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Text } from "react-native";
+import { View } from "react-native";
 
 export default function AuthCallbackScreen() {
   const router = useRouter();
@@ -24,7 +27,9 @@ export default function AuthCallbackScreen() {
     const activeUrl = getActiveAuthUrl(linkingUrl);
 
     if (!activeUrl || !urlHasAuthPayload(activeUrl)) {
-      setErrorMessage("This auth link is missing the session payload. Try signing in again.");
+      setErrorMessage(
+        "This auth link is missing the session payload. Try signing in again."
+      );
       return;
     }
 
@@ -58,24 +63,41 @@ export default function AuthCallbackScreen() {
   }, [linkingUrl, router]);
 
   return (
-    <ScreenLayout>
-      <VStack className="w-full flex-1 items-center justify-center gap-4">
-        <Text className="w-full text-2xl font-bold">Signing you in</Text>
-        <Text className="w-full text-sm text-typography-700">{statusMessage}</Text>
+    <AuthShell
+      description="The redirect handoff should still feel deliberate and structured while the session finalizes."
+      eyebrow="Auth Callback / Redirect"
+      panelTag="Auth / Callback"
+      title="Completing your access."
+    >
+      <View style={{ gap: atomSpacing[6] }}>
+        <View style={{ gap: atomSpacing[2] }}>
+          <AppText tone="muted" variant="eyebrow">
+            Redirect / Session Resolution
+          </AppText>
+          <AppHeading variant="title">Signing you in.</AppHeading>
+          <AppText tone="muted">{statusMessage}</AppText>
+        </View>
+
         {errorMessage ? (
-          <>
-            <Text className="w-full text-sm text-red-600">{errorMessage}</Text>
-            <Button
-              className="w-full rounded-full"
-              onPress={() => {
-                router.replace("/sign-in");
-              }}
-            >
-              <ButtonText>Back to sign in</ButtonText>
-            </Button>
-          </>
+          <AuthStatusMessage tone="danger">{errorMessage}</AuthStatusMessage>
+        ) : (
+          <AuthStatusMessage>
+            <AppText variant="meta">
+              STATUS / HANDOFF IN PROGRESS / WAITING FOR SESSION CONFIRMATION
+            </AppText>
+          </AuthStatusMessage>
+        )}
+
+        {errorMessage ? (
+          <AppButton
+            onPress={() => {
+              router.replace("/sign-in");
+            }}
+          >
+            Back to Sign In
+          </AppButton>
         ) : null}
-      </VStack>
-    </ScreenLayout>
+      </View>
+    </AuthShell>
   );
 }

@@ -3,11 +3,30 @@ import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { AuthContext, AuthProvider } from "@/contexts/auth";
 import { navigationIntegration, Sentry } from "@/lib/sentry";
 import "@/global.css";
+import { useFonts } from "expo-font";
 import { Stack, useNavigationContainerRef } from "expo-router";
 import { useContext, useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Geist: require("@/assets/fonts/Geist-Regular.ttf"),
+    "Geist-Regular": require("@/assets/fonts/Geist-Regular.ttf"),
+    "Geist-Medium": require("@/assets/fonts/Geist-Medium.ttf"),
+    "Geist-SemiBold": require("@/assets/fonts/Geist-SemiBold.ttf"),
+    "Geist-Bold": require("@/assets/fonts/Geist-Bold.ttf"),
+    "Geist-Black": require("@/assets/fonts/Geist-Black.ttf"),
+    "JetBrains Mono": require("@/assets/fonts/JetBrainsMono-Regular.ttf"),
+    "JetBrainsMono-Regular": require("@/assets/fonts/JetBrainsMono-Regular.ttf"),
+    "JetBrainsMono-Medium": require("@/assets/fonts/JetBrainsMono-Medium.ttf"),
+    "JetBrainsMono-SemiBold": require("@/assets/fonts/JetBrainsMono-SemiBold.ttf"),
+    "JetBrainsMono-Bold": require("@/assets/fonts/JetBrainsMono-Bold.ttf")
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <GluestackUIProvider mode="light">
       <AuthProvider>
