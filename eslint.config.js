@@ -22,7 +22,19 @@ module.exports = defineConfig([
   },
   {
     rules: {
-      "react/no-unescaped-entities": "off"
+      "react/no-unescaped-entities": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          args: "all",
+          argsIgnorePattern: "^_",
+          caughtErrors: "all",
+          caughtErrorsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+          vars: "all",
+          varsIgnorePattern: "^_"
+        }
+      ]
     }
   },
   {

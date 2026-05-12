@@ -9,8 +9,8 @@
 
   // Disable ESLint formatting (let Prettier handle it)
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit",
-    "source.organizeImports": "explicit"
+    "source.fixAll.eslint": "always",
+    "source.organizeImports": "always"
   },
 
   // File-specific settings
