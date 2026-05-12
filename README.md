@@ -1,50 +1,151 @@
-# Welcome to your Expo app 👋
+# onzait
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Mobile-first construction and job-site management app built with Expo Router, React Native, Supabase Auth, and static web export for Vercel.
 
-## Get started
+## Stack
 
-1. Install dependencies
+- Expo Router + React Native
+- Expo web static export
+- Supabase Auth + `public.users`
+- Vercel for web hosting
+- EAS for native builds
+- Sentry for error monitoring
+
+## Package manager
+
+Use `npm` for this repository. The repo is checked in with `package-lock.json`, and CI runs with npm as well.
+
+## Prerequisites
+
+- Node.js 22 or newer
+- npm
+- Expo-compatible iOS Simulator / Android Emulator if you want to run native locally
+- Supabase project configured for auth
+
+## Getting started
+
+1. Install dependencies:
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. Create local envs:
+
+   - Frontend secrets live in `.env.local`
+   - `.env.example` is generated from `env-sync.config.json`
+
+3. Verify your env contract:
 
    ```bash
-   npx expo start
+   npm run env:check
    ```
 
-In the output, you'll find options to open the app in a
+4. Start the app:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   ```bash
+   npm run start
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Useful shortcuts:
 
-## Get a fresh project
+- `npm run ios`
+- `npm run android`
+- `npm run web`
 
-When you're ready, run:
+## Environment workflow
+
+Environment metadata and sync targets live in `env-sync.config.json`.
+
+Useful commands:
 
 ```bash
-npm run reset-project
+npm run env:example
+npm run env:check
+npm run sync:env
+npm run sync:env -- --dry-run
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Current app-facing env vars:
 
-## Learn more
+- `EXPO_PUBLIC_SUPABASE_URL`
+- `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `EXPO_PUBLIC_SENTRY_DSN`
+- `EXPO_PUBLIC_SITE_URL`
+- `EXPO_PUBLIC_APP_ENV`
 
-To learn more about developing your project with Expo, look at the following resources:
+Backend-only env vars currently tracked in `.env.example`:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- `DATABASE_URL`
+- `DIRECT_URL`
 
-## Join the community
+## Auth architecture
 
-Join our community of developers creating universal apps.
+- Supabase is the source of truth for identity
+- `public.users.id` must match `auth.users.id`
+- Global role lives in `public.users.role`
+- New users default to `user`
+- Role assignment must stay server/database controlled
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Supported flows:
+
+- Email/password
+- Google OAuth
+- Apple OAuth
+- Password reset
+
+Important files:
+
+- `lib/auth.ts`
+- `lib/supabase.ts`
+- `contexts/auth.tsx`
+- `app/_layout.tsx`
+- `app/(auth)/callback.tsx`
+
+## Database and backend status
+
+The current tracked Supabase bootstrap is intentionally minimal:
+
+- only `public.users` is created in tracked migrations
+- only `public.users` currently has direct authenticated client access
+- future product tables should be added as feature-specific migrations
+
+There is also a separate Express/Prisma backend under `backend/`, but it is not the main auth path today.
+
+See:
+
+- `supabase/README.md`
+- `backend/README.md`
+
+## Quality checks
+
+Run these before shipping:
+
+```bash
+npm run env:check
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+## Deployment
+
+### Web
+
+- Hosting target: Vercel
+- Build command: `npm run build`
+- Output directory: `dist`
+
+### Native
+
+- EAS project: `@florenciasoldavini/onzait`
+- iOS bundle identifier: `com.florenciasoldavini.onzait`
+- Android package: `com.florenciasoldavini.onzait`
+
+## Additional docs
+
+- `AGENTS.md`
+- `supabase/README.md`
+- `docs/onzait-step-1-foundation.md`
+- `docs/onzait-step-2-foundations.md`
+- `docs/onzait-design-guide.md`
