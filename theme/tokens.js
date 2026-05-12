@@ -319,6 +319,14 @@ const typeScale = {
     fontSize: 12,
     lineHeight: 16,
     fontWeight: "500"
+  },
+  tabLabelMono: {
+    fontFamily: fontFamilies.web.mono,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "500",
+    letterSpacing: 0.6,
+    textTransform: "uppercase"
   }
 };
 
