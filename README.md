@@ -151,6 +151,9 @@ npm run build
 
 - `AGENTS.md`
 - `docs/CONTRIBUTING.md`
+- `docs/performance-baseline.md`
+- `docs/seo-accessibility-baseline.md`
+- `docs/security-baseline.md`
 - `supabase/README.md`
 - `docs/onzait-step-1-foundation.md`
 - `docs/onzait-step-2-foundations.md`
