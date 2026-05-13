@@ -1,5 +1,10 @@
 # AGENTS.md
 
+Purpose: architecture snapshot, product decisions, and implementation guardrails for contributors and agents
+Source of truth for: current auth architecture, platform decisions, naming rules, and high-level project constraints
+Update when: auth flow, platform ownership, schema strategy, CI expectations, or product naming decisions change
+Last reviewed: 2026-05-12
+
 ## Project Snapshot
 
 - Project name: `onzait`

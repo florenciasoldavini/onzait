@@ -1,5 +1,12 @@
 # Backend Setup Instructions
 
+Purpose: backend-only setup and status notes for the separate Express/Prisma service
+Source of truth for: backend install/run commands and backend-owned implementation details
+Update when: backend scripts, required env vars, route surface, or backend ownership/status change
+Last reviewed: 2026-05-12
+
+Note: this file is not the source of truth for the frontend auth path or the current tracked Supabase bootstrap. For those, see the root `README.md`, `AGENTS.md`, and `supabase/README.md`.
+
 ## Prerequisites
 
 1. Ensure you have Node.js installed
@@ -100,4 +107,3 @@ backend/
 │       ├── user.schema.ts  # Zod validation schemas
 │       └── project.schema.ts
 ```
-

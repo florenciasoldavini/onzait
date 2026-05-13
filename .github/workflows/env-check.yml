@@ -31,7 +31,7 @@ jobs:
       - name: Install backend dependencies
         run: npm ci --prefix backend
 
-      - name: Verify .env.example is up to date
+      - name: Documentation drift check (.env.example)
         run: npm run env:check
 
       - name: TypeScript check

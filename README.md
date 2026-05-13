@@ -1,5 +1,10 @@
 # onzait
 
+Purpose: project setup, daily development commands, verification, and deployment basics
+Source of truth for: install, run, env workflow, quality checks, and platform entrypoints
+Update when: scripts, required env vars, local setup, verification steps, or deployment flow change
+Last reviewed: 2026-05-12
+
 Mobile-first construction and job-site management app built with Expo Router, React Native, Supabase Auth, and static web export for Vercel.
 
 ## Stack
@@ -145,6 +150,7 @@ npm run build
 ## Additional docs
 
 - `AGENTS.md`
+- `docs/CONTRIBUTING.md`
 - `supabase/README.md`
 - `docs/onzait-step-1-foundation.md`
 - `docs/onzait-step-2-foundations.md`

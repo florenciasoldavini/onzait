@@ -1,5 +1,10 @@
 # Supabase Setup
 
+Purpose: tracked Supabase schema, migration, RLS, and auth URL guidance
+Source of truth for: current Supabase bootstrap scope, migration expectations, and direct client-access policy
+Update when: migrations, RLS policy, auth redirect configuration, or client data-access rules change
+Last reviewed: 2026-05-12
+
 This folder is the starting point for tracked Supabase database changes.
 
 ## Included migrations
