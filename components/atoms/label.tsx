@@ -28,7 +28,9 @@ export function FieldLabel({
           gap: atomSpacing[1]
         }}
       >
-        <AppText variant="label">{children}</AppText>
+        <AppText tone="subtle" variant="label">
+          {children}
+        </AppText>
         {required ? (
           <AppText style={{ color: atomPalette.error }} variant="label">
             *

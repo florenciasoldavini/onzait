@@ -3,7 +3,7 @@ import {
   AuthFooterLink,
   AuthShell,
   AuthStatusMessage,
-  authFormControlSize,
+  authFieldSize,
   authSocialButtonSize
 } from "@/components/auth/AuthShell";
 import {
@@ -201,7 +201,7 @@ export default function SignUpScreen() {
               }
             }}
             placeholder="name@company.com"
-            size={authFormControlSize}
+            size={authFieldSize}
             type="text"
             value={email}
           />
@@ -234,7 +234,7 @@ export default function SignUpScreen() {
                 visible={passwordVisible}
               />
             }
-            size={authFormControlSize}
+            size={authFieldSize}
             type={passwordVisible ? "text" : "password"}
             value={password}
           />
@@ -250,7 +250,7 @@ export default function SignUpScreen() {
             onPress={() => {
               void signUpWithEmail();
             }}
-            size={authFormControlSize}
+            size={authFieldSize}
           >
             Create Account
           </AppButton>

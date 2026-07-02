@@ -3,7 +3,7 @@ import {
   AuthFooterLink,
   AuthStatusMessage,
   AuthShell,
-  authFormControlSize,
+  authFieldSize,
   authSocialButtonSize
 } from "@/components/auth/AuthShell";
 import {
@@ -183,7 +183,7 @@ export default function SignInScreen() {
               }
             }}
             placeholder="architect@onzait.com"
-            size={authFormControlSize}
+            size={authFieldSize}
             textContentType="emailAddress"
             type="text"
             value={email}
@@ -217,7 +217,7 @@ export default function SignInScreen() {
                 visible={passwordVisible}
               />
             }
-            size={authFormControlSize}
+            size={authFieldSize}
             textContentType="password"
             type={passwordVisible ? "text" : "password"}
             value={password}
@@ -234,7 +234,7 @@ export default function SignInScreen() {
             onPress={() => {
               void signInWithEmail();
             }}
-            size={authFormControlSize}
+            size={authFieldSize}
           >
             Sign In
           </AppButton>

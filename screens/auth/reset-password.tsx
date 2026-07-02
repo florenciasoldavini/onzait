@@ -1,7 +1,7 @@
 import {
   AuthFooterLink,
   AuthShell,
-  authFormControlSize
+  authFieldSize
 } from "@/components/auth/AuthShell";
 import {
   AppButton,
@@ -253,7 +253,7 @@ export default function ResetPasswordScreen() {
                 }
               }}
               placeholder="name@company.com"
-              size={authFormControlSize}
+              size={authFieldSize}
               type="text"
               value={email}
             />
@@ -298,7 +298,7 @@ export default function ResetPasswordScreen() {
                     visible={passwordVisible}
                   />
                 }
-                size={authFormControlSize}
+                size={authFieldSize}
                 type={passwordVisible ? "text" : "password"}
                 value={password}
               />
@@ -336,7 +336,7 @@ export default function ResetPasswordScreen() {
                     visible={confirmPasswordVisible}
                   />
                 }
-                size={authFormControlSize}
+                size={authFieldSize}
                 type={confirmPasswordVisible ? "text" : "password"}
                 value={confirmPassword}
               />
@@ -364,7 +364,7 @@ export default function ResetPasswordScreen() {
                 void handleResetRequest();
               }
             }}
-            size={authFormControlSize}
+            size={authFieldSize}
           >
             {mode === "update" ? "Update Password" : "Send Reset Link"}
           </AppButton>

@@ -214,6 +214,10 @@ export const authFormControlSize = Platform.select({
   default: "lg",
   web: "sm"
 }) as "sm" | "lg";
+export const authFieldSize = Platform.select({
+  default: "lg",
+  web: "md"
+}) as "md" | "lg";
 export const authSocialButtonSize = Platform.select({
   default: "iconLg",
   web: "md"

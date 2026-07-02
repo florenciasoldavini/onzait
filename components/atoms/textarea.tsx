@@ -120,7 +120,7 @@ function getTextAreaBorderColor({
   isHovered: boolean;
 }) {
   if (isDisabled) {
-    return atomPalette.border;
+    return atomPalette.borderSubtle;
   }
 
   if (errorText) {
@@ -132,8 +132,8 @@ function getTextAreaBorderColor({
   }
 
   if (isHovered) {
-    return atomPalette.borderStrong;
+    return atomPalette.border;
   }
 
-  return atomPalette.border;
+  return atomPalette.borderSubtle;
 }

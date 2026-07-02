@@ -39,6 +39,7 @@ The interface should prioritize clarity, structure, and operational confidence o
 - Do not introduce one-off saturated colors into normal product UI.
 - Keep borders subtle by default and rely on stronger borders only for hover, focus, validation, or selected states.
 - Placeholder text should be clearly lighter than entered text while remaining readable.
+- Form fields should use a clear hierarchy: subtle mono label, readable but lighter placeholder, subtle resting border, readable entered text, and icons that align with the text baseline without being clipped.
 
 ## Component State Rules
 

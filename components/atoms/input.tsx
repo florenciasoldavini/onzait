@@ -28,16 +28,19 @@ type FieldSize = "sm" | "md" | "lg";
 
 const sizeMap = {
   sm: {
+    iconSize: 18,
     input: "lg" as const,
     minHeight: atomControlHeights.sm,
     radius: atomSpacing[3]
   },
   md: {
+    iconSize: 20,
     input: "xl" as const,
     minHeight: atomControlHeights.md,
     radius: atomSpacing[4]
   },
   lg: {
+    iconSize: 20,
     input: "xl" as const,
     minHeight: atomControlHeights.lg,
     radius: atomControlRadius
@@ -95,7 +98,6 @@ export function TextField({
           cursor: isDisabled ? "not-allowed" : "text"
         } as TextStyle)
       : null;
-
   return (
     <FormField
       accessory={accessory}
@@ -124,15 +126,27 @@ export function TextField({
         }}
       >
         {leftIcon ? (
-          <InputSlot style={{ paddingLeft: atomSpacing[4] }}>
+          <InputSlot
+            style={{
+              minWidth: atomSpacing[10],
+              paddingLeft: atomSpacing[4]
+            }}
+          >
             {(() => {
               const Icon = leftIcon;
 
-              return <Icon color={iconColor} size={18} strokeWidth={1.8} />;
+              return (
+                <Icon
+                  color={iconColor}
+                  size={config.iconSize}
+                  strokeWidth={1.8}
+                />
+              );
             })()}
           </InputSlot>
         ) : null}
         <UIInputField
+          className="placeholder:text-typography-400"
           editable={editable}
           onBlur={(event: NativeSyntheticEvent<TextInputFocusEventData>) => {
             setIsFocused(false);
@@ -146,6 +160,7 @@ export function TextField({
           style={{
             color: atomPalette.text,
             fontSize: atomTypeScale.bodyMd.fontSize,
+            letterSpacing: 0,
             lineHeight: atomTypeScale.bodyMd.lineHeight,
             paddingHorizontal:
               leftIcon || rightSlot ? atomSpacing[3] : atomSpacing[4],
@@ -204,7 +219,7 @@ function getFieldBorderColor({
   isHovered: boolean;
 }) {
   if (isDisabled) {
-    return atomPalette.border;
+    return atomPalette.borderSubtle;
   }
 
   if (errorText) {
@@ -216,10 +231,10 @@ function getFieldBorderColor({
   }
 
   if (isHovered) {
-    return atomPalette.borderStrong;
+    return atomPalette.border;
   }
 
-  return atomPalette.border;
+  return atomPalette.borderSubtle;
 }
 
 function getFieldIconColor({
