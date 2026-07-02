@@ -2,11 +2,14 @@ import {
   AuthDivider,
   AuthFooterLink,
   AuthStatusMessage,
-  AuthShell
+  AuthShell,
+  authFormControlSize,
+  authSocialButtonSize
 } from "@/components/auth/AuthShell";
 import {
   AppButton,
   AppLink,
+  FieldMessage,
   PasswordVisibilityToggle,
   TextField
 } from "@/components/atoms";
@@ -14,9 +17,10 @@ import { atomSpacing } from "@/components/atoms/theme";
 import { AuthContext } from "@/contexts/auth";
 import { startOAuthSignIn } from "@/lib/auth";
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
+import { emailSchema } from "@/schemas/fields";
 import { AtSign, Lock } from "lucide-react-native";
 import { useContext, useState } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 
 const googleLogo = require("@/assets/images/auth/google-logo.png");
 const appleLogo = require("@/assets/images/auth/apple-logo.png");
@@ -25,25 +29,62 @@ export default function SignInScreen() {
   const { authError } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({
+    email: false,
+    password: false
+  });
   const [loadingAction, setLoadingAction] = useState<
     "apple" | "email" | "google" | null
   >(null);
+  const validateEmail = (value: string) => {
+    const result = emailSchema.safeParse(value);
+
+    if (result.success) {
+      return null;
+    }
+
+    return result.error.issues[0]?.message ?? "Invalid email address";
+  };
+  const validatePassword = (value: string) => {
+    if (!value.trim()) {
+      return "Password is required";
+    }
+
+    return null;
+  };
+  const revealEmailSignInValidation = () => {
+    const nextEmailError = validateEmail(email);
+    const nextPasswordError = validatePassword(password);
+
+    setTouchedFields({ email: true, password: true });
+    setEmailError(nextEmailError);
+    setPasswordError(nextPasswordError);
+  };
+  const isEmailSignInValid =
+    validateEmail(email) === null && validatePassword(password) === null;
+  const isBusy = loadingAction !== null;
 
   async function signInWithEmail() {
     if (!supabase) {
-      setErrorMessage(getSupabaseErrorMessage("Supabase is not configured."));
+      setFormError(getSupabaseErrorMessage("Supabase is not configured."));
       return;
     }
 
-    if (!email || !password) {
-      setErrorMessage("Enter both your email and password.");
+    const nextEmailError = validateEmail(email);
+    const nextPasswordError = validatePassword(password);
+
+    revealEmailSignInValidation();
+
+    if (nextEmailError || nextPasswordError) {
       return;
     }
 
     setLoadingAction("email");
-    setErrorMessage(null);
+    setFormError(null);
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -52,8 +93,7 @@ export default function SignInScreen() {
 
     if (error) {
       const message = getSupabaseErrorMessage(error);
-      setErrorMessage(message);
-      Alert.alert("Sign in failed", message);
+      setFormError(message);
     }
 
     setLoadingAction(null);
@@ -62,12 +102,11 @@ export default function SignInScreen() {
   async function signInWithProvider(provider: "apple" | "google") {
     try {
       setLoadingAction(provider);
-      setErrorMessage(null);
+      setFormError(null);
       await startOAuthSignIn(provider);
     } catch (error) {
       const message = getSupabaseErrorMessage(error);
-      setErrorMessage(message);
-      Alert.alert("Sign in failed", message);
+      setFormError(message);
     } finally {
       setLoadingAction(null);
     }
@@ -96,26 +135,28 @@ export default function SignInScreen() {
               accessibilityLabel="Continue with Google"
               fullWidth={false}
               imageSource={googleLogo}
+              isDisabled={isBusy}
               layout="icon"
               loading={loadingAction === "google"}
               onPress={() => {
                 void signInWithProvider("google");
               }}
               shape="pill"
-              size="iconLg"
+              size={authSocialButtonSize}
               variant="secondary"
             />
             <AppButton
               accessibilityLabel="Continue with Apple"
               fullWidth={false}
               imageSource={appleLogo}
+              isDisabled={isBusy}
               layout="icon"
               loading={loadingAction === "apple"}
               onPress={() => {
                 void signInWithProvider("apple");
               }}
               shape="pill"
-              size="iconLg"
+              size={authSocialButtonSize}
               variant="secondary"
             />
           </View>
@@ -125,26 +166,48 @@ export default function SignInScreen() {
           <TextField
             autoCapitalize="none"
             autoComplete="email"
-            errorText={errorMessage}
+            errorText={emailError}
             keyboardType="email-address"
             label="Email Address"
             leftIcon={AtSign}
-            onChangeText={setEmail}
+            onBlur={() => {
+              setTouchedFields((current) => ({ ...current, email: true }));
+              setEmailError(validateEmail(email));
+            }}
+            onChangeText={(value) => {
+              setEmail(value);
+              setFormError(null);
+
+              if (touchedFields.email || emailError) {
+                setEmailError(validateEmail(value));
+              }
+            }}
             placeholder="architect@onzait.com"
+            size={authFormControlSize}
             textContentType="emailAddress"
             type="text"
             value={email}
           />
 
           <TextField
-            accessory={
-              <AppLink href="/reset-password">Forgot?</AppLink>
-            }
+            accessory={<AppLink href="/reset-password">Forgot?</AppLink>}
             autoCapitalize="none"
             autoComplete="password"
+            errorText={passwordError}
             label="Secure Password"
             leftIcon={Lock}
-            onChangeText={setPassword}
+            onBlur={() => {
+              setTouchedFields((current) => ({ ...current, password: true }));
+              setPasswordError(validatePassword(password));
+            }}
+            onChangeText={(value) => {
+              setPassword(value);
+              setFormError(null);
+
+              if (touchedFields.password || passwordError) {
+                setPasswordError(validatePassword(value));
+              }
+            }}
             placeholder="••••••••••••"
             rightSlot={
               <PasswordVisibilityToggle
@@ -154,20 +217,30 @@ export default function SignInScreen() {
                 visible={passwordVisible}
               />
             }
+            size={authFormControlSize}
             textContentType="password"
             type={passwordVisible ? "text" : "password"}
             value={password}
           />
 
           <AppButton
+            isDisabled={!isEmailSignInValid || isBusy}
             loading={loadingAction === "email"}
+            onDisabledPress={
+              !isEmailSignInValid && !isBusy
+                ? revealEmailSignInValidation
+                : undefined
+            }
             onPress={() => {
               void signInWithEmail();
             }}
-            size="lg"
+            size={authFormControlSize}
           >
-            {loadingAction === "email" ? "Signing In..." : "Sign In"}
+            Sign In
           </AppButton>
+          {formError ? (
+            <FieldMessage tone="error">{formError}</FieldMessage>
+          ) : null}
         </View>
 
         <AuthFooterLink

@@ -8,29 +8,51 @@ import {
 import { FormField } from "@/components/molecules";
 import {
   Input,
-  InputIcon,
   InputSlot,
   InputField as UIInputField
 } from "@/components/ui/input";
 import { getSansFontStyle } from "@/theme/fonts";
 import { Eye, EyeOff } from "lucide-react-native";
 import type { ComponentType, ReactNode } from "react";
-import { Pressable } from "react-native";
+import { useState } from "react";
+import {
+  Platform,
+  Pressable,
+  type NativeSyntheticEvent,
+  type TextInputFocusEventData,
+  type TextStyle,
+  type ViewStyle
+} from "react-native";
 
 type FieldSize = "sm" | "md" | "lg";
 
 const sizeMap = {
-  sm: { input: "lg" as const, minHeight: atomControlHeights.sm },
-  md: { input: "xl" as const, minHeight: atomControlHeights.md },
-  lg: { input: "xl" as const, minHeight: atomControlHeights.lg }
+  sm: {
+    input: "lg" as const,
+    minHeight: atomControlHeights.sm,
+    radius: atomSpacing[3]
+  },
+  md: {
+    input: "xl" as const,
+    minHeight: atomControlHeights.md,
+    radius: atomSpacing[4]
+  },
+  lg: {
+    input: "xl" as const,
+    minHeight: atomControlHeights.lg,
+    radius: atomControlRadius
+  }
 };
 
 export function TextField({
   accessory,
+  editable = true,
   errorText,
   helperText,
   label,
   leftIcon,
+  onBlur,
+  onFocus,
   required = false,
   rightSlot,
   size = "lg",
@@ -46,6 +68,33 @@ export function TextField({
   size?: FieldSize;
 }) {
   const config = sizeMap[size];
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const isDisabled = editable === false;
+  const borderColor = getFieldBorderColor({
+    errorText,
+    isDisabled,
+    isFocused,
+    isHovered
+  });
+  const iconColor = getFieldIconColor({
+    errorText,
+    isDisabled,
+    isFocused,
+    isHovered
+  });
+  const webRootCursorStyle =
+    Platform.OS === "web"
+      ? ({
+          cursor: isDisabled ? "not-allowed" : "text"
+        } as unknown as ViewStyle)
+      : null;
+  const webInputCursorStyle =
+    Platform.OS === "web"
+      ? ({
+          cursor: isDisabled ? "not-allowed" : "text"
+        } as TextStyle)
+      : null;
 
   return (
     <FormField
@@ -57,31 +106,50 @@ export function TextField({
     >
       <Input
         isInvalid={Boolean(errorText)}
+        onPointerEnter={() => {
+          setIsHovered(true);
+        }}
+        onPointerLeave={() => {
+          setIsHovered(false);
+        }}
         size={config.input}
         style={{
-          backgroundColor: atomPalette.surface,
-          borderColor: errorText ? atomPalette.error : atomPalette.border,
-          borderRadius: atomControlRadius,
-          minHeight: config.minHeight
+          backgroundColor: isDisabled
+            ? atomPalette.surfaceLow
+            : atomPalette.surface,
+          borderColor,
+          borderRadius: config.radius,
+          minHeight: config.minHeight,
+          ...webRootCursorStyle
         }}
       >
         {leftIcon ? (
           <InputSlot style={{ paddingLeft: atomSpacing[4] }}>
-            <InputIcon
-              as={leftIcon}
-              className={errorText ? "text-error-500" : "text-typography-400"}
-              size="lg"
-            />
+            {(() => {
+              const Icon = leftIcon;
+
+              return <Icon color={iconColor} size={18} strokeWidth={1.8} />;
+            })()}
           </InputSlot>
         ) : null}
         <UIInputField
-          placeholderTextColor={atomPalette.textSubtle}
+          editable={editable}
+          onBlur={(event: NativeSyntheticEvent<TextInputFocusEventData>) => {
+            setIsFocused(false);
+            onBlur?.(event);
+          }}
+          onFocus={(event: NativeSyntheticEvent<TextInputFocusEventData>) => {
+            setIsFocused(true);
+            onFocus?.(event);
+          }}
+          placeholderTextColor={atomPalette.textPlaceholder}
           style={{
             color: atomPalette.text,
             fontSize: atomTypeScale.bodyMd.fontSize,
             lineHeight: atomTypeScale.bodyMd.lineHeight,
             paddingHorizontal:
               leftIcon || rightSlot ? atomSpacing[3] : atomSpacing[4],
+            ...webInputCursorStyle,
             ...getSansFontStyle(atomTypeScale.bodyMd.fontWeight)
           }}
           {...props}
@@ -107,6 +175,13 @@ export function PasswordVisibilityToggle({
     <Pressable
       accessibilityLabel={visible ? "Hide password" : "Show password"}
       onPress={onPress}
+      style={
+        Platform.OS === "web"
+          ? ({
+              cursor: "pointer"
+            } as ViewStyle)
+          : null
+      }
     >
       {visible ? (
         <EyeOff color={atomPalette.accent} size={18} strokeWidth={1.8} />
@@ -115,4 +190,64 @@ export function PasswordVisibilityToggle({
       )}
     </Pressable>
   );
+}
+
+function getFieldBorderColor({
+  errorText,
+  isDisabled,
+  isFocused,
+  isHovered
+}: {
+  errorText?: string | null;
+  isDisabled: boolean;
+  isFocused: boolean;
+  isHovered: boolean;
+}) {
+  if (isDisabled) {
+    return atomPalette.border;
+  }
+
+  if (errorText) {
+    return isHovered ? atomPalette.errorText : atomPalette.error;
+  }
+
+  if (isFocused) {
+    return atomPalette.accent;
+  }
+
+  if (isHovered) {
+    return atomPalette.borderStrong;
+  }
+
+  return atomPalette.border;
+}
+
+function getFieldIconColor({
+  errorText,
+  isDisabled,
+  isFocused,
+  isHovered
+}: {
+  errorText?: string | null;
+  isDisabled: boolean;
+  isFocused: boolean;
+  isHovered: boolean;
+}) {
+  if (isDisabled) {
+    return atomPalette.textSubtle;
+  }
+
+  if (errorText) {
+    return atomPalette.error;
+  }
+
+  if (isFocused) {
+    return atomPalette.accent;
+  }
+
+  if (isHovered) {
+    return atomPalette.textMuted;
+  }
+
+  return atomPalette.textSubtle;
 }

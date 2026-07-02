@@ -30,6 +30,10 @@ Documentation should be updated in the same change where behavior, setup, or arc
   - Backend routes and scripts
 - `docs/`
   - Longer-lived design and reference material
+- `docs/onzait-design-system.md`
+  - Active design-system rules
+  - Token and primitive source map
+  - Reusable interaction-state decisions
 
 ## Update triggers
 
@@ -62,6 +66,13 @@ Update `backend/README.md` when:
 - backend env vars change
 - backend route surface changes
 - backend ownership or status changes
+
+Update `docs/onzait-design-system.md` when:
+
+- a reusable visual rule is decided
+- a design-system primitive changes
+- a component state pattern changes
+- a screen-level design decision should become reusable
 
 ## PR workflow
 

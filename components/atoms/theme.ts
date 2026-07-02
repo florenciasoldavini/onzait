@@ -10,6 +10,7 @@ export const atomPalette = {
   text: designTokens.colors.semantic.text.primary,
   textMuted: designTokens.colors.semantic.text.secondary,
   textSubtle: designTokens.colors.semantic.text.muted,
+  textPlaceholder: designTokens.colors.primitive.ink[300],
   textInverse: designTokens.colors.semantic.text.inverse,
   borderSubtle: designTokens.colors.semantic.border.subtle,
   border: designTokens.colors.semantic.border.default,

@@ -1,9 +1,11 @@
 import {
   AuthFooterLink,
-  AuthShell
+  AuthShell,
+  authFormControlSize
 } from "@/components/auth/AuthShell";
 import {
   AppButton,
+  FieldMessage,
   PasswordVisibilityToggle,
   TextField
 } from "@/components/atoms";
@@ -17,11 +19,12 @@ import {
   urlHasAuthPayload
 } from "@/lib/auth";
 import { getSupabaseErrorMessage } from "@/lib/supabase";
+import { emailSchema } from "@/schemas/fields";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { AtSign, Lock } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 
 type ResetMode = "request" | "update";
 
@@ -29,13 +32,85 @@ export default function ResetPasswordScreen() {
   const router = useRouter();
   const linkingUrl = Linking.useURL();
   const [email, setEmail] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState<
+    string | null
+  >(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<ResetMode>("request");
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({
+    confirmPassword: false,
+    email: false,
+    password: false
+  });
+  const validateEmail = (value: string) => {
+    const result = emailSchema.safeParse(value);
+
+    if (result.success) {
+      return null;
+    }
+
+    return result.error.issues[0]?.message ?? "Invalid email address";
+  };
+  const validatePassword = (value: string) => {
+    if (!value.trim()) {
+      return "Password is required";
+    }
+
+    if (value.length < 8) {
+      return "Use at least 8 characters for your new password";
+    }
+
+    return null;
+  };
+  const validateConfirmPassword = (
+    confirmValue: string,
+    passwordValue: string
+  ) => {
+    if (!confirmValue.trim()) {
+      return "Please confirm your new password";
+    }
+
+    if (confirmValue !== passwordValue) {
+      return "The passwords do not match";
+    }
+
+    return null;
+  };
+  const revealResetRequestValidation = () => {
+    const nextEmailError = validateEmail(email);
+
+    setTouchedFields((current) => ({ ...current, email: true }));
+    setEmailError(nextEmailError);
+  };
+  const revealPasswordUpdateValidation = () => {
+    const nextPasswordError = validatePassword(password);
+    const nextConfirmPasswordError = validateConfirmPassword(
+      confirmPassword,
+      password
+    );
+
+    setTouchedFields((current) => ({
+      ...current,
+      confirmPassword: true,
+      password: true
+    }));
+    setPasswordError(nextPasswordError);
+    setConfirmPasswordError(nextConfirmPasswordError);
+  };
+  const isResetRequestValid = validateEmail(email) === null;
+  const isPasswordUpdateValid =
+    validatePassword(password) === null &&
+    validateConfirmPassword(confirmPassword, password) === null;
+  const isSubmitDisabled =
+    isLoading ||
+    (mode === "update" ? !isPasswordUpdateValid : !isResetRequestValid);
 
   useEffect(() => {
     const activeUrl = getActiveAuthUrl(linkingUrl);
@@ -49,7 +124,7 @@ export default function ResetPasswordScreen() {
     const prepareRecoverySession = async () => {
       try {
         setIsLoading(true);
-        setErrorMessage(null);
+        setFormError(null);
 
         const { type, session } = await completeAuthSessionFromUrl(activeUrl);
 
@@ -60,14 +135,24 @@ export default function ResetPasswordScreen() {
         clearWebAuthUrlArtifacts();
 
         if (type === "recovery" || session) {
+          setConfirmPassword("");
+          setConfirmPasswordError(null);
+          setEmailError(null);
           setMode("update");
+          setPassword("");
+          setPasswordError(null);
+          setTouchedFields({
+            confirmPassword: false,
+            email: false,
+            password: false
+          });
         }
       } catch (error) {
         if (!isMounted) {
           return;
         }
 
-        setErrorMessage(getSupabaseErrorMessage(error));
+        setFormError(getSupabaseErrorMessage(error));
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -83,54 +168,50 @@ export default function ResetPasswordScreen() {
   }, [linkingUrl]);
 
   async function handleResetRequest() {
-    if (!email) {
-      setErrorMessage("Enter the email address for your account.");
+    const nextEmailError = validateEmail(email);
+
+    revealResetRequestValidation();
+
+    if (nextEmailError) {
       return;
     }
 
     setIsLoading(true);
-    setErrorMessage(null);
+    setFormError(null);
 
     try {
       await sendPasswordResetEmail(email);
-      Alert.alert("Check your email", "We sent you a password reset link.");
       router.replace("/sign-in");
     } catch (error) {
       const message = getSupabaseErrorMessage(error);
-      setErrorMessage(message);
-      Alert.alert("Reset request failed", message);
+      setFormError(message);
     } finally {
       setIsLoading(false);
     }
   }
 
   async function handlePasswordUpdate() {
-    if (!password) {
-      setErrorMessage("Enter a new password.");
-      return;
-    }
+    const nextPasswordError = validatePassword(password);
+    const nextConfirmPasswordError = validateConfirmPassword(
+      confirmPassword,
+      password
+    );
 
-    if (password.length < 8) {
-      setErrorMessage("Use at least 8 characters for your new password.");
-      return;
-    }
+    revealPasswordUpdateValidation();
 
-    if (password !== confirmPassword) {
-      setErrorMessage("The passwords do not match.");
+    if (nextPasswordError || nextConfirmPasswordError) {
       return;
     }
 
     setIsLoading(true);
-    setErrorMessage(null);
+    setFormError(null);
 
     try {
       await updatePassword(password);
-      Alert.alert("Password updated", "Your password has been changed.");
       router.replace("/");
     } catch (error) {
       const message = getSupabaseErrorMessage(error);
-      setErrorMessage(message);
-      Alert.alert("Password update failed", message);
+      setFormError(message);
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +225,7 @@ export default function ResetPasswordScreen() {
           : "Request a secure reset link."
       }
       panelTag={mode === "update" ? "Recovery / Update" : "Recovery / Request"}
-      title={mode === "update" ? "Update your password." : "Reset your password."}
+      title={mode === "update" ? "Update Your Password" : "Reset Your Password"}
     >
       <View style={{ gap: atomSpacing[6] }}>
         <View style={{ gap: atomSpacing[4] }}>
@@ -152,17 +233,27 @@ export default function ResetPasswordScreen() {
             <TextField
               autoCapitalize="none"
               autoComplete="email"
-              errorText={errorMessage}
+              errorText={emailError}
               helperText={
-                !errorMessage
-                  ? "Enter the email tied to your account."
-                  : null
+                !emailError ? "Enter the email tied to your account." : null
               }
               keyboardType="email-address"
               label="Email"
               leftIcon={AtSign}
-              onChangeText={setEmail}
+              onBlur={() => {
+                setTouchedFields((current) => ({ ...current, email: true }));
+                setEmailError(validateEmail(email));
+              }}
+              onChangeText={(value) => {
+                setEmail(value);
+                setFormError(null);
+
+                if (touchedFields.email || emailError) {
+                  setEmailError(validateEmail(value));
+                }
+              }}
               placeholder="name@company.com"
+              size={authFormControlSize}
               type="text"
               value={email}
             />
@@ -171,11 +262,33 @@ export default function ResetPasswordScreen() {
               <TextField
                 autoCapitalize="none"
                 autoComplete="new-password"
-                errorText={errorMessage}
-                helperText={!errorMessage ? "Use at least 8 characters." : null}
+                errorText={passwordError}
+                helperText={
+                  !passwordError ? "Use at least 8 characters." : null
+                }
                 label="New Password"
                 leftIcon={Lock}
-                onChangeText={setPassword}
+                onBlur={() => {
+                  setTouchedFields((current) => ({
+                    ...current,
+                    password: true
+                  }));
+                  setPasswordError(validatePassword(password));
+                }}
+                onChangeText={(value) => {
+                  setPassword(value);
+                  setFormError(null);
+
+                  if (touchedFields.password || passwordError) {
+                    setPasswordError(validatePassword(value));
+                  }
+
+                  if (touchedFields.confirmPassword || confirmPasswordError) {
+                    setConfirmPasswordError(
+                      validateConfirmPassword(confirmPassword, value)
+                    );
+                  }
+                }}
                 placeholder="new-password"
                 rightSlot={
                   <PasswordVisibilityToggle
@@ -185,15 +298,35 @@ export default function ResetPasswordScreen() {
                     visible={passwordVisible}
                   />
                 }
+                size={authFormControlSize}
                 type={passwordVisible ? "text" : "password"}
                 value={password}
               />
               <TextField
                 autoCapitalize="none"
                 autoComplete="new-password"
+                errorText={confirmPasswordError}
                 label="Confirm Password"
                 leftIcon={Lock}
-                onChangeText={setConfirmPassword}
+                onBlur={() => {
+                  setTouchedFields((current) => ({
+                    ...current,
+                    confirmPassword: true
+                  }));
+                  setConfirmPasswordError(
+                    validateConfirmPassword(confirmPassword, password)
+                  );
+                }}
+                onChangeText={(value) => {
+                  setConfirmPassword(value);
+                  setFormError(null);
+
+                  if (touchedFields.confirmPassword || confirmPasswordError) {
+                    setConfirmPasswordError(
+                      validateConfirmPassword(value, password)
+                    );
+                  }
+                }}
                 placeholder="confirm-password"
                 rightSlot={
                   <PasswordVisibilityToggle
@@ -203,6 +336,7 @@ export default function ResetPasswordScreen() {
                     visible={confirmPasswordVisible}
                   />
                 }
+                size={authFormControlSize}
                 type={confirmPasswordVisible ? "text" : "password"}
                 value={confirmPassword}
               />
@@ -210,7 +344,19 @@ export default function ResetPasswordScreen() {
           )}
 
           <AppButton
+            isDisabled={isSubmitDisabled}
             loading={isLoading}
+            onDisabledPress={
+              !isLoading
+                ? mode === "update"
+                  ? !isPasswordUpdateValid
+                    ? revealPasswordUpdateValidation
+                    : undefined
+                  : !isResetRequestValid
+                    ? revealResetRequestValidation
+                    : undefined
+                : undefined
+            }
             onPress={() => {
               if (mode === "update") {
                 void handlePasswordUpdate();
@@ -218,15 +364,13 @@ export default function ResetPasswordScreen() {
                 void handleResetRequest();
               }
             }}
+            size={authFormControlSize}
           >
-            {isLoading
-              ? mode === "update"
-                ? "Updating..."
-                : "Sending..."
-              : mode === "update"
-                ? "Update Password"
-                : "Send Reset Link"}
+            {mode === "update" ? "Update Password" : "Send Reset Link"}
           </AppButton>
+          {formError ? (
+            <FieldMessage tone="error">{formError}</FieldMessage>
+          ) : null}
         </View>
 
         <AuthFooterLink

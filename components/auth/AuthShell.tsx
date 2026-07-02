@@ -36,7 +36,7 @@ const palette = {
 
 const authCardMaxWidth = Platform.select({
   default: atomLayout.maxWidthFormNative,
-  web: atomLayout.maxWidthFormWeb
+  web: 440
 });
 
 function MonoLabel({ children }: { children: ReactNode }) {
@@ -118,9 +118,20 @@ export function AuthFooterLink({
         paddingTop: atomSpacing[5]
       }}
     >
-      <AppText style={{ textAlign: "center" }} tone="muted">
-        {prompt} <AppLink href={href}>{actionLabel}</AppLink>
-      </AppText>
+      <View
+        style={{
+          alignItems: "center",
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: atomSpacing[2],
+          justifyContent: "center"
+        }}
+      >
+        <AppText style={{ textAlign: "center" }} tone="muted">
+          {prompt}
+        </AppText>
+        <AppLink href={href}>{actionLabel}</AppLink>
+      </View>
     </View>
   );
 }
@@ -199,3 +210,11 @@ export const authPalette = palette;
 export const authCardRadius = atomRadii.xl;
 export const authControlHeight = atomControlHeights.lg;
 export const authControlRadius = atomControlRadius;
+export const authFormControlSize = Platform.select({
+  default: "lg",
+  web: "sm"
+}) as "sm" | "lg";
+export const authSocialButtonSize = Platform.select({
+  default: "iconLg",
+  web: "md"
+}) as "md" | "iconLg";

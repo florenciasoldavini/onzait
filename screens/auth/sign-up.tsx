@@ -2,10 +2,13 @@ import {
   AuthDivider,
   AuthFooterLink,
   AuthShell,
-  AuthStatusMessage
+  AuthStatusMessage,
+  authFormControlSize,
+  authSocialButtonSize
 } from "@/components/auth/AuthShell";
 import {
   AppButton,
+  FieldMessage,
   PasswordVisibilityToggle,
   TextField
 } from "@/components/atoms";
@@ -13,10 +16,11 @@ import { atomSpacing } from "@/components/atoms/theme";
 import { AuthContext } from "@/contexts/auth";
 import { getAuthRedirectUrl, startOAuthSignIn } from "@/lib/auth";
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
+import { emailSchema } from "@/schemas/fields";
 import { useRouter } from "expo-router";
 import { AtSign, Lock } from "lucide-react-native";
 import { useContext, useState } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 
 const googleLogo = require("@/assets/images/auth/google-logo.png");
 const appleLogo = require("@/assets/images/auth/apple-logo.png");
@@ -26,25 +30,66 @@ export default function SignUpScreen() {
   const { authError } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({
+    email: false,
+    password: false
+  });
   const [loadingAction, setLoadingAction] = useState<
     "apple" | "email" | "google" | null
   >(null);
+  const validateEmail = (value: string) => {
+    const result = emailSchema.safeParse(value);
+
+    if (result.success) {
+      return null;
+    }
+
+    return result.error.issues[0]?.message ?? "Invalid email address";
+  };
+  const validatePassword = (value: string) => {
+    if (!value.trim()) {
+      return "Password is required";
+    }
+
+    if (value.length < 8) {
+      return "Use at least 8 characters";
+    }
+
+    return null;
+  };
+  const revealEmailSignUpValidation = () => {
+    const nextEmailError = validateEmail(email);
+    const nextPasswordError = validatePassword(password);
+
+    setTouchedFields({ email: true, password: true });
+    setEmailError(nextEmailError);
+    setPasswordError(nextPasswordError);
+  };
+  const isEmailSignUpValid =
+    validateEmail(email) === null && validatePassword(password) === null;
+  const isBusy = loadingAction !== null;
 
   async function signUpWithEmail() {
     if (!supabase) {
-      setErrorMessage(getSupabaseErrorMessage("Supabase is not configured."));
+      setFormError(getSupabaseErrorMessage("Supabase is not configured."));
       return;
     }
 
-    if (!email || !password) {
-      setErrorMessage("Enter both your email and password.");
+    const nextEmailError = validateEmail(email);
+    const nextPasswordError = validatePassword(password);
+
+    revealEmailSignUpValidation();
+
+    if (nextEmailError || nextPasswordError) {
       return;
     }
 
     setLoadingAction("email");
-    setErrorMessage(null);
+    setFormError(null);
 
     try {
       const {
@@ -60,19 +105,13 @@ export default function SignUpScreen() {
 
       if (error) {
         const message = getSupabaseErrorMessage(error);
-        setErrorMessage(message);
-        Alert.alert("Sign up failed", message);
+        setFormError(message);
       } else if (!session) {
-        Alert.alert(
-          "Check your email",
-          "Your account was created. Confirm your email, then sign in."
-        );
         router.replace("/sign-in");
       }
     } catch (error) {
       const message = getSupabaseErrorMessage(error);
-      setErrorMessage(message);
-      Alert.alert("Sign up failed", message);
+      setFormError(message);
     } finally {
       setLoadingAction(null);
     }
@@ -81,12 +120,11 @@ export default function SignUpScreen() {
   async function signUpWithProvider(provider: "apple" | "google") {
     try {
       setLoadingAction(provider);
-      setErrorMessage(null);
+      setFormError(null);
       await startOAuthSignIn(provider);
     } catch (error) {
       const message = getSupabaseErrorMessage(error);
-      setErrorMessage(message);
-      Alert.alert("Sign up failed", message);
+      setFormError(message);
     } finally {
       setLoadingAction(null);
     }
@@ -115,26 +153,28 @@ export default function SignUpScreen() {
               accessibilityLabel="Continue with Google"
               fullWidth={false}
               imageSource={googleLogo}
+              isDisabled={isBusy}
               layout="icon"
               loading={loadingAction === "google"}
               onPress={() => {
                 void signUpWithProvider("google");
               }}
               shape="pill"
-              size="iconLg"
+              size={authSocialButtonSize}
               variant="secondary"
             />
             <AppButton
               accessibilityLabel="Continue with Apple"
               fullWidth={false}
               imageSource={appleLogo}
+              isDisabled={isBusy}
               layout="icon"
               loading={loadingAction === "apple"}
               onPress={() => {
                 void signUpWithProvider("apple");
               }}
               shape="pill"
-              size="iconLg"
+              size={authSocialButtonSize}
               variant="secondary"
             />
           </View>
@@ -144,12 +184,24 @@ export default function SignUpScreen() {
           <TextField
             autoCapitalize="none"
             autoComplete="email"
-            errorText={errorMessage}
+            errorText={emailError}
             keyboardType="email-address"
             label="Email"
             leftIcon={AtSign}
-            onChangeText={setEmail}
+            onBlur={() => {
+              setTouchedFields((current) => ({ ...current, email: true }));
+              setEmailError(validateEmail(email));
+            }}
+            onChangeText={(value) => {
+              setEmail(value);
+              setFormError(null);
+
+              if (touchedFields.email || emailError) {
+                setEmailError(validateEmail(value));
+              }
+            }}
             placeholder="name@company.com"
+            size={authFormControlSize}
             type="text"
             value={email}
           />
@@ -157,10 +209,22 @@ export default function SignUpScreen() {
           <TextField
             autoCapitalize="none"
             autoComplete="new-password"
-            helperText={!errorMessage ? "Use at least 8 characters." : null}
+            errorText={passwordError}
+            helperText={!passwordError ? "Use at least 8 characters." : null}
             label="Password"
             leftIcon={Lock}
-            onChangeText={setPassword}
+            onBlur={() => {
+              setTouchedFields((current) => ({ ...current, password: true }));
+              setPasswordError(validatePassword(password));
+            }}
+            onChangeText={(value) => {
+              setPassword(value);
+              setFormError(null);
+
+              if (touchedFields.password || passwordError) {
+                setPasswordError(validatePassword(value));
+              }
+            }}
             placeholder="min 8 characters"
             rightSlot={
               <PasswordVisibilityToggle
@@ -170,18 +234,29 @@ export default function SignUpScreen() {
                 visible={passwordVisible}
               />
             }
+            size={authFormControlSize}
             type={passwordVisible ? "text" : "password"}
             value={password}
           />
 
           <AppButton
+            isDisabled={!isEmailSignUpValid || isBusy}
             loading={loadingAction === "email"}
+            onDisabledPress={
+              !isEmailSignUpValid && !isBusy
+                ? revealEmailSignUpValidation
+                : undefined
+            }
             onPress={() => {
               void signUpWithEmail();
             }}
+            size={authFormControlSize}
           >
-            {loadingAction === "email" ? "Creating..." : "Create Account"}
+            Create Account
           </AppButton>
+          {formError ? (
+            <FieldMessage tone="error">{formError}</FieldMessage>
+          ) : null}
         </View>
 
         <AuthFooterLink

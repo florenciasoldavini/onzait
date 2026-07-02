@@ -1,9 +1,10 @@
 import { AppButton, AppHeading, AppText } from "@/components/atoms";
-import {
-  AuthStatusMessage,
-  AuthShell
-} from "@/components/auth/AuthShell";
 import { atomSpacing } from "@/components/atoms/theme";
+import {
+  AuthShell,
+  AuthStatusMessage,
+  authFormControlSize
+} from "@/components/auth/AuthShell";
 import {
   clearWebAuthUrlArtifacts,
   completeAuthSessionFromUrl,
@@ -67,14 +68,14 @@ export default function AuthCallbackScreen() {
       description="The redirect handoff should still feel deliberate and structured while the session finalizes."
       eyebrow="Auth Callback / Redirect"
       panelTag="Auth / Callback"
-      title="Completing your access."
+      title="Completing Your Access"
     >
       <View style={{ gap: atomSpacing[6] }}>
         <View style={{ gap: atomSpacing[2] }}>
           <AppText tone="muted" variant="eyebrow">
             Redirect / Session Resolution
           </AppText>
-          <AppHeading variant="title">Signing you in.</AppHeading>
+          <AppHeading variant="title">Signing You In</AppHeading>
           <AppText tone="muted">{statusMessage}</AppText>
         </View>
 
@@ -93,6 +94,7 @@ export default function AuthCallbackScreen() {
             onPress={() => {
               router.replace("/sign-in");
             }}
+            size={authFormControlSize}
           >
             Back to Sign In
           </AppButton>

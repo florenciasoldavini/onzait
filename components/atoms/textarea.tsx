@@ -12,12 +12,17 @@ import {
 } from "@/components/ui/textarea";
 import { getSansFontStyle } from "@/theme/fonts";
 import type { ReactNode } from "react";
+import { useState } from "react";
+import { Platform, type TextStyle, type ViewStyle } from "react-native";
 
 export function TextAreaField({
   accessory,
+  editable = true,
   errorText,
   helperText,
   label,
+  onBlur,
+  onFocus,
   required = false,
   ...props
 }: React.ComponentProps<typeof UITextareaInput> & {
@@ -27,6 +32,28 @@ export function TextAreaField({
   label?: ReactNode;
   required?: boolean;
 }) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const isDisabled = editable === false;
+  const borderColor = getTextAreaBorderColor({
+    errorText,
+    isDisabled,
+    isFocused,
+    isHovered
+  });
+  const webRootCursorStyle =
+    Platform.OS === "web"
+      ? ({
+          cursor: isDisabled ? "not-allowed" : "text"
+        } as unknown as ViewStyle)
+      : null;
+  const webInputCursorStyle =
+    Platform.OS === "web"
+      ? ({
+          cursor: isDisabled ? "not-allowed" : "text"
+        } as TextStyle)
+      : null;
+
   return (
     <FormField
       accessory={accessory}
@@ -37,22 +64,41 @@ export function TextAreaField({
     >
       <Textarea
         isInvalid={Boolean(errorText)}
+        onPointerEnter={() => {
+          setIsHovered(true);
+        }}
+        onPointerLeave={() => {
+          setIsHovered(false);
+        }}
         size="md"
         style={{
-          backgroundColor: atomPalette.surface,
-          borderColor: errorText ? atomPalette.error : atomPalette.border,
+          backgroundColor: isDisabled
+            ? atomPalette.surfaceLow
+            : atomPalette.surface,
+          borderColor,
           borderRadius: atomControlRadius,
-          minHeight: atomControlHeights.lg * 2 + atomSpacing[6]
+          minHeight: atomControlHeights.lg * 2 + atomSpacing[6],
+          ...webRootCursorStyle
         }}
       >
         <UITextareaInput
-          placeholderTextColor={atomPalette.textSubtle}
+          editable={editable}
+          onBlur={(event) => {
+            setIsFocused(false);
+            onBlur?.(event);
+          }}
+          onFocus={(event) => {
+            setIsFocused(true);
+            onFocus?.(event);
+          }}
+          placeholderTextColor={atomPalette.textPlaceholder}
           style={{
             color: atomPalette.text,
             fontSize: atomTypeScale.bodyMd.fontSize,
             lineHeight: atomTypeScale.bodyMd.lineHeight,
             paddingHorizontal: atomSpacing[4],
             paddingVertical: atomSpacing[3],
+            ...webInputCursorStyle,
             ...getSansFontStyle(atomTypeScale.bodyMd.fontWeight)
           }}
           {...props}
@@ -60,4 +106,34 @@ export function TextAreaField({
       </Textarea>
     </FormField>
   );
+}
+
+function getTextAreaBorderColor({
+  errorText,
+  isDisabled,
+  isFocused,
+  isHovered
+}: {
+  errorText?: string | null;
+  isDisabled: boolean;
+  isFocused: boolean;
+  isHovered: boolean;
+}) {
+  if (isDisabled) {
+    return atomPalette.border;
+  }
+
+  if (errorText) {
+    return isHovered ? atomPalette.errorText : atomPalette.error;
+  }
+
+  if (isFocused) {
+    return atomPalette.accent;
+  }
+
+  if (isHovered) {
+    return atomPalette.borderStrong;
+  }
+
+  return atomPalette.border;
 }

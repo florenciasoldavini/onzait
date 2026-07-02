@@ -155,6 +155,6 @@ npm run build
 - `docs/seo-accessibility-baseline.md`
 - `docs/security-baseline.md`
 - `supabase/README.md`
+- `docs/onzait-design-system.md`
 - `docs/onzait-step-1-foundation.md`
 - `docs/onzait-step-2-foundations.md`
-- `docs/onzait-design-guide.md`

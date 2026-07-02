@@ -15,6 +15,7 @@ import { getSansFontStyle } from "@/theme/fonts";
 import type { ComponentType, ReactNode } from "react";
 import {
   Image,
+  Platform,
   StyleSheet,
   type ImageSourcePropType,
   type StyleProp,
@@ -31,24 +32,28 @@ const sizeMap = {
     button: "md" as const,
     height: atomControlHeights.sm,
     iconVisualSize: 18,
+    radius: atomRadii.md,
     textToken: atomTypeScale.buttonSm
   },
   md: {
     button: "lg" as const,
     height: atomControlHeights.md,
     iconVisualSize: 18,
+    radius: atomRadii.lg,
     textToken: atomTypeScale.buttonMd
   },
   lg: {
     button: "xl" as const,
     height: atomControlHeights.lg,
     iconVisualSize: 20,
+    radius: atomControlRadius,
     textToken: atomTypeScale.buttonLg
   },
   iconLg: {
     button: "xl" as const,
     height: atomControlHeights.iconLg,
     iconVisualSize: 22,
+    radius: atomControlRadius,
     textToken: atomTypeScale.buttonLg
   }
 };
@@ -95,14 +100,28 @@ const variantConfig: Record<
   }
 };
 
+const disabledVisualStyle = {
+  backgroundColor: atomPalette.surfaceStrong,
+  borderColor: atomPalette.borderStrong,
+  iconClassName: "text-typography-600",
+  opacity: 0.72,
+  textColor: atomPalette.textMuted
+} as const;
+
 export function AppButton({
   children,
   fullWidth = true,
   icon,
   iconAfter = true,
   imageSource,
+  isDisabled = false,
   layout = "default",
   loading = false,
+  onDisabledPress,
+  onLongPress,
+  onPress,
+  onPressIn,
+  onPressOut,
   shape = "default",
   size = "lg",
   style,
@@ -116,6 +135,7 @@ export function AppButton({
   imageSource?: ImageSourcePropType;
   layout?: ButtonLayout;
   loading?: boolean;
+  onDisabledPress?: () => void;
   shape?: ButtonShape;
   size?: ButtonSize;
   style?: StyleProp<ViewStyle>;
@@ -123,36 +143,75 @@ export function AppButton({
 }) {
   const sizeConfig = sizeMap[size];
   const config = variantConfig[variant];
+  const isVisuallyDisabled = Boolean(isDisabled || loading);
+  const isInteractionDisabled = Boolean(
+    loading || (isDisabled && !onDisabledPress)
+  );
   const buttonWidth =
     layout === "icon" ? sizeConfig.height : fullWidth ? "100%" : undefined;
+  const resolvedTextColor = isVisuallyDisabled
+    ? disabledVisualStyle.textColor
+    : config.textColor;
+  const resolvedIconClassName = isVisuallyDisabled
+    ? disabledVisualStyle.iconClassName
+    : config.iconClassName;
   const buttonTextStyle = {
-    color: config.textColor,
+    color: resolvedTextColor,
     fontSize: sizeConfig.textToken.fontSize,
     letterSpacing: sizeConfig.textToken.letterSpacing,
     lineHeight: sizeConfig.textToken.lineHeight,
     textTransform: sizeConfig.textToken.textTransform,
     ...getSansFontStyle(sizeConfig.textToken.fontWeight)
   };
+  const webCursorStyle =
+    Platform.OS === "web"
+      ? ({
+          cursor: isVisuallyDisabled ? "not-allowed" : "pointer"
+        } as ViewStyle)
+      : null;
 
   return (
     <Button
       action={config.action}
       className={config.className}
+      isDisabled={isInteractionDisabled}
+      onLongPress={isInteractionDisabled ? undefined : onLongPress}
+      onPress={(event) => {
+        if (loading) {
+          return;
+        }
+
+        if (isDisabled) {
+          onDisabledPress?.();
+          return;
+        }
+
+        onPress?.(event);
+      }}
+      onPressIn={isInteractionDisabled ? undefined : onPressIn}
+      onPressOut={isInteractionDisabled ? undefined : onPressOut}
       size={sizeConfig.button}
       style={StyleSheet.flatten([
         {
-          borderRadius: shape === "pill" ? atomRadii.full : atomControlRadius,
+          borderRadius: shape === "pill" ? atomRadii.full : sizeConfig.radius,
           minHeight: sizeConfig.height,
           paddingHorizontal: layout === "icon" ? 0 : undefined,
           width: buttonWidth
         },
+        isVisuallyDisabled
+          ? {
+              backgroundColor: disabledVisualStyle.backgroundColor,
+              borderColor: disabledVisualStyle.borderColor,
+              opacity: disabledVisualStyle.opacity
+            }
+          : null,
+        webCursorStyle,
         style
       ])}
       variant={config.buttonVariant}
       {...props}
     >
-      {loading ? <ButtonSpinner color={config.textColor} /> : null}
-      {imageSource ? (
+      {imageSource && !loading ? (
         <Image
           source={imageSource}
           style={{
@@ -163,15 +222,14 @@ export function AppButton({
         />
       ) : null}
       {icon && !iconAfter && !imageSource && !loading ? (
-        <ButtonIcon as={icon} className={config.iconClassName} size="lg" />
+        <ButtonIcon as={icon} className={resolvedIconClassName} size="lg" />
       ) : null}
       {children && layout !== "icon" ? (
-        <ButtonText style={buttonTextStyle}>
-          {loading ? "Working..." : children}
-        </ButtonText>
+        <ButtonText style={buttonTextStyle}>{children}</ButtonText>
       ) : null}
+      {loading ? <ButtonSpinner color={resolvedTextColor} /> : null}
       {icon && iconAfter && !imageSource && !loading ? (
-        <ButtonIcon as={icon} className={config.iconClassName} size="lg" />
+        <ButtonIcon as={icon} className={resolvedIconClassName} size="lg" />
       ) : null}
     </Button>
   );
