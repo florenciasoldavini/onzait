@@ -51,7 +51,7 @@ export function TextAreaField({
     Platform.OS === "web"
       ? ({
           cursor: isDisabled ? "not-allowed" : "text"
-        } as TextStyle)
+        } as unknown as TextStyle)
       : null;
 
   return (

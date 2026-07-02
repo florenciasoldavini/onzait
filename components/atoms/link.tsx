@@ -2,6 +2,7 @@ import { atomPalette, atomTypeScale } from "@/components/atoms/theme";
 import { getMonoFontStyle } from "@/theme/fonts";
 import { Link, type LinkProps } from "expo-router";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import {
   Platform,
   Pressable,
@@ -20,10 +21,17 @@ export function AppLink({
   style?: React.ComponentProps<typeof Text>["style"];
 }) {
   const linkToken = atomTypeScale.linkMono;
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <Link {...props} asChild>
       <Pressable
+        onPointerEnter={() => {
+          setIsHovered(true);
+        }}
+        onPointerLeave={() => {
+          setIsHovered(false);
+        }}
         style={
           Platform.OS === "web"
             ? ({
@@ -32,18 +40,18 @@ export function AppLink({
             : null
         }
       >
-        {({ hovered, pressed }) => (
+        {({ pressed }) => (
           <Text
             style={[
               {
                 color:
-                  hovered || pressed
+                  isHovered || pressed
                     ? atomPalette.accentHover
                     : atomPalette.accent,
                 fontSize: linkToken.fontSize,
                 lineHeight: linkToken.lineHeight,
                 letterSpacing: linkToken.letterSpacing,
-                textDecorationLine: hovered || pressed ? "underline" : "none",
+                textDecorationLine: isHovered || pressed ? "underline" : "none",
                 textTransform: linkToken.textTransform,
                 ...getMonoFontStyle(linkToken.fontWeight)
               } as TextStyle,
