@@ -87,6 +87,7 @@ Focus and selected states may change an element's semantic color because they co
 - An input with a grey border can use the cobalt accent border on focus.
 - A tab can move from neutral text to accent text when selected.
 - A selected nav item can use an accent indicator or accent-toned surface.
+- Bottom navigation items use muted neutral by default, darker neutral on hover, and accent color when selected.
 
 Error and success states are validation states, so they may use their semantic status colors when those states are intentionally present.
 
