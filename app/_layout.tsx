@@ -1,56 +1,65 @@
+// app/_layout.tsx
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import { AuthContext, AuthProvider } from "@/contexts/auth";
+import { navigationIntegration, Sentry } from "@/lib/sentry";
 import "@/global.css";
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider
-} from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import "react-native-reanimated";
-
-import { SessionProvider } from "@/contexts/auth";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { Stack, useNavigationContainerRef } from "expo-router";
+import { useContext, useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf")
+function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Geist: require("@/assets/fonts/Geist-Regular.ttf"),
+    "Geist-Regular": require("@/assets/fonts/Geist-Regular.ttf"),
+    "Geist-Medium": require("@/assets/fonts/Geist-Medium.ttf"),
+    "Geist-SemiBold": require("@/assets/fonts/Geist-SemiBold.ttf"),
+    "Geist-Bold": require("@/assets/fonts/Geist-Bold.ttf"),
+    "Geist-Black": require("@/assets/fonts/Geist-Black.ttf"),
+    "JetBrains Mono": require("@/assets/fonts/JetBrainsMono-Regular.ttf"),
+    "JetBrainsMono-Regular": require("@/assets/fonts/JetBrainsMono-Regular.ttf"),
+    "JetBrainsMono-Medium": require("@/assets/fonts/JetBrainsMono-Medium.ttf"),
+    "JetBrainsMono-SemiBold": require("@/assets/fonts/JetBrainsMono-SemiBold.ttf"),
+    "JetBrainsMono-Bold": require("@/assets/fonts/JetBrainsMono-Bold.ttf")
   });
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
+  if (!fontsLoaded) {
     return null;
   }
 
   return (
     <GluestackUIProvider mode="light">
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <SessionProvider>
-          <SafeAreaProvider>
-            <RootNavigator />
-          </SafeAreaProvider>
-        </SessionProvider>
-        <StatusBar style="auto" />
-      </ThemeProvider>
+      <AuthProvider>
+        <SafeAreaProvider>
+          <RootNavigator />
+        </SafeAreaProvider>
+      </AuthProvider>
     </GluestackUIProvider>
   );
 }
 
 function RootNavigator() {
-  // const { session } = useSession();
+  const { isLoading, session } = useContext(AuthContext);
+  const navigationRef = useNavigationContainerRef();
+
+  useEffect(() => {
+    navigationIntegration.registerNavigationContainer(navigationRef);
+  }, [navigationRef]);
+
+  if (isLoading) {
+    return null;
+  }
 
   return (
-    <Stack screenOptions={{ headerShown: true }}>
-      <Stack.Protected guard={false}>
-        <Stack.Screen name="(app)" options={{ headerShown: true }} />
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={Boolean(session)}>
+        <Stack.Screen name="(app)" options={{ headerShown: false }} />
       </Stack.Protected>
-      <Stack.Screen name="sign-in" options={{ headerShown: false }} />
-      <Stack.Screen name="sign-up" options={{ headerShown: false }} />
-      <Stack.Screen name="reset-password" options={{ headerShown: false }} />
-      <Stack.Screen name="verify-email" options={{ headerShown: false }} />
+      <Stack.Protected guard={!session}>
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      </Stack.Protected>
     </Stack>
   );
 }
+
+export default Sentry.wrap(RootLayout);

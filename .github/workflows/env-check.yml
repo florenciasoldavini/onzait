@@ -1,0 +1,47 @@
+name: CI Checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - development
+      - feature/**
+
+jobs:
+  ci-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      - name: Install app dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
+
+      - name: Documentation drift check (.env.example)
+        run: npm run env:check
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Backend compile check
+        run: npm run build --prefix backend
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build

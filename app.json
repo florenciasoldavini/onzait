@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "on-site",
-    "slug": "on-site",
+    "name": "onzait",
+    "slug": "onzait",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "onsite",
+    "scheme": "onzait",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.florenciasoldavini.onzait",
       "supportsTablet": true
     },
     "android": {
@@ -16,6 +16,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "package": "com.florenciasoldavini.onzait",
       "edgeToEdgeEnabled": true
     },
     "web": {
@@ -24,6 +25,13 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "florencia-soldavini",
+          "project": "onzait"
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
@@ -34,10 +42,49 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Geist-Black.ttf",
+            "./assets/fonts/Geist-Bold.ttf",
+            "./assets/fonts/Geist-ExtraBold.ttf",
+            "./assets/fonts/Geist-ExtraLight.ttf",
+            "./assets/fonts/Geist-Light.ttf",
+            "./assets/fonts/Geist-Medium.ttf",
+            "./assets/fonts/Geist-Regular.ttf",
+            "./assets/fonts/Geist-SemiBold.ttf",
+            "./assets/fonts/Geist-Thin.ttf",
+            "./assets/fonts/JetBrainsMono-Bold.ttf",
+            "./assets/fonts/JetBrainsMono-BoldItalic.ttf",
+            "./assets/fonts/JetBrainsMono-ExtraBold.ttf",
+            "./assets/fonts/JetBrainsMono-ExtraBoldItalic.ttf",
+            "./assets/fonts/JetBrainsMono-ExtraLight.ttf",
+            "./assets/fonts/JetBrainsMono-ExtraLightItalic.ttf",
+            "./assets/fonts/JetBrainsMono-Italic.ttf",
+            "./assets/fonts/JetBrainsMono-Light.ttf",
+            "./assets/fonts/JetBrainsMono-LightItalic.ttf",
+            "./assets/fonts/JetBrainsMono-Medium.ttf",
+            "./assets/fonts/JetBrainsMono-MediumItalic.ttf",
+            "./assets/fonts/JetBrainsMono-Regular.ttf",
+            "./assets/fonts/JetBrainsMono-SemiBold.ttf",
+            "./assets/fonts/JetBrainsMono-SemiBoldItalic.ttf",
+            "./assets/fonts/JetBrainsMono-Thin.ttf",
+            "./assets/fonts/JetBrainsMono-ThinItalic.ttf"
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cfe1b670-171b-4fb9-808a-78cbbe47ed33"
+      }
+    },
+    "owner": "florenciasoldavini"
   }
 }

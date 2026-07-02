@@ -3,5 +3,8 @@
   "useTabs": false,
   "semi": true,
   "singleQuote": false,
-  "trailingComma": "none"
-} 
+  "trailingComma": "none",
+  "printWidth": 80,
+  "arrowParens": "always",
+  "endOfLine": "lf"
+}
