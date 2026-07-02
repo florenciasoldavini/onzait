@@ -10,15 +10,6 @@ import {
 
 type TextVariant = "body" | "bodySm" | "caption" | "label" | "meta" | "eyebrow";
 
-type TextTone =
-  | "default"
-  | "muted"
-  | "subtle"
-  | "accent"
-  | "inverse"
-  | "danger"
-  | "success";
-
 function sansTypeStyle(tokenName: "bodyMd" | "bodySm" | "caption"): TextStyle {
   const token = atomTypeScale[tokenName];
 
@@ -52,7 +43,7 @@ const variantStyles: Record<TextVariant, TextStyle> = {
   eyebrow: monoTypeStyle("eyebrow")
 };
 
-const toneStyles: Record<TextTone, TextStyle> = {
+const toneStyles = {
   default: { color: atomPalette.text },
   muted: { color: atomPalette.textMuted },
   subtle: { color: atomPalette.textSubtle },
@@ -60,7 +51,9 @@ const toneStyles: Record<TextTone, TextStyle> = {
   inverse: { color: atomPalette.textInverse },
   danger: { color: atomPalette.errorText },
   success: { color: atomPalette.successText }
-};
+} satisfies Record<string, TextStyle>;
+
+type TextTone = keyof typeof toneStyles;
 
 export function AppText({
   children,

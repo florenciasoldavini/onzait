@@ -1,7 +1,12 @@
 import { atomPalette, atomTypeScale } from "@/components/atoms/theme";
 import { getSansFontStyle } from "@/theme/fonts";
 import type { ReactNode } from "react";
-import { Text, type StyleProp, type TextProps, type TextStyle } from "react-native";
+import {
+  Text,
+  type StyleProp,
+  type TextProps,
+  type TextStyle
+} from "react-native";
 
 type HeadingVariant = "hero" | "title" | "section" | "card";
 type HeadingTone = "default" | "muted" | "inverse";
