@@ -152,7 +152,7 @@ export function AuthShell({
   title: string;
 }) {
   return (
-    <Screen centered>
+    <Screen centered keyboardSafe>
       <View
         style={{
           alignSelf: "center",

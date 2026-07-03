@@ -1,6 +1,9 @@
 import { atomLayout, atomPalette, atomSpacing } from "@/components/atoms/theme";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   useWindowDimensions,
   View,
@@ -12,16 +15,20 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export function Screen({
   centered = false,
   children,
+  keyboardSafe = false,
   scrollable = true,
   style
 }: {
   centered?: boolean;
   children: ReactNode;
+  keyboardSafe?: boolean;
   scrollable?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const scrollRef = useRef<ScrollView>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const horizontalPadding =
     width >= atomLayout.breakpointDesktop
       ? atomLayout.marginDesktop
@@ -43,38 +50,98 @@ export function Screen({
       {children}
     </View>
   );
+  const shouldAvoidKeyboard = keyboardSafe && Platform.OS !== "web";
+  const keyboardBottomPadding =
+    shouldAvoidKeyboard && keyboardVisible ? atomSpacing[24] : atomSpacing[12];
 
-  if (!scrollable) {
+  useEffect(() => {
+    if (!shouldAvoidKeyboard) {
+      return;
+    }
+
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSubscription = Keyboard.addListener(showEvent, () => {
+      setKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardVisible(false);
+      scrollRef.current?.scrollTo({ animated: true, y: 0 });
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, [shouldAvoidKeyboard]);
+
+  function renderRoot(content: ReactNode) {
+    if (!shouldAvoidKeyboard) {
+      return (
+        <View
+          style={[
+            {
+              backgroundColor: atomPalette.background,
+              flex: 1
+            },
+            style
+          ]}
+        >
+          {content}
+        </View>
+      );
+    }
+
     return (
-      <View
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
         style={[
           {
             backgroundColor: atomPalette.background,
-            flex: 1,
-            paddingBottom: insets.bottom + atomSpacing[6],
-            paddingTop: insets.top + atomSpacing[6]
+            flex: 1
           },
           style
         ]}
+      >
+        {content}
+      </KeyboardAvoidingView>
+    );
+  }
+
+  if (!scrollable) {
+    return renderRoot(
+      <View
+        style={{
+          flex: 1,
+          paddingBottom: insets.bottom + atomSpacing[6],
+          paddingTop: insets.top + atomSpacing[6]
+        }}
       >
         {container}
       </View>
     );
   }
 
-  return (
-    <View style={[{ backgroundColor: atomPalette.background, flex: 1 }, style]}>
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: centered ? "center" : undefined,
-          paddingBottom: insets.bottom + atomSpacing[12],
-          paddingTop: insets.top + atomSpacing[6]
-        }}
-        showsVerticalScrollIndicator={false}
-      >
-        {container}
-      </ScrollView>
-    </View>
+  return renderRoot(
+    <ScrollView
+      ref={scrollRef}
+      automaticallyAdjustKeyboardInsets={shouldAvoidKeyboard}
+      bounces={!shouldAvoidKeyboard || keyboardVisible}
+      contentContainerStyle={{
+        flexGrow: 1,
+        justifyContent: centered ? "center" : undefined,
+        paddingBottom: insets.bottom + keyboardBottomPadding,
+        paddingTop: insets.top + atomSpacing[6]
+      }}
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+      keyboardShouldPersistTaps="handled"
+      scrollEnabled={!shouldAvoidKeyboard || keyboardVisible}
+      showsVerticalScrollIndicator={false}
+    >
+      {container}
+    </ScrollView>
   );
 }

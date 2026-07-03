@@ -15,7 +15,11 @@ import {
 import { atomSpacing } from "@/components/atoms/theme";
 import { AuthContext } from "@/contexts/auth";
 import { getAuthRedirectUrl, startOAuthSignIn } from "@/lib/auth";
-import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
+import {
+  getSupabaseErrorMessage,
+  isSupabaseEmailCooldownError,
+  supabase
+} from "@/lib/supabase";
 import { emailSchema } from "@/schemas/fields";
 import { useRouter } from "expo-router";
 import { AtSign, Lock } from "lucide-react-native";
@@ -88,6 +92,8 @@ export default function SignUpScreen() {
       return;
     }
 
+    const signUpEmail = email.trim().toLowerCase();
+
     setLoadingAction("email");
     setFormError(null);
 
@@ -96,7 +102,7 @@ export default function SignUpScreen() {
         data: { session },
         error
       } = await supabase.auth.signUp({
-        email,
+        email: signUpEmail,
         password,
         options: {
           emailRedirectTo: getAuthRedirectUrl("callback")
@@ -104,10 +110,18 @@ export default function SignUpScreen() {
       });
 
       if (error) {
-        const message = getSupabaseErrorMessage(error);
-        setFormError(message);
+        if (isSupabaseEmailCooldownError(error)) {
+          router.replace(
+            `/verify-email?email=${encodeURIComponent(signUpEmail)}&notice=rate-limited`
+          );
+        } else {
+          const message = getSupabaseErrorMessage(error);
+          setFormError(message);
+        }
       } else if (!session) {
-        router.replace("/sign-in");
+        router.replace(
+          `/verify-email?email=${encodeURIComponent(signUpEmail)}&notice=sent`
+        );
       }
     } catch (error) {
       const message = getSupabaseErrorMessage(error);

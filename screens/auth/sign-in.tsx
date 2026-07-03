@@ -16,8 +16,13 @@ import {
 import { atomSpacing } from "@/components/atoms/theme";
 import { AuthContext } from "@/contexts/auth";
 import { startOAuthSignIn } from "@/lib/auth";
-import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
+import {
+  getSupabaseErrorMessage,
+  isSupabaseEmailNotConfirmedError,
+  supabase
+} from "@/lib/supabase";
 import { emailSchema } from "@/schemas/fields";
+import { useRouter } from "expo-router";
 import { AtSign, Lock } from "lucide-react-native";
 import { useContext, useState } from "react";
 import { View } from "react-native";
@@ -26,6 +31,7 @@ const googleLogo = require("@/assets/images/auth/google-logo.png");
 const appleLogo = require("@/assets/images/auth/apple-logo.png");
 
 export default function SignInScreen() {
+  const router = useRouter();
   const { authError } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -83,20 +89,34 @@ export default function SignInScreen() {
       return;
     }
 
+    const signInEmail = email.trim().toLowerCase();
+
     setLoadingAction("email");
     setFormError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: signInEmail,
+        password
+      });
 
-    if (error) {
+      if (error) {
+        if (isSupabaseEmailNotConfirmedError(error)) {
+          router.replace(
+            `/verify-email?email=${encodeURIComponent(signInEmail)}`
+          );
+          return;
+        }
+
+        const message = getSupabaseErrorMessage(error);
+        setFormError(message);
+      }
+    } catch (error) {
       const message = getSupabaseErrorMessage(error);
       setFormError(message);
+    } finally {
+      setLoadingAction(null);
     }
-
-    setLoadingAction(null);
   }
 
   async function signInWithProvider(provider: "apple" | "google") {

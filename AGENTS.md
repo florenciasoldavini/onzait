@@ -3,7 +3,7 @@
 Purpose: architecture snapshot, product decisions, and implementation guardrails for contributors and agents
 Source of truth for: current auth architecture, platform decisions, naming rules, and high-level project constraints
 Update when: auth flow, platform ownership, schema strategy, CI expectations, or product naming decisions change
-Last reviewed: 2026-05-12
+Last reviewed: 2026-07-03
 
 ## Project Snapshot
 
@@ -37,6 +37,7 @@ Last reviewed: 2026-05-12
 - Email/password
 - Google OAuth
 - Apple OAuth
+- Email verification with resend confirmation link
 - Password reset
 - Shared callback/session handling lives in [lib/auth.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/lib/auth.ts:1)
 
@@ -47,8 +48,10 @@ Last reviewed: 2026-05-12
 - [contexts/auth.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/contexts/auth.tsx:1)
 - [app/\_layout.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/_layout.tsx:1)
 - [app/(auth)/callback.tsx](</Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/(auth)/callback.tsx:1>)
+- [app/(auth)/verify-email.tsx](</Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/(auth)/verify-email.tsx:1>)
 - [screens/auth/sign-in.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/screens/auth/sign-in.tsx:1)
 - [screens/auth/sign-up.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/screens/auth/sign-up.tsx:1)
+- [screens/auth/verify-email.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/screens/auth/verify-email.tsx:1)
 - [screens/auth/reset-password.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/screens/auth/reset-password.tsx:1)
 
 ### Auth Gotchas
@@ -58,6 +61,8 @@ Last reviewed: 2026-05-12
 - Web redirect URLs should use the current browser origin when available; hosted fallback comes from `EXPO_PUBLIC_SITE_URL`
 - Native auth redirects use `onzait://` in development/production builds
 - Expo Go auth redirects use the current `exp://.../--/<path>` callback and must be allow-listed in Supabase while testing OAuth there
+- Email/password sign-in with an unverified email should route to `/verify-email` instead of showing a form error
+- Verification email rate limits should be represented as a disabled resend countdown, not as a blocking error message
 
 ## Supabase Decisions
 

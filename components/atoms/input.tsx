@@ -98,6 +98,10 @@ export function TextField({
           cursor: isDisabled ? "not-allowed" : "text"
         } as unknown as TextStyle)
       : null;
+  const inputLineHeight =
+    Platform.OS === "web"
+      ? atomTypeScale.bodyMd.lineHeight
+      : atomTypeScale.bodyMd.fontSize + 4;
   return (
     <FormField
       accessory={accessory}
@@ -128,6 +132,7 @@ export function TextField({
         {leftIcon ? (
           <InputSlot
             style={{
+              height: config.minHeight,
               minWidth: atomSpacing[10],
               paddingLeft: atomSpacing[4]
             }}
@@ -160,10 +165,13 @@ export function TextField({
           style={{
             color: atomPalette.text,
             fontSize: atomTypeScale.bodyMd.fontSize,
+            height: config.minHeight,
             letterSpacing: 0,
-            lineHeight: atomTypeScale.bodyMd.lineHeight,
+            lineHeight: inputLineHeight,
             paddingHorizontal:
               leftIcon || rightSlot ? atomSpacing[3] : atomSpacing[4],
+            paddingVertical: 0,
+            textAlignVertical: "center",
             ...webInputCursorStyle,
             ...getSansFontStyle(atomTypeScale.bodyMd.fontWeight)
           }}

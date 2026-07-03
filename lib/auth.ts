@@ -219,6 +219,24 @@ export async function sendPasswordResetEmail(email: string) {
   }
 }
 
+export async function resendSignUpConfirmationEmail(email: string) {
+  if (!supabase) {
+    throw new Error(getSupabaseErrorMessage("Supabase is not configured."));
+  }
+
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: {
+      emailRedirectTo: getAuthRedirectUrl("callback")
+    }
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
 export async function updatePassword(password: string) {
   if (!supabase) {
     throw new Error(getSupabaseErrorMessage("Supabase is not configured."));

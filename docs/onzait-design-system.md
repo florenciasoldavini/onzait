@@ -3,7 +3,7 @@
 Purpose: active design-system source of truth for reusable UI decisions, component rules, and interaction behavior
 Source of truth for: design rules, token usage, component state expectations, and reusable UI patterns
 Update when: a reusable visual rule is decided, a token changes meaning, a component gains a new standard state, or a screen teaches us a pattern that should be reused
-Last reviewed: 2026-07-02
+Last reviewed: 2026-07-03
 
 ## Active Sources
 
@@ -123,6 +123,15 @@ Size variants should be reviewed across mobile, tablet, and desktop before they 
 - Responsive size behavior should live in shared tokens, components, or layout constants whenever the pattern is reusable.
 
 Use judgment: responsive sizing is required when a fixed size hurts usability or composition, not as a mechanical rule for every element.
+
+## Keyboard Safety Rules
+
+Screens with editable fields must keep the active field visible and reachable when the mobile keyboard is open.
+
+- Form screens may use a keyboard-safe scroll layout while the keyboard is open, but resting auth-style forms should not feel scrollable when their content fits.
+- Password fields, submit buttons, and validation messages must not be hidden behind the keyboard.
+- Shared layout primitives should own keyboard avoidance when the pattern is reusable.
+- Keyboard-safe screens should preserve normal scrolling, safe-area padding, and tap behavior while the keyboard is open.
 
 ## Documentation Rule
 
