@@ -3,7 +3,7 @@
 Purpose: architecture snapshot, product decisions, and implementation guardrails for contributors and agents
 Source of truth for: current auth architecture, platform decisions, naming rules, and high-level project constraints
 Update when: auth flow, platform ownership, schema strategy, CI expectations, or product naming decisions change
-Last reviewed: 2026-05-12
+Last reviewed: 2026-07-03
 
 ## Project Snapshot
 
@@ -71,11 +71,14 @@ Last reviewed: 2026-05-12
 
 ### RLS Baseline
 
-- Only `public.users` is currently created in the tracked Supabase bootstrap
-- Only `public.users` currently has direct authenticated Data API access
-- Policies are anchored to `auth.uid() = users.id`
-- Insert policy forces `role = 'user'`
-- Update policy prevents users from changing their own role
+- `public.users` is the auth profile table and `public.projects` is the first product feature table
+- Feature tables must default to owner-scoped access for normal users and admin-wide access for `users.role = 'admin'`
+- Admin users should see all non-deleted rows for feature tables unless a feature documents a narrower rule
+- Normal users should see only their own rows unless a feature explicitly introduces participant access
+- All get/list reads must filter out rows where `deleted_at` is not null
+- Policies are anchored to `auth.uid()` plus trusted database role checks, not client-only role checks
+- Insert policies must prevent clients from assigning privileged ownership, membership, or role values
+- Update policies must preserve ownership/role invariants and use both `USING` and `WITH CHECK` where ownership could change
 
 ### Migration Gotcha
 
@@ -105,6 +108,9 @@ Last reviewed: 2026-05-12
 - `npm run env:check`
 - `npm run sync:env`
 - `npm run sync:env -- --dry-run`
+- `npm test`
+- `npm run test:watch`
+- `npx supabase test db`
 
 ## CI / Verification
 
@@ -113,12 +119,27 @@ Last reviewed: 2026-05-12
   - `npx tsc --noEmit`
   - `npm run lint`
   - `npm run build`
+  - `npm test`
 
 ### Useful Local Checks
 
 - `npx tsc --noEmit`
 - `npm run build`
 - `npm run lint`
+- `npm test`
+- `npx supabase test db`
+
+## Feature Implementation Rules
+
+- Every feature must include appropriate tests for the work: unit tests for reusable logic, database/RLS tests for Supabase access rules, and flow/UI tests for user-critical behavior.
+- Every async surface must handle loading explicitly with an appropriate spinner, skeleton, disabled state, optimistic state, or other clear indicator.
+- Use the dependency direction `screens/components -> hooks -> services -> repositories -> Supabase/Storage/Edge Functions`.
+- UI components should not call Supabase, Storage, Google, or other external services directly; use feature hooks.
+- Hooks should own React Query/cache behavior only and call feature services for workflows.
+- Services should own product/business workflows and orchestration.
+- Repositories should own raw persistence or external transport calls only.
+- External APIs that require secret keys, expensive quotas, or abuse protection must go through a trusted server boundary with validation, caching where allowed, and rate limiting.
+- Do not persistently cache third-party API content unless that provider's terms allow it; store only product data the user selected or created.
 
 ## Web / Hosting Notes
 

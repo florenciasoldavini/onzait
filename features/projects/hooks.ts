@@ -1,0 +1,165 @@
+import { AuthContext } from "@/contexts/auth";
+import {
+  autocompleteProjectAddress,
+  resolveProjectAddress
+} from "@/features/projects/services/address.service";
+import {
+  createProject,
+  getProject,
+  listProjects,
+  softDeleteProject,
+  updateProject,
+  uploadProjectCover
+} from "@/features/projects/services/projects.service";
+import type {
+  CreateProjectInput,
+  ProjectFilters,
+  UpdateProjectInput
+} from "@/features/projects/types";
+import { normalizeProjectFilters } from "@/features/projects/validation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useContext, useEffect, useMemo, useState } from "react";
+
+const projectsKey = ["projects"] as const;
+
+export function useProjects(filters: ProjectFilters) {
+  const { user } = useContext(AuthContext);
+  const normalizedFilters = useMemo(
+    () => normalizeProjectFilters(filters),
+    [filters]
+  );
+
+  return useQuery({
+    enabled: Boolean(user),
+    queryFn: () =>
+      listProjects({
+        filters,
+        userId: user!.id,
+        userRole: user!.role
+      }),
+    queryKey: [...projectsKey, user?.id, user?.role, normalizedFilters]
+  });
+}
+
+export function useProject(projectId?: string) {
+  return useQuery({
+    enabled: Boolean(projectId),
+    queryFn: () => getProject(projectId!),
+    queryKey: [...projectsKey, "detail", projectId]
+  });
+}
+
+export function useCreateProject() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateProjectInput) => createProject(input),
+    onSuccess: async (project) => {
+      await queryClient.invalidateQueries({ queryKey: projectsKey });
+      queryClient.setQueryData([...projectsKey, "detail", project.id], project);
+    }
+  });
+}
+
+export function useUpdateProject(projectId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UpdateProjectInput) => updateProject(projectId, input),
+    onSuccess: async (project) => {
+      await queryClient.invalidateQueries({ queryKey: projectsKey });
+      queryClient.setQueryData([...projectsKey, "detail", project.id], project);
+    }
+  });
+}
+
+export function useSoftDeleteProject() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (projectId: string) => softDeleteProject(projectId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: projectsKey });
+    }
+  });
+}
+
+export function useUploadProjectCover(defaultProjectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      asset,
+      projectId
+    }: {
+      asset: {
+        fileName?: string | null;
+        mimeType?: string | null;
+        uri: string;
+      };
+      projectId?: string;
+    }) => {
+      const resolvedProjectId = projectId ?? defaultProjectId;
+
+      if (!resolvedProjectId) {
+        throw new Error("Missing project id for cover upload.");
+      }
+
+      return uploadProjectCover({ asset, projectId: resolvedProjectId });
+    },
+    onSuccess: async (_path, variables) => {
+      const resolvedProjectId = variables.projectId ?? defaultProjectId;
+
+      await queryClient.invalidateQueries({ queryKey: projectsKey });
+
+      if (resolvedProjectId) {
+        await queryClient.invalidateQueries({
+          queryKey: [...projectsKey, "detail", resolvedProjectId]
+        });
+      }
+    }
+  });
+}
+
+export function useAddressAutocomplete(input: string, sessionToken: string) {
+  const debouncedInput = useDebouncedValue(input, 350);
+
+  return useQuery({
+    enabled: debouncedInput.trim().length >= 3 && sessionToken.length > 0,
+    queryFn: () =>
+      autocompleteProjectAddress({
+        input: debouncedInput.trim(),
+        sessionToken
+      }),
+    queryKey: ["address-autocomplete", debouncedInput.trim(), sessionToken],
+    staleTime: 30_000
+  });
+}
+
+export function useResolveAddress() {
+  return useMutation({
+    mutationFn: ({
+      placeId,
+      sessionToken
+    }: {
+      placeId: string;
+      sessionToken: string;
+    }) => resolveProjectAddress({ placeId, sessionToken })
+  });
+}
+
+function useDebouncedValue<T>(value: T, delayMs: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delayMs);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [delayMs, value]);
+
+  return debouncedValue;
+}

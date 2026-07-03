@@ -3,7 +3,7 @@
 Purpose: tracked Supabase schema, migration, RLS, and auth URL guidance
 Source of truth for: current Supabase bootstrap scope, migration expectations, and direct client-access policy
 Update when: migrations, RLS policy, auth redirect configuration, or client data-access rules change
-Last reviewed: 2026-05-12
+Last reviewed: 2026-07-03
 
 This folder is the starting point for tracked Supabase database changes.
 
@@ -13,8 +13,10 @@ This folder is the starting point for tracked Supabase database changes.
   Creates only the auth bootstrap schema: `public.user_role` and `public.users`.
 - `20260510090002_enable_users_rls.sql`
   Enables RLS for `public.users` and grants direct client access only to that table.
+- `20260703133205_create_projects_feature.sql`
+  Creates the first projects feature schema, owner/admin RLS, and private project cover storage policies.
 
-Right now, the tracked bootstrap intentionally creates only the `users` table. The rest of the product tables should be added later as feature-specific migrations instead of being front-loaded.
+The tracked bootstrap started with only the `users` table. Product tables should continue to be added as feature-specific migrations instead of being front-loaded.
 
 ## Current RLS strategy
 
@@ -22,12 +24,15 @@ The current frontend talks directly to:
 
 - Supabase Auth
 - `public.users`
+- `public.projects`
+- private Supabase Storage for project cover images
 
-So the first policy pass is intentionally narrow:
+Current policy rules:
 
-- only `public.users` exists in the current tracked bootstrap
-- direct `authenticated` Data API access is granted only for `public.users`
 - `users` policies are anchored directly to `auth.uid() = users.id`
+- feature tables default to owner access for normal users and admin-wide access for `users.role = 'admin'`
+- get/list queries and policies must exclude soft-deleted rows with `deleted_at is null`
+- clients may add owner filters for normal users for performance, but RLS remains the real authorization boundary
 
 Everything else should be added later with its own schema migration plus its own RLS pass when the app starts reading or writing that table from the client.
 
@@ -36,12 +41,30 @@ Everything else should be added later with its own schema migration plus its own
 When the app starts exposing more project data directly from the client, the next tables to policy should likely be:
 
 - `project_participants`
-- `projects`
 - `photos`
 - `todos`
-- storage buckets for project images / receipts
+- storage buckets for project photos / receipts
 
-Those policies should probably be participant-based, not global role-based.
+Those policies should use explicit participant or owner rules plus admin-wide support where the product requires it.
+
+## Project storage
+
+- `project-covers` is private.
+- Cover paths use `projects/{project_id}/cover/{generated_file_name}`.
+- Storage policies should allow only project owners or admins to read, upload, replace, and remove cover images.
+- Signed URLs are used for preview display; do not make operational project media globally public by default.
+
+## Supabase tests
+
+- Database and RLS changes should include pgTAP tests under `supabase/tests/`.
+- Run `npx supabase test db` after migrations or policy changes when local Supabase is available.
+- Tests should cover owner access, admin access, cross-user denial, soft-delete filtering, and storage policy behavior.
+
+## Edge Functions
+
+- Google Maps and other paid/secret external APIs must be called through Supabase Edge Functions or another trusted server boundary.
+- Edge Functions must validate request payloads, authenticate user-scoped calls, rate-limit abusive patterns, and avoid persistent third-party content caching unless provider terms allow it.
+- Google Maps address functions store only selected project data such as address, `place_id`, latitude, and longitude.
 
 ## Auth URL configuration
 

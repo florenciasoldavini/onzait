@@ -3,7 +3,7 @@
 Purpose: project setup, daily development commands, verification, and deployment basics
 Source of truth for: install, run, env workflow, quality checks, and platform entrypoints
 Update when: scripts, required env vars, local setup, verification steps, or deployment flow change
-Last reviewed: 2026-05-12
+Last reviewed: 2026-07-03
 
 Mobile-first construction and job-site management app built with Expo Router, React Native, Supabase Auth, and static web export for Vercel.
 
@@ -11,7 +11,7 @@ Mobile-first construction and job-site management app built with Expo Router, Re
 
 - Expo Router + React Native
 - Expo web static export
-- Supabase Auth + `public.users`
+- Supabase Auth + `public.users` + `public.projects`
 - Vercel for web hosting
 - EAS for native builds
 - Sentry for error monitoring
@@ -79,8 +79,9 @@ Current app-facing env vars:
 - `EXPO_PUBLIC_SITE_URL`
 - `EXPO_PUBLIC_APP_ENV`
 
-Backend-only env vars currently tracked in `.env.example`:
+Server-side env vars currently tracked in `.env.example`:
 
+- `GOOGLE_MAPS_API_KEY`
 - `DATABASE_URL`
 - `DIRECT_URL`
 
@@ -111,8 +112,8 @@ Important files:
 
 The current tracked Supabase bootstrap is intentionally minimal:
 
-- only `public.users` is created in tracked migrations
-- only `public.users` currently has direct authenticated client access
+- `public.users` and `public.projects` are created in tracked migrations
+- `public.projects` uses owner/admin RLS, soft delete, and Google-selected coordinates
 - future product tables should be added as feature-specific migrations
 
 There is also a separate Express/Prisma backend under `backend/`, but it is not the main auth path today.
@@ -131,6 +132,8 @@ npm run env:check
 npx tsc --noEmit
 npm run lint
 npm run build
+npm test
+npx supabase test db
 ```
 
 ## Deployment

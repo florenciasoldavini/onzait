@@ -1,5 +1,5 @@
-import Constants from "expo-constants";
 import * as Sentry from "@sentry/react-native";
+import Constants from "expo-constants";
 
 const dsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
 const releaseVersion = Constants.expoConfig?.version;
@@ -17,7 +17,8 @@ if (isSentryEnabled) {
     dsn,
     enabled: true,
     environment:
-      process.env.EXPO_PUBLIC_APP_ENV ?? (__DEV__ ? "development" : "production"),
+      process.env.EXPO_PUBLIC_APP_ENV ??
+      (__DEV__ ? "development" : "production"),
     integrations: [navigationIntegration],
     release: releaseVersion ? `${releaseSlug}@${releaseVersion}` : undefined,
     tracesSampleRate: __DEV__ ? 1 : 0.2

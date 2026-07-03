@@ -1,8 +1,10 @@
 // app/_layout.tsx
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { AuthContext, AuthProvider } from "@/contexts/auth";
+import { queryClient } from "@/lib/query-client";
 import { navigationIntegration, Sentry } from "@/lib/sentry";
 import "@/global.css";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack, useNavigationContainerRef } from "expo-router";
 import { useContext, useEffect } from "react";
@@ -29,11 +31,13 @@ function RootLayout() {
 
   return (
     <GluestackUIProvider mode="light">
-      <AuthProvider>
-        <SafeAreaProvider>
-          <RootNavigator />
-        </SafeAreaProvider>
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <SafeAreaProvider>
+            <RootNavigator />
+          </SafeAreaProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </GluestackUIProvider>
   );
 }

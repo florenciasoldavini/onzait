@@ -1,0 +1,19 @@
+import { AppCard, SkeletonBlock } from "@/components/atoms";
+import { atomSpacing } from "@/components/atoms/theme";
+import { View } from "react-native";
+
+export function ProjectCardSkeleton() {
+  return (
+    <AppCard padding="md" tone="raised">
+      <View style={{ gap: atomSpacing[4] }}>
+        <SkeletonBlock height={150} radius={12} />
+        <View style={{ gap: atomSpacing[3] }}>
+          <SkeletonBlock height={12} width={96} />
+          <SkeletonBlock height={24} width="72%" />
+          <SkeletonBlock height={16} width="90%" />
+          <SkeletonBlock height={16} width="52%" />
+        </View>
+      </View>
+    </AppCard>
+  );
+}

@@ -3,7 +3,7 @@
 Purpose: active design-system source of truth for reusable UI decisions, component rules, and interaction behavior
 Source of truth for: design rules, token usage, component state expectations, and reusable UI patterns
 Update when: a reusable visual rule is decided, a token changes meaning, a component gains a new standard state, or a screen teaches us a pattern that should be reused
-Last reviewed: 2026-07-02
+Last reviewed: 2026-07-03
 
 ## Active Sources
 
@@ -45,6 +45,8 @@ The interface should prioritize clarity, structure, and operational confidence o
 
 All interactive design-system items should define every relevant state before they are considered complete.
 
+Every async UI surface must expose a loading state appropriate to its shape. Use skeletons for initial content loads, spinners for short actions, disabled states while a submitted action is in flight, optimistic states only when rollback behavior is clear, and clear retry/error states when loading fails.
+
 Buttons should have clear, differentiable:
 
 - normal
@@ -71,6 +73,8 @@ Selectable items such as tabs, nav buttons, segmented controls, checklist items,
 - disabled, when unavailable
 
 State styling should be designed as a full set. Do not add only the happy-path state and leave the rest to default library behavior unless the default has been reviewed and intentionally accepted.
+
+Feature screens should not silently block while data loads. Lists, cards, forms, uploads, autocomplete results, and destructive actions all need explicit loading feedback.
 
 ## Hover, Focus, And Selected Rules
 

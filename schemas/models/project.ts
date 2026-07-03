@@ -1,33 +1,32 @@
-import { z } from 'zod';
+import { z } from "zod";
 import {
-  Project,
-  BuildingType,
-  ProjectType,
-  ProjectStatus,
-  ProjectPhase,
-} from '@/types/models/project';
+  PROJECT_BUILDING_TYPES,
+  PROJECT_PHASES,
+  PROJECT_STATUSES,
+  PROJECT_TYPES
+} from "@/features/projects/constants";
+import type { Project } from "@/types/models/project";
 
 export const ProjectSchema: z.ZodType<Project> = z.object({
   id: z.string(),
+  owner_id: z.string(),
   name: z.string(),
-  description: z.string(),
-  cover_image: z.string().nullable(),
+  description: z.string().nullable(),
+  cover_image_path: z.string().nullable(),
   address: z.string(),
-  coordinates: z.object({
-    lat: z.number(),
-    lng: z.number(),
-  }),
-  building_type: z.nativeEnum(BuildingType),
-  project_type: z.nativeEnum(ProjectType),
-  status: z.nativeEnum(ProjectStatus),
-  phase: z.nativeEnum(ProjectPhase),
+  google_place_id: z.string(),
+  latitude: z.number(),
+  longitude: z.number(),
+  building_type: z.enum(PROJECT_BUILDING_TYPES),
+  project_type: z.enum(PROJECT_TYPES),
+  status: z.enum(PROJECT_STATUSES),
+  phase: z.enum(PROJECT_PHASES),
   progress_percentage: z.number(),
-  estimated_start_date: z.date().nullable(),
-  start_date: z.date().nullable(),
-  estimated_end_date: z.date().nullable(),
-  end_date: z.date().nullable(),
-  created_at: z.date(),
-  updated_at: z.date().nullable(),
-  deleted_at: z.date().nullable(),
+  estimated_start_date: z.string().nullable(),
+  start_date: z.string().nullable(),
+  estimated_end_date: z.string().nullable(),
+  end_date: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string().nullable(),
+  deleted_at: z.string().nullable()
 });
-

@@ -3,7 +3,7 @@
 Purpose: practical security rules for upcoming MVP feature work
 Source of truth for: security expectations around auth, authorization, RLS, uploads, validation, secrets, and release review
 Update when: auth architecture, storage strategy, client data-access scope, backend ownership, or MVP entity model changes
-Last reviewed: 2026-05-12
+Last reviewed: 2026-07-03
 
 ## Scope
 
@@ -23,6 +23,9 @@ It is intentionally practical. The goal is to prevent the most likely and most d
 - The client must never be trusted to assign access, role, ownership, or participant scope.
 - Every client-accessible table must have explicit RLS before the UI ships.
 - New features should default to least privilege.
+- Feature get/list reads must exclude soft-deleted rows by filtering `deleted_at is null`.
+- Admin-wide visibility belongs in trusted RLS or server logic, not just in UI conditions.
+- External APIs with secret keys or paid quotas must go through a trusted boundary with validation, rate limiting, and cache controls.
 
 ## Threat model
 
@@ -53,21 +56,32 @@ No new client-accessible table should ship without:
 - RLS enabled
 - explicit `select`, `insert`, `update`, and `delete` policy review
 - a cross-user access test case
+- a soft-delete visibility test when the table has `deleted_at`
+
+### Default feature visibility
+
+Unless a feature documents a more specific participant model:
+
+- admin users can read and manage all non-deleted feature rows
+- normal users can read and manage only rows they own
+- deleted rows must be hidden from normal get/list requests
+- client code can add owner filters for performance, but database/server authorization remains mandatory
 
 ### Projects
 
-Recommended direction:
+Current v1 direction:
 
-- create a participant-based model
-- avoid global read/write permissions
-- avoid relying only on `users.role = admin` for normal project collaboration
+- use an owner-based model
+- admins can see and manage all non-deleted projects
+- normal users can see and manage only projects where they are `owner_id`
+- participant-based collaboration is deferred until membership flows are built
 
 Baseline rules:
 
-- users can only read projects they participate in
-- users can only create projects through a clearly defined owner/creator rule
-- users can only update projects if they have an allowed project-level role
-- users can only delete or archive projects if explicitly allowed by policy
+- users can only create projects for themselves
+- users cannot reassign project ownership
+- project delete is soft delete through `deleted_at`
+- project address coordinates must come from the trusted Google Maps boundary, not direct client calls to Google web services
 
 ### Tasks
 
@@ -104,6 +118,7 @@ Baseline rules:
 
 Recommended path structure:
 
+- `projects/{project_id}/cover/{generated_file_name}`
 - `projects/{project_id}/photos/{generated_file_name}`
 - `projects/{project_id}/documents/{generated_file_name}`
 
@@ -176,6 +191,13 @@ The backend is not the main auth path today, but if MVP features start using it:
 - request schemas must be validated at the edge
 - security-relevant failures should be logged without exposing secrets
 
+## External API boundaries
+
+- Do not expose server-side API keys in Expo, web bundles, or public env vars.
+- Client UI should call local feature services/hooks, not third-party web services directly.
+- Trusted API boundaries must validate inputs, authenticate users when data is user-scoped, rate-limit abusive call patterns, and cache only where provider terms allow.
+- Google Maps address lookup must keep the API key server-side, store selected `place_id` and coordinates only as project data, and show required Google Maps attribution near suggestions or resolved address content.
+
 ## Logging and monitoring
 
 - use Sentry for unexpected errors and auth-related failures where useful
@@ -192,6 +214,8 @@ The backend is not the main auth path today, but if MVP features start using it:
   - `npx tsc --noEmit`
   - `npm run lint`
   - `npm run build`
+  - `npm test`
+  - `npx supabase test db` when migrations or RLS policies change
   - `npm run build --prefix backend`
 
 ## MVP release checklist
@@ -205,6 +229,7 @@ Before shipping `projects`, `tasks`, or `uploads`, confirm:
 - upload limits and allowed file types are enforced
 - sensitive secrets are not exposed to the client
 - at least one cross-user access test case was performed manually or automatically
+- all async UI states have explicit loading indicators, disabled states, skeletons, or equivalent feedback
 
 ## Non-goals for now
 
