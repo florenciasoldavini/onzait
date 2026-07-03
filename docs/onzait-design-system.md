@@ -112,6 +112,14 @@ Mobile-first controls should keep comfortable touch targets, but browser layouts
 - Smaller controls should usually use a smaller radius than taller controls so compact inputs and buttons do not become pill-like by accident.
 - Density changes should be applied through shared component or layout constants, not one-off screen overrides.
 
+## Form Spacing Rules
+
+Form fields and their primary CTA should have enough vertical separation to read as related steps, not a compressed block.
+
+- Consecutive inputs should not visually touch or feel stacked too tightly.
+- The primary CTA should have at least the same breathing room from the last field as fields have from each other.
+- Shared form stacks should use reusable spacing constants instead of per-screen margin tweaks.
+
 ## Responsive Size Rules
 
 Size variants should be reviewed across mobile, tablet, and desktop before they become part of the design system.

@@ -4,6 +4,7 @@ import {
   AuthStatusMessage,
   AuthShell,
   authFieldSize,
+  authFormStackGap,
   authSocialButtonSize
 } from "@/components/auth/AuthShell";
 import {
@@ -143,7 +144,7 @@ export default function SignInScreen() {
           <AuthStatusMessage tone="danger">{authError}</AuthStatusMessage>
         ) : null}
 
-        <View style={{ gap: atomSpacing[4] }}>
+        <View style={{ gap: authFormStackGap }}>
           <View
             style={{
               flexDirection: "row",

@@ -210,6 +210,7 @@ export const authPalette = palette;
 export const authCardRadius = atomRadii.xl;
 export const authControlHeight = atomControlHeights.lg;
 export const authControlRadius = atomControlRadius;
+export const authFormStackGap = atomSpacing[6];
 export const authFormControlSize = Platform.select({
   default: "lg",
   web: "sm"
