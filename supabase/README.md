@@ -50,12 +50,15 @@ In Supabase Auth, set:
 - `Site URL`: `https://onzait.vercel.app`
 - additional redirect URLs for local web: `http://localhost:8081/**` (adjust if Expo web is running on a different port)
 - additional redirect URLs for production web paths: `https://onzait.vercel.app/**`
+- additional redirect URLs for native app auth:
+  - `onzait://callback`
+  - `onzait://reset-password`
 
 If you want auth links to work on Vercel preview deploys too, add your preview wildcard once you confirm the account slug. Supabase's current Vercel pattern is:
 
 - `https://*-<your-vercel-account-or-team-slug>.vercel.app/**`
 
-The app also has the native scheme `onzait`, so if you later add email confirmation, password reset, or OAuth flows for iPhone/Android, include native deep-link URLs too.
+Expo Go uses temporary `exp://.../--/<path>` links instead of the production native scheme. When testing Google or Apple OAuth in Expo Go, add the exact current Expo Go callback URL, such as `exp://<host>:8081/--/callback`, to Supabase Auth redirect URLs. This URL can change with the dev server host or port, so a development build is more reliable for ongoing OAuth testing.
 
 ## Notes
 

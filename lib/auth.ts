@@ -1,5 +1,6 @@
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
 import type { Session } from "@supabase/supabase-js";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Platform } from "react-native";
@@ -35,6 +36,16 @@ function getBrowserOrigin() {
   return window.location.origin.replace(/\/+$/, "");
 }
 
+function isExpoGo() {
+  return Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+}
+
+function getNativeAuthRedirectUrl(path: "callback" | "reset-password") {
+  return Linking.createURL(path, {
+    scheme: isExpoGo() ? "exp" : "onzait"
+  });
+}
+
 function getCombinedSearchParams(url: URL) {
   const searchParams = new URLSearchParams(url.search);
   const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
@@ -48,7 +59,9 @@ function getCombinedSearchParams(url: URL) {
   return searchParams;
 }
 
-export function getAuthRedirectUrl(path: "callback" | "reset-password" = "callback") {
+export function getAuthRedirectUrl(
+  path: "callback" | "reset-password" = "callback"
+) {
   if (Platform.OS === "web") {
     const siteUrl = getBrowserOrigin() ?? getConfiguredSiteUrl();
 
@@ -61,7 +74,7 @@ export function getAuthRedirectUrl(path: "callback" | "reset-password" = "callba
     return `${siteUrl}/${path}`;
   }
 
-  return Linking.createURL(path);
+  return getNativeAuthRedirectUrl(path);
 }
 
 export function getAuthParamsFromUrl(url: string) {
@@ -93,14 +106,17 @@ export function getActiveAuthUrl(linkingUrl: string | null) {
   return null;
 }
 
-export async function completeAuthSessionFromUrl(url: string): Promise<AuthRedirectResult> {
+export async function completeAuthSessionFromUrl(
+  url: string
+): Promise<AuthRedirectResult> {
   if (!supabase) {
     throw new Error(getSupabaseErrorMessage("Supabase is not configured."));
   }
 
   const params = getAuthParamsFromUrl(url);
   const authType = params.get("type");
-  const errorDescription = params.get("error_description") ?? params.get("error");
+  const errorDescription =
+    params.get("error_description") ?? params.get("error");
   const code = params.get("code");
   const accessToken = params.get("access_token");
   const refreshToken = params.get("refresh_token");
@@ -141,6 +157,7 @@ export async function startOAuthSignIn(provider: SupportedOAuthProvider) {
   }
 
   const redirectTo = getAuthRedirectUrl("callback");
+  const providerLabel = provider === "google" ? "Google" : "Apple";
 
   if (Platform.OS === "web") {
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -167,10 +184,22 @@ export async function startOAuthSignIn(provider: SupportedOAuthProvider) {
     throw error;
   }
 
-  const result = await WebBrowser.openAuthSessionAsync(data?.url ?? "", redirectTo);
+  if (!data?.url) {
+    throw new Error(
+      `${providerLabel} sign-in could not start because Supabase did not return an OAuth URL.`
+    );
+  }
+
+  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
 
   if (result.type !== "success" || !("url" in result) || !result.url) {
-    return null;
+    const redirectHelp = isExpoGo()
+      ? `Add the current Expo Go redirect URL (${redirectTo}) to Supabase Auth redirect URLs, or test ${providerLabel} sign-in in a development build using onzait://callback.`
+      : `Add ${redirectTo} to Supabase Auth redirect URLs.`;
+
+    throw new Error(
+      `${providerLabel} sign-in did not return to the app. ${redirectHelp}`
+    );
   }
 
   return completeAuthSessionFromUrl(result.url);
