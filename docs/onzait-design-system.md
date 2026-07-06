@@ -3,7 +3,7 @@
 Purpose: active design-system source of truth for reusable UI decisions, component rules, and interaction behavior
 Source of truth for: design rules, token usage, component state expectations, and reusable UI patterns
 Update when: a reusable visual rule is decided, a token changes meaning, a component gains a new standard state, or a screen teaches us a pattern that should be reused
-Last reviewed: 2026-07-03
+Last reviewed: 2026-07-06
 
 ## Active Sources
 
@@ -101,6 +101,23 @@ Clickable and interactive components should always expose the correct cursor as 
 - Read-only fields should communicate that the value can be selected or inspected but not edited.
 
 No clickable item should keep the normal/default cursor. The cursor must make it clear that the element is actionable before the user clicks.
+
+## Icon Rules
+
+Product UI should not import icon libraries directly inside screens or components.
+
+- All app icons should be exported from the central icon registry in `components/icons/index.tsx`.
+- Screens and reusable components should import named app icons from `@/components/icons`, not from `lucide-react-native`.
+- Every app icon should follow the shared icon contract: `color` plus a tokenized `size`.
+- Icon sizes should use the standard scale `xs`, `sm`, `md`, and `lg` instead of raw pixel values in product UI.
+- If the underlying icon library changes later, the swap should happen in the central icon registry instead of across product screens.
+
+Icon meaning should also stay consistent across the product.
+
+- Use the same icon for the same concept every time. If `ProjectsIcon` represents projects, every project reference should use `ProjectsIcon`.
+- Use the same icon for the same action every time. Delete actions should all use the same delete icon, link actions should all use the same link icon, and password visibility should use the shared visibility icons.
+- Do not choose alternate icons for variety when the meaning is the same. Visual consistency is more important than decorative variation.
+- Add new icons to the registry only when there is a new concept or action that the existing icons do not clearly cover.
 
 ## Responsive Density Rules
 

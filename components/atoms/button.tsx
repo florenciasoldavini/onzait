@@ -5,14 +5,10 @@ import {
   atomRadii,
   atomTypeScale
 } from "@/components/atoms/theme";
-import {
-  Button,
-  ButtonIcon,
-  ButtonSpinner,
-  ButtonText
-} from "@/components/ui/button";
+import type { AppIconComponent, AppIconSize } from "@/components/icons";
+import { Button, ButtonSpinner, ButtonText } from "@/components/ui/button";
 import { getSansFontStyle } from "@/theme/fonts";
-import type { ComponentType, ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
   Image,
   Platform,
@@ -31,28 +27,32 @@ const sizeMap = {
   sm: {
     button: "md" as const,
     height: atomControlHeights.sm,
-    iconVisualSize: 18,
+    iconSize: "sm" as AppIconSize,
+    imageVisualSize: 18,
     radius: atomRadii.md,
     textToken: atomTypeScale.buttonSm
   },
   md: {
     button: "lg" as const,
     height: atomControlHeights.md,
-    iconVisualSize: 18,
+    iconSize: "sm" as AppIconSize,
+    imageVisualSize: 18,
     radius: atomRadii.lg,
     textToken: atomTypeScale.buttonMd
   },
   lg: {
     button: "xl" as const,
     height: atomControlHeights.lg,
-    iconVisualSize: 20,
+    iconSize: "md" as AppIconSize,
+    imageVisualSize: 20,
     radius: atomControlRadius,
     textToken: atomTypeScale.buttonLg
   },
   iconLg: {
     button: "xl" as const,
     height: atomControlHeights.iconLg,
-    iconVisualSize: 22,
+    iconSize: "lg" as AppIconSize,
+    imageVisualSize: 22,
     radius: atomControlRadius,
     textToken: atomTypeScale.buttonLg
   }
@@ -64,7 +64,7 @@ const variantConfig: Record<
     action: "default" | "negative" | "primary" | "secondary";
     buttonVariant: "outline" | "solid";
     className: string;
-    iconClassName: string;
+    iconColor: string;
     textColor: string;
   }
 > = {
@@ -72,7 +72,7 @@ const variantConfig: Record<
     action: "primary",
     buttonVariant: "solid",
     className: "",
-    iconClassName: "text-white",
+    iconColor: atomPalette.accentText,
     textColor: atomPalette.accentText
   },
   secondary: {
@@ -80,7 +80,7 @@ const variantConfig: Record<
     buttonVariant: "outline",
     className:
       "bg-white border-outline-300 data-[hover=true]:bg-background-50 data-[hover=true]:border-outline-400 data-[active=true]:bg-background-100",
-    iconClassName: "text-typography-900",
+    iconColor: atomPalette.text,
     textColor: atomPalette.text
   },
   ghost: {
@@ -88,14 +88,14 @@ const variantConfig: Record<
     buttonVariant: "outline",
     className:
       "bg-transparent border-outline-200 data-[hover=true]:bg-background-50 data-[hover=true]:border-outline-300 data-[active=true]:bg-background-100",
-    iconClassName: "text-primary-500",
+    iconColor: atomPalette.accent,
     textColor: atomPalette.accent
   },
   destructive: {
     action: "negative",
     buttonVariant: "solid",
     className: "",
-    iconClassName: "text-white",
+    iconColor: atomPalette.accentText,
     textColor: atomPalette.accentText
   }
 };
@@ -103,7 +103,7 @@ const variantConfig: Record<
 const disabledVisualStyle = {
   backgroundColor: atomPalette.surfaceStrong,
   borderColor: atomPalette.borderStrong,
-  iconClassName: "text-typography-600",
+  iconColor: atomPalette.textMuted,
   opacity: 0.72,
   textColor: atomPalette.textMuted
 } as const;
@@ -130,7 +130,7 @@ export function AppButton({
 }: Omit<React.ComponentProps<typeof Button>, "action" | "size" | "variant"> & {
   children?: ReactNode;
   fullWidth?: boolean;
-  icon?: ComponentType<any>;
+  icon?: AppIconComponent;
   iconAfter?: boolean;
   imageSource?: ImageSourcePropType;
   layout?: ButtonLayout;
@@ -152,9 +152,10 @@ export function AppButton({
   const resolvedTextColor = isVisuallyDisabled
     ? disabledVisualStyle.textColor
     : config.textColor;
-  const resolvedIconClassName = isVisuallyDisabled
-    ? disabledVisualStyle.iconClassName
-    : config.iconClassName;
+  const resolvedIconColor = isVisuallyDisabled
+    ? disabledVisualStyle.iconColor
+    : config.iconColor;
+  const Icon = icon;
   const buttonTextStyle = {
     color: resolvedTextColor,
     fontSize: sizeConfig.textToken.fontSize,
@@ -215,21 +216,21 @@ export function AppButton({
         <Image
           source={imageSource}
           style={{
-            height: sizeConfig.iconVisualSize,
+            height: sizeConfig.imageVisualSize,
             resizeMode: "contain",
-            width: sizeConfig.iconVisualSize
+            width: sizeConfig.imageVisualSize
           }}
         />
       ) : null}
-      {icon && !iconAfter && !imageSource && !loading ? (
-        <ButtonIcon as={icon} className={resolvedIconClassName} size="lg" />
+      {Icon && !iconAfter && !imageSource && !loading ? (
+        <Icon color={resolvedIconColor} size={sizeConfig.iconSize} />
       ) : null}
       {children && layout !== "icon" ? (
         <ButtonText style={buttonTextStyle}>{children}</ButtonText>
       ) : null}
       {loading ? <ButtonSpinner color={resolvedTextColor} /> : null}
-      {icon && iconAfter && !imageSource && !loading ? (
-        <ButtonIcon as={icon} className={resolvedIconClassName} size="lg" />
+      {Icon && iconAfter && !imageSource && !loading ? (
+        <Icon color={resolvedIconColor} size={sizeConfig.iconSize} />
       ) : null}
     </Button>
   );

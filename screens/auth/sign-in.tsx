@@ -23,8 +23,8 @@ import {
   supabase
 } from "@/lib/supabase";
 import { emailSchema } from "@/schemas/fields";
+import { AtSignIcon, LockIcon } from "@/components/icons";
 import { useRouter } from "expo-router";
-import { AtSign, Lock } from "lucide-react-native";
 import { useContext, useState } from "react";
 import { View } from "react-native";
 
@@ -190,7 +190,7 @@ export default function SignInScreen() {
             errorText={emailError}
             keyboardType="email-address"
             label="Email Address"
-            leftIcon={AtSign}
+            leftIcon={AtSignIcon}
             onBlur={() => {
               setTouchedFields((current) => ({ ...current, email: true }));
               setEmailError(validateEmail(email));
@@ -216,7 +216,7 @@ export default function SignInScreen() {
             autoComplete="password"
             errorText={passwordError}
             label="Secure Password"
-            leftIcon={Lock}
+            leftIcon={LockIcon}
             onBlur={() => {
               setTouchedFields((current) => ({ ...current, password: true }));
               setPasswordError(validatePassword(password));

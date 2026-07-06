@@ -6,7 +6,7 @@ import { Platform } from "react-native";
 
 export default function TabsLayout() {
   const tabLabelToken = designTokens.typeScale.tabLabelMono;
-  const tabIconSize = 20;
+  const tabIconSize = "md" as const;
   const nativeLabelSize = 10;
   const nativeLetterSpacing = 0.35;
   const nativeTabBarHeight = 78;
@@ -55,8 +55,8 @@ export default function TabsLayout() {
         name="projects"
         options={{
           title: "Projects",
-          tabBarIcon: ({ color, size }) => (
-            <ProjectsIcon color={color} size={Math.min(size, tabIconSize)} />
+          tabBarIcon: ({ color }) => (
+            <ProjectsIcon color={color} size={tabIconSize} />
           )
         }}
       />
@@ -64,8 +64,8 @@ export default function TabsLayout() {
         name="tasks"
         options={{
           title: "Tasks",
-          tabBarIcon: ({ color, size }) => (
-            <ToDoIcon color={color} size={Math.min(size, tabIconSize)} />
+          tabBarIcon: ({ color }) => (
+            <ToDoIcon color={color} size={tabIconSize} />
           )
         }}
       />
@@ -73,8 +73,8 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <ProfileIcon color={color} size={Math.min(size, tabIconSize)} />
+          tabBarIcon: ({ color }) => (
+            <ProfileIcon color={color} size={tabIconSize} />
           )
         }}
       />

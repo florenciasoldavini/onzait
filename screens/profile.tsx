@@ -19,15 +19,15 @@ import {
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
 import type { UserIdentity } from "@supabase/supabase-js";
 import {
-  Camera,
-  CheckCircle2,
-  Link2,
-  LogOut,
-  Lock,
-  Mail,
-  Phone,
-  UserRound
-} from "lucide-react-native";
+  CameraIcon,
+  CheckCircleIcon,
+  LinkIcon,
+  LockIcon,
+  LogoutIcon,
+  MailIcon,
+  PhoneIcon,
+  UserIcon
+} from "@/components/icons";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Image, View } from "react-native";
 
@@ -303,11 +303,7 @@ export default function ProfileScreen() {
                         }}
                       />
                     ) : (
-                      <Camera
-                        color={atomPalette.textSubtle}
-                        size={28}
-                        strokeWidth={1.8}
-                      />
+                      <CameraIcon color={atomPalette.textSubtle} size="lg" />
                     )}
                   </View>
                   <AppText
@@ -325,7 +321,7 @@ export default function ProfileScreen() {
                   autoComplete="url"
                   keyboardType="url"
                   label="Avatar URL"
-                  leftIcon={Camera}
+                  leftIcon={CameraIcon}
                   onChangeText={(value) => {
                     setAvatar(value);
                     setFormError(null);
@@ -338,7 +334,7 @@ export default function ProfileScreen() {
                 <TextField
                   errorText={firstNameError}
                   label="First Name"
-                  leftIcon={UserRound}
+                  leftIcon={UserIcon}
                   onBlur={() => {
                     setFirstNameError(
                       firstName.trim() ? null : "First name is required"
@@ -361,7 +357,7 @@ export default function ProfileScreen() {
 
                 <TextField
                   label="Last Name"
-                  leftIcon={UserRound}
+                  leftIcon={UserIcon}
                   onChangeText={(value) => {
                     setLastName(value);
                     setFormError(null);
@@ -375,7 +371,7 @@ export default function ProfileScreen() {
                   autoComplete="tel"
                   keyboardType="phone-pad"
                   label="Phone"
-                  leftIcon={Phone}
+                  leftIcon={PhoneIcon}
                   onChangeText={(value) => {
                     setPhoneNumber(value);
                     setFormError(null);
@@ -425,7 +421,7 @@ export default function ProfileScreen() {
                     autoComplete="new-password"
                     errorText={passwordError}
                     label="New Password"
-                    leftIcon={Lock}
+                    leftIcon={LockIcon}
                     onBlur={() => {
                       if (password) {
                         setPasswordError(validatePassword(password));
@@ -463,7 +459,7 @@ export default function ProfileScreen() {
                     autoComplete="new-password"
                     errorText={confirmPasswordError}
                     label="Confirm Password"
-                    leftIcon={Lock}
+                    leftIcon={LockIcon}
                     onBlur={() => {
                       if (confirmPassword) {
                         setConfirmPasswordError(
@@ -557,7 +553,7 @@ export default function ProfileScreen() {
         ) : null}
 
         <AppButton
-          icon={LogOut}
+          icon={LogoutIcon}
           iconAfter={false}
           onPress={() => {
             void logOut();
@@ -624,7 +620,7 @@ function IdentityMethodRow({
             gap: atomSpacing[1]
           }}
         >
-          <CheckCircle2 color={atomPalette.successText} size={16} />
+          <CheckCircleIcon color={atomPalette.successText} size="sm" />
           <AppText tone="success" variant="label">
             Linked
           </AppText>
@@ -632,7 +628,7 @@ function IdentityMethodRow({
       ) : isOAuthProvider ? (
         <AppButton
           fullWidth={false}
-          icon={Link2}
+          icon={LinkIcon}
           iconAfter={false}
           isDisabled={isLoading}
           loading={isLoading}
@@ -661,5 +657,5 @@ function ProviderIcon({ provider }: { provider: IdentityProvider }) {
     );
   }
 
-  return <Mail color={atomPalette.textMuted} size={24} strokeWidth={1.8} />;
+  return <MailIcon color={atomPalette.textMuted} size="lg" />;
 }

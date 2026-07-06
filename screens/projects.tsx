@@ -6,8 +6,8 @@ import {
   Screen,
   Section
 } from "@/components/atoms";
-import { atomSpacing } from "@/components/atoms/theme";
-import { FolderPlus, HardHat, MapPinned } from "lucide-react-native";
+import { atomPalette, atomSpacing } from "@/components/atoms/theme";
+import { FolderPlusIcon, HardHatIcon, MapPinIcon } from "@/components/icons";
 import { View } from "react-native";
 
 const projectSnapshots = [
@@ -40,7 +40,7 @@ export default function ProjectsScreen() {
           action={
             <AppButton
               fullWidth={false}
-              icon={FolderPlus}
+              icon={FolderPlusIcon}
               iconAfter={false}
               size="sm"
             >
@@ -67,7 +67,7 @@ export default function ProjectsScreen() {
                         gap: atomSpacing[2]
                       }}
                     >
-                      <MapPinned size={16} />
+                      <MapPinIcon color={atomPalette.text} size="sm" />
                       <AppText tone="muted" variant="bodySm">
                         {project.location}
                       </AppText>
@@ -79,7 +79,7 @@ export default function ProjectsScreen() {
                         gap: atomSpacing[2]
                       }}
                     >
-                      <HardHat size={16} />
+                      <HardHatIcon color={atomPalette.text} size="sm" />
                       <AppText tone="muted" variant="bodySm">
                         Ready for crew, schedule, and field updates.
                       </AppText>

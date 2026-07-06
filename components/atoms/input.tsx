@@ -7,13 +7,18 @@ import {
 } from "@/components/atoms/theme";
 import { FormField } from "@/components/molecules";
 import {
+  ClosedEyeIcon,
+  OpenEyeIcon,
+  type AppIconComponent,
+  type AppIconSize
+} from "@/components/icons";
+import {
   Input,
   InputSlot,
   InputField as UIInputField
 } from "@/components/ui/input";
 import { getSansFontStyle } from "@/theme/fonts";
-import { Eye, EyeOff } from "lucide-react-native";
-import type { ComponentType, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import {
   Platform,
@@ -30,19 +35,19 @@ type FieldSize = "sm" | "md" | "lg";
 
 const sizeMap = {
   sm: {
-    iconSize: 18,
+    iconSize: "sm" as AppIconSize,
     input: "lg" as const,
     minHeight: atomControlHeights.sm,
     radius: atomSpacing[3]
   },
   md: {
-    iconSize: 20,
+    iconSize: "md" as AppIconSize,
     input: "xl" as const,
     minHeight: atomControlHeights.md,
     radius: atomSpacing[4]
   },
   lg: {
-    iconSize: 20,
+    iconSize: "md" as AppIconSize,
     input: "xl" as const,
     minHeight: atomControlHeights.lg,
     radius: atomControlRadius
@@ -70,7 +75,7 @@ export function TextField({
   errorText?: string | null;
   helperText?: string | null;
   label?: ReactNode;
-  leftIcon?: ComponentType<any>;
+  leftIcon?: AppIconComponent;
   required?: boolean;
   rightSlot?: ReactNode;
   size?: FieldSize;
@@ -170,13 +175,7 @@ export function TextField({
             {(() => {
               const Icon = leftIcon;
 
-              return (
-                <Icon
-                  color={iconColor}
-                  size={config.iconSize}
-                  strokeWidth={1.8}
-                />
-              );
+              return <Icon color={iconColor} size={config.iconSize} />;
             })()}
           </InputSlot>
         ) : null}
@@ -260,9 +259,9 @@ export function PasswordVisibilityToggle({
       }
     >
       {visible ? (
-        <EyeOff color={atomPalette.accent} size={18} strokeWidth={1.8} />
+        <ClosedEyeIcon color={atomPalette.accent} size="sm" />
       ) : (
-        <Eye color={atomPalette.accent} size={18} strokeWidth={1.8} />
+        <OpenEyeIcon color={atomPalette.accent} size="sm" />
       )}
     </Pressable>
   );
