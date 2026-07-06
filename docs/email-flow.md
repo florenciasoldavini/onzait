@@ -104,6 +104,8 @@ After a domain is verified, use a sender like:
 Onzait <no-reply@auth.onzait.com>
 ```
 
+The pending domain, DNS, and branded sender checklist lives in [docs/pending-launch-setup.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/pending-launch-setup.md:1).
+
 ## Test Invocation
 
 From app code, call:
