@@ -3,7 +3,7 @@
 Purpose: active design-system source of truth for reusable UI decisions, component rules, and interaction behavior
 Source of truth for: design rules, token usage, component state expectations, and reusable UI patterns
 Update when: a reusable visual rule is decided, a token changes meaning, a component gains a new standard state, or a screen teaches us a pattern that should be reused
-Last reviewed: 2026-07-03
+Last reviewed: 2026-07-06
 
 ## Active Sources
 
@@ -106,6 +106,23 @@ Clickable and interactive components should always expose the correct cursor as 
 
 No clickable item should keep the normal/default cursor. The cursor must make it clear that the element is actionable before the user clicks.
 
+## Icon Rules
+
+Product UI should not import icon libraries directly inside screens or components.
+
+- All app icons should be exported from the central icon registry in `components/icons/index.tsx`.
+- Screens and reusable components should import named app icons from `@/components/icons`, not from `lucide-react-native`.
+- Every app icon should follow the shared icon contract: `color` plus a tokenized `size`.
+- Icon sizes should use the standard scale `xs`, `sm`, `md`, and `lg` instead of raw pixel values in product UI.
+- If the underlying icon library changes later, the swap should happen in the central icon registry instead of across product screens.
+
+Icon meaning should also stay consistent across the product.
+
+- Use the same icon for the same concept every time. If `ProjectsIcon` represents projects, every project reference should use `ProjectsIcon`.
+- Use the same icon for the same action every time. Delete actions should all use the same delete icon, link actions should all use the same link icon, and password visibility should use the shared visibility icons.
+- Do not choose alternate icons for variety when the meaning is the same. Visual consistency is more important than decorative variation.
+- Add new icons to the registry only when there is a new concept or action that the existing icons do not clearly cover.
+
 ## Responsive Density Rules
 
 Mobile-first controls should keep comfortable touch targets, but browser layouts should not automatically inherit the largest native control size.
@@ -115,6 +132,14 @@ Mobile-first controls should keep comfortable touch targets, but browser layouts
 - Social icon buttons should use a smaller browser size than native touch-first icon buttons.
 - Smaller controls should usually use a smaller radius than taller controls so compact inputs and buttons do not become pill-like by accident.
 - Density changes should be applied through shared component or layout constants, not one-off screen overrides.
+
+## Form Spacing Rules
+
+Form fields and their primary CTA should have enough vertical separation to read as related steps, not a compressed block.
+
+- Consecutive inputs should not visually touch or feel stacked too tightly.
+- The primary CTA should have at least the same breathing room from the last field as fields have from each other.
+- Shared form stacks should use reusable spacing constants instead of per-screen margin tweaks.
 
 ## Responsive Size Rules
 
@@ -127,6 +152,15 @@ Size variants should be reviewed across mobile, tablet, and desktop before they 
 - Responsive size behavior should live in shared tokens, components, or layout constants whenever the pattern is reusable.
 
 Use judgment: responsive sizing is required when a fixed size hurts usability or composition, not as a mechanical rule for every element.
+
+## Keyboard Safety Rules
+
+Screens with editable fields must keep the active field visible and reachable when the mobile keyboard is open.
+
+- Form screens may use a keyboard-safe scroll layout while the keyboard is open, but resting auth-style forms should not feel scrollable when their content fits.
+- Password fields, submit buttons, and validation messages must not be hidden behind the keyboard.
+- Shared layout primitives should own keyboard avoidance when the pattern is reusable.
+- Keyboard-safe screens should preserve normal scrolling, safe-area padding, and tap behavior while the keyboard is open.
 
 ## Documentation Rule
 

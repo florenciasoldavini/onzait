@@ -11,5 +11,6 @@ export * from "@/components/atoms/screen";
 export * from "@/components/atoms/section";
 export * from "@/components/atoms/select-field";
 export * from "@/components/atoms/skeleton-block";
+export * from "@/components/atoms/tabs";
 export * from "@/components/atoms/text";
 export * from "@/components/atoms/textarea";

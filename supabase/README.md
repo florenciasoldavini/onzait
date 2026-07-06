@@ -3,7 +3,7 @@
 Purpose: tracked Supabase schema, migration, RLS, and auth URL guidance
 Source of truth for: current Supabase bootstrap scope, migration expectations, and direct client-access policy
 Update when: migrations, RLS policy, auth redirect configuration, or client data-access rules change
-Last reviewed: 2026-07-03
+Last reviewed: 2026-07-06
 
 This folder is the starting point for tracked Supabase database changes.
 
@@ -15,6 +15,8 @@ This folder is the starting point for tracked Supabase database changes.
   Enables RLS for `public.users` and grants direct client access only to that table.
 - `20260703133205_create_projects_feature.sql`
   Creates the first projects feature schema, owner/admin RLS, and private project cover storage policies.
+- `20260706191340_add_welcome_email_sent_at_to_users.sql`
+  Adds `public.users.welcome_email_sent_at` as the once-per-user marker for the product welcome email.
 
 The tracked bootstrap started with only the `users` table. Product tables should continue to be added as feature-specific migrations instead of being front-loaded.
 
@@ -33,6 +35,7 @@ Current policy rules:
 - feature tables default to owner access for normal users and admin-wide access for `users.role = 'admin'`
 - get/list queries and policies must exclude soft-deleted rows with `deleted_at is null`
 - clients may add owner filters for normal users for performance, but RLS remains the real authorization boundary
+- product emails can use `users.welcome_email_sent_at` as a non-sensitive idempotency marker
 
 Everything else should be added later with its own schema migration plus its own RLS pass when the app starts reading or writing that table from the client.
 
@@ -73,12 +76,19 @@ In Supabase Auth, set:
 - `Site URL`: `https://onzait.vercel.app`
 - additional redirect URLs for local web: `http://localhost:8081/**` (adjust if Expo web is running on a different port)
 - additional redirect URLs for production web paths: `https://onzait.vercel.app/**`
+- additional redirect URLs for native app auth:
+  - `onzait://callback`
+  - `onzait://reset-password`
 
 If you want auth links to work on Vercel preview deploys too, add your preview wildcard once you confirm the account slug. Supabase's current Vercel pattern is:
 
 - `https://*-<your-vercel-account-or-team-slug>.vercel.app/**`
 
-The app also has the native scheme `onzait`, so if you later add email confirmation, password reset, or OAuth flows for iPhone/Android, include native deep-link URLs too.
+Expo Go uses temporary `exp://.../--/<path>` links instead of the production native scheme. When testing Google or Apple OAuth in Expo Go, add the exact current Expo Go callback URL, such as `exp://<host>:8081/--/callback`, to Supabase Auth redirect URLs. This URL can change with the dev server host or port, so a development build is more reliable for ongoing OAuth testing.
+
+## Pending Launch Setup
+
+Pending auth branding, custom domain, DNS, and branded email setup live in [docs/pending-launch-setup.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/pending-launch-setup.md:1).
 
 ## Notes
 

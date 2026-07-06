@@ -53,5 +53,15 @@
   "prettier.trailingComma": "none",
   "prettier.tabWidth": 2,
   "prettier.semi": true,
-  "prettier.singleQuote": false
+  "prettier.singleQuote": false,
+
+  // Supabase Edge Functions use Deno instead of the Expo TypeScript runtime.
+  "deno.config": "./supabase/functions/deno.json",
+  "deno.enable": true,
+  "deno.enablePaths": ["./supabase/functions"],
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ]
 }

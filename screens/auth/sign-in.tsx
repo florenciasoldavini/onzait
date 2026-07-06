@@ -4,6 +4,7 @@ import {
   AuthStatusMessage,
   AuthShell,
   authFieldSize,
+  authFormStackGap,
   authSocialButtonSize
 } from "@/components/auth/AuthShell";
 import {
@@ -16,9 +17,14 @@ import {
 import { atomSpacing } from "@/components/atoms/theme";
 import { AuthContext } from "@/contexts/auth";
 import { startOAuthSignIn } from "@/lib/auth";
-import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
+import {
+  getSupabaseErrorMessage,
+  isSupabaseEmailNotConfirmedError,
+  supabase
+} from "@/lib/supabase";
 import { emailSchema } from "@/schemas/fields";
-import { AtSign, Lock } from "lucide-react-native";
+import { AtSignIcon, LockIcon } from "@/components/icons";
+import { useRouter } from "expo-router";
 import { useContext, useState } from "react";
 import { View } from "react-native";
 
@@ -26,6 +32,7 @@ const googleLogo = require("@/assets/images/auth/google-logo.png");
 const appleLogo = require("@/assets/images/auth/apple-logo.png");
 
 export default function SignInScreen() {
+  const router = useRouter();
   const { authError } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -83,20 +90,34 @@ export default function SignInScreen() {
       return;
     }
 
+    const signInEmail = email.trim().toLowerCase();
+
     setLoadingAction("email");
     setFormError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: signInEmail,
+        password
+      });
 
-    if (error) {
+      if (error) {
+        if (isSupabaseEmailNotConfirmedError(error)) {
+          router.replace(
+            `/verify-email?email=${encodeURIComponent(signInEmail)}`
+          );
+          return;
+        }
+
+        const message = getSupabaseErrorMessage(error);
+        setFormError(message);
+      }
+    } catch (error) {
       const message = getSupabaseErrorMessage(error);
       setFormError(message);
+    } finally {
+      setLoadingAction(null);
     }
-
-    setLoadingAction(null);
   }
 
   async function signInWithProvider(provider: "apple" | "google") {
@@ -123,7 +144,7 @@ export default function SignInScreen() {
           <AuthStatusMessage tone="danger">{authError}</AuthStatusMessage>
         ) : null}
 
-        <View style={{ gap: atomSpacing[4] }}>
+        <View style={{ gap: authFormStackGap }}>
           <View
             style={{
               flexDirection: "row",
@@ -169,7 +190,7 @@ export default function SignInScreen() {
             errorText={emailError}
             keyboardType="email-address"
             label="Email Address"
-            leftIcon={AtSign}
+            leftIcon={AtSignIcon}
             onBlur={() => {
               setTouchedFields((current) => ({ ...current, email: true }));
               setEmailError(validateEmail(email));
@@ -195,7 +216,7 @@ export default function SignInScreen() {
             autoComplete="password"
             errorText={passwordError}
             label="Secure Password"
-            leftIcon={Lock}
+            leftIcon={LockIcon}
             onBlur={() => {
               setTouchedFields((current) => ({ ...current, password: true }));
               setPasswordError(validatePassword(password));

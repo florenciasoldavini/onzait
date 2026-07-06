@@ -4,6 +4,7 @@ import {
   AuthShell,
   AuthStatusMessage,
   authFieldSize,
+  authFormStackGap,
   authSocialButtonSize
 } from "@/components/auth/AuthShell";
 import {
@@ -15,10 +16,14 @@ import {
 import { atomSpacing } from "@/components/atoms/theme";
 import { AuthContext } from "@/contexts/auth";
 import { getAuthRedirectUrl, startOAuthSignIn } from "@/lib/auth";
-import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
+import {
+  getSupabaseErrorMessage,
+  isSupabaseEmailCooldownError,
+  supabase
+} from "@/lib/supabase";
 import { emailSchema } from "@/schemas/fields";
+import { AtSignIcon, LockIcon } from "@/components/icons";
 import { useRouter } from "expo-router";
-import { AtSign, Lock } from "lucide-react-native";
 import { useContext, useState } from "react";
 import { View } from "react-native";
 
@@ -88,6 +93,8 @@ export default function SignUpScreen() {
       return;
     }
 
+    const signUpEmail = email.trim().toLowerCase();
+
     setLoadingAction("email");
     setFormError(null);
 
@@ -96,7 +103,7 @@ export default function SignUpScreen() {
         data: { session },
         error
       } = await supabase.auth.signUp({
-        email,
+        email: signUpEmail,
         password,
         options: {
           emailRedirectTo: getAuthRedirectUrl("callback")
@@ -104,10 +111,18 @@ export default function SignUpScreen() {
       });
 
       if (error) {
-        const message = getSupabaseErrorMessage(error);
-        setFormError(message);
+        if (isSupabaseEmailCooldownError(error)) {
+          router.replace(
+            `/verify-email?email=${encodeURIComponent(signUpEmail)}&notice=rate-limited`
+          );
+        } else {
+          const message = getSupabaseErrorMessage(error);
+          setFormError(message);
+        }
       } else if (!session) {
-        router.replace("/sign-in");
+        router.replace(
+          `/verify-email?email=${encodeURIComponent(signUpEmail)}&notice=sent`
+        );
       }
     } catch (error) {
       const message = getSupabaseErrorMessage(error);
@@ -141,7 +156,7 @@ export default function SignUpScreen() {
           <AuthStatusMessage tone="danger">{authError}</AuthStatusMessage>
         ) : null}
 
-        <View style={{ gap: atomSpacing[4] }}>
+        <View style={{ gap: authFormStackGap }}>
           <View
             style={{
               flexDirection: "row",
@@ -187,7 +202,7 @@ export default function SignUpScreen() {
             errorText={emailError}
             keyboardType="email-address"
             label="Email"
-            leftIcon={AtSign}
+            leftIcon={AtSignIcon}
             onBlur={() => {
               setTouchedFields((current) => ({ ...current, email: true }));
               setEmailError(validateEmail(email));
@@ -212,7 +227,7 @@ export default function SignUpScreen() {
             errorText={passwordError}
             helperText={!passwordError ? "Use at least 8 characters." : null}
             label="Password"
-            leftIcon={Lock}
+            leftIcon={LockIcon}
             onBlur={() => {
               setTouchedFields((current) => ({ ...current, password: true }));
               setPasswordError(validatePassword(password));

@@ -7,6 +7,7 @@
     "build": "expo export --platform web",
     "env:example": "node ./scripts/generate-env-example.js",
     "env:check": "node ./scripts/generate-env-example.js --check",
+    "email:dev": "react-email dev --dir supabase/functions/_shared/email",
     "sync:env": "node ./scripts/sync-env.js",
     "android": "DARK_MODE=media expo start --android",
     "ios": "DARK_MODE=media expo start --ios",
@@ -101,6 +102,7 @@
     "eslint-plugin-prettier": "^5.5.0",
     "jscodeshift": "^0.15.2",
     "prettier": "^3.6.0",
+    "react-email": "6.6.6",
     "supabase": "^2.98.2",
     "typescript": "~5.9.2",
     "vitest": "^4.1.9"

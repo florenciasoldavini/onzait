@@ -65,11 +65,11 @@ export default function ProjectsScreen() {
         <AppCard padding="lg" tone="muted">
           <View style={{ gap: atomSpacing[4] }}>
             <TextField
+              label="Search"
               leftIcon={Search}
               onChangeText={(text) => updateFilter("query", text)}
               placeholder="Search projects"
               value={filters.query ?? ""}
-              label="Search"
             />
             <SelectField
               label="Status"

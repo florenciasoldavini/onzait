@@ -20,9 +20,9 @@ import {
 } from "@/lib/auth";
 import { getSupabaseErrorMessage } from "@/lib/supabase";
 import { emailSchema } from "@/schemas/fields";
+import { AtSignIcon, LockIcon } from "@/components/icons";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
-import { AtSign, Lock } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
@@ -239,7 +239,7 @@ export default function ResetPasswordScreen() {
               }
               keyboardType="email-address"
               label="Email"
-              leftIcon={AtSign}
+              leftIcon={AtSignIcon}
               onBlur={() => {
                 setTouchedFields((current) => ({ ...current, email: true }));
                 setEmailError(validateEmail(email));
@@ -267,7 +267,7 @@ export default function ResetPasswordScreen() {
                   !passwordError ? "Use at least 8 characters." : null
                 }
                 label="New Password"
-                leftIcon={Lock}
+                leftIcon={LockIcon}
                 onBlur={() => {
                   setTouchedFields((current) => ({
                     ...current,
@@ -307,7 +307,7 @@ export default function ResetPasswordScreen() {
                 autoComplete="new-password"
                 errorText={confirmPasswordError}
                 label="Confirm Password"
-                leftIcon={Lock}
+                leftIcon={LockIcon}
                 onBlur={() => {
                   setTouchedFields((current) => ({
                     ...current,
