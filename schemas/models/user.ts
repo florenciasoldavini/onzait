@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { User } from '@/types/models/user';
+import { User } from "@/types/models/user";
+import { z } from "zod";
 
 export const UserSchema: z.ZodType<User> = z.object({
   id: z.string(),
@@ -9,7 +9,8 @@ export const UserSchema: z.ZodType<User> = z.object({
   email: z.string().email(),
   phone_number: z.string().nullable(),
   role: z.enum(["admin", "user"]),
+  welcome_email_sent_at: z.date().nullable(),
   created_at: z.date(),
   updated_at: z.date().nullable(),
-  deleted_at: z.date().nullable(),
+  deleted_at: z.date().nullable()
 });

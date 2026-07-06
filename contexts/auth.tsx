@@ -4,9 +4,10 @@ import {
   supabase
 } from "@/lib/supabase";
 import { Sentry } from "@/lib/sentry";
+import { sendWelcomeToOnzaitEmail } from "@/services/email.service";
 import type { User } from "@/types/models/user";
 import type { Session } from "@supabase/supabase-js";
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useRef, useState } from "react";
 
 type EditableUserProfile = Pick<
   User,
@@ -93,7 +94,10 @@ function getAuthMetadataSources(session: Session) {
 const getFallbackProfile = (
   session: Session,
   profile?: Partial<User>
-): Omit<User, "created_at" | "updated_at" | "deleted_at"> => {
+): Omit<
+  User,
+  "created_at" | "updated_at" | "deleted_at" | "welcome_email_sent_at"
+> => {
   const email = (session.user.email ?? profile?.email ?? "")
     .trim()
     .toLowerCase();
@@ -169,6 +173,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const welcomeEmailAttemptsRef = useRef<Set<string>>(new Set());
+
+  const maybeSendWelcomeEmail = (nextUser: User) => {
+    if (
+      nextUser.welcome_email_sent_at ||
+      welcomeEmailAttemptsRef.current.has(nextUser.id)
+    ) {
+      return;
+    }
+
+    welcomeEmailAttemptsRef.current.add(nextUser.id);
+
+    void sendWelcomeToOnzaitEmail({ name: nextUser.first_name })
+      .then((result) => {
+        const welcomeEmailSentAt = result?.welcome_email_sent_at;
+
+        if (!welcomeEmailSentAt) {
+          return;
+        }
+
+        setUser((currentUser) =>
+          currentUser?.id === nextUser.id
+            ? {
+                ...currentUser,
+                welcome_email_sent_at: new Date(welcomeEmailSentAt)
+              }
+            : currentUser
+        );
+      })
+      .catch((error) => {
+        Sentry.captureException(error);
+      });
+  };
 
   const createUser = async (
     nextSession: Session,
@@ -206,6 +243,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (nextUser.id === payload.id) {
             setUser(nextUser);
             setAuthError(null);
+            maybeSendWelcomeEmail(nextUser);
             return nextUser;
           }
 
@@ -223,6 +261,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const nextUser = data as User;
     setUser(nextUser);
     setAuthError(null);
+    maybeSendWelcomeEmail(nextUser);
     return nextUser;
   };
 
@@ -304,14 +343,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
 
       if (!updateError && updatedUser) {
-        setUser(updatedUser as User);
+        const nextUser = updatedUser as User;
+        setUser(nextUser);
         setAuthError(null);
+        maybeSendWelcomeEmail(nextUser);
         return;
       }
     }
 
     setUser(existingUser);
     setAuthError(null);
+    maybeSendWelcomeEmail(existingUser);
   };
 
   const logOut = async () => {

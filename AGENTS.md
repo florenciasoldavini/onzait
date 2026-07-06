@@ -3,7 +3,7 @@
 Purpose: architecture snapshot, product decisions, and implementation guardrails for contributors and agents
 Source of truth for: current auth architecture, platform decisions, naming rules, and high-level project constraints
 Update when: auth flow, platform ownership, schema strategy, CI expectations, or product naming decisions change
-Last reviewed: 2026-07-03
+Last reviewed: 2026-07-06
 
 ## Project Snapshot
 
@@ -38,6 +38,7 @@ Last reviewed: 2026-07-03
 - Google OAuth
 - Apple OAuth
 - Email verification with resend confirmation link
+- Welcome product email after verified first app entry
 - Account profile editing
 - Google/Apple identity linking from the profile screen
 - Password reset
@@ -78,6 +79,7 @@ Last reviewed: 2026-07-03
 
 - [20260510090001_create_users_bootstrap.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260510090001_create_users_bootstrap.sql:1)
 - [20260510090002_enable_users_rls.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260510090002_enable_users_rls.sql:1)
+- [20260706191340_add_welcome_email_sent_at_to_users.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260706191340_add_welcome_email_sent_at_to_users.sql:1)
 
 ### RLS Baseline
 
@@ -99,6 +101,7 @@ Last reviewed: 2026-07-03
 - `users.email`: unique, normalized to lowercase in app code
 - `users.last_name`: nullable
 - `users.role`: enum-like DB type `user_role` with values `admin | user`
+- `users.welcome_email_sent_at`: nullable timestamp set after the welcome product email is sent
 
 ## Environment Workflow
 
@@ -108,6 +111,7 @@ Last reviewed: 2026-07-03
 - the current performance baseline lives in [docs/performance-baseline.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/performance-baseline.md:1)
 - the current SEO and accessibility baseline lives in [docs/seo-accessibility-baseline.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/seo-accessibility-baseline.md:1)
 - the current security baseline for MVP feature work lives in [docs/security-baseline.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/security-baseline.md:1)
+- pending launch setup for custom domain, auth branding, DNS, and branded email lives in [docs/pending-launch-setup.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/pending-launch-setup.md:1)
 
 ### Useful Commands
 

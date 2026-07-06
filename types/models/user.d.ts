@@ -6,6 +6,7 @@ export interface User {
   email: string;
   phone_number: string | null;
   role: "admin" | "user";
+  welcome_email_sent_at: Date | null;
   created_at: Date;
   updated_at: Date | null;
   deleted_at: Date | null;
