@@ -5,6 +5,7 @@ import {
   FieldMessage,
   PasswordVisibilityToggle,
   Screen,
+  SegmentedTabs,
   TextField
 } from "@/components/atoms";
 import { atomPalette, atomRadii, atomSpacing } from "@/components/atoms/theme";
@@ -28,7 +29,7 @@ import {
   UserRound
 } from "lucide-react-native";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Image, Platform, Pressable, View, type ViewStyle } from "react-native";
+import { Image, View } from "react-native";
 
 const appleLogo = require("@/assets/images/auth/apple-logo.png");
 const googleLogo = require("@/assets/images/auth/google-logo.png");
@@ -52,10 +53,10 @@ const providerCopy = {
 } satisfies Record<IdentityProvider, { label: string; supporting: string }>;
 
 const profileTabs = [
-  { id: "profile", label: "Profile" },
-  { id: "security", label: "Security" },
-  { id: "methods", label: "Sign-In" }
-] satisfies { id: ProfileTab; label: string }[];
+  { value: "profile", label: "Profile" },
+  { value: "security", label: "Security" },
+  { value: "methods", label: "Sign-In" }
+] satisfies { value: ProfileTab; label: string }[];
 
 export default function ProfileScreen() {
   const { logOut, session, updateUserProfile, user } = useContext(AuthContext);
@@ -259,7 +260,11 @@ export default function ProfileScreen() {
           <AppText tone="muted">{user?.email ?? session?.user.email}</AppText>
         </View>
 
-        <ProfileFeatureTabs activeTab={activeTab} onChange={setActiveTab} />
+        <SegmentedTabs
+          onChange={setActiveTab}
+          options={profileTabs}
+          value={activeTab}
+        />
 
         {activeTab === "profile" ? (
           <AppCard padding="lg">
@@ -564,101 +569,6 @@ export default function ProfileScreen() {
         </AppButton>
       </View>
     </Screen>
-  );
-}
-
-function ProfileFeatureTabs({
-  activeTab,
-  onChange
-}: {
-  activeTab: ProfileTab;
-  onChange: (tab: ProfileTab) => void;
-}) {
-  const [hoveredTab, setHoveredTab] = useState<ProfileTab | null>(null);
-  const [pressedTab, setPressedTab] = useState<ProfileTab | null>(null);
-
-  return (
-    <View
-      accessibilityRole="tablist"
-      style={{
-        backgroundColor: atomPalette.surfaceLow,
-        borderColor: atomPalette.borderSubtle,
-        borderRadius: atomRadii.lg,
-        borderWidth: 1,
-        flexDirection: "row",
-        minHeight: 48,
-        padding: atomSpacing[1],
-        width: "100%"
-      }}
-    >
-      {profileTabs.map((tab) => {
-        const isSelected = activeTab === tab.id;
-        const isHovered = hoveredTab === tab.id;
-        const isPressed = pressedTab === tab.id;
-        const isInteractive = isHovered || isPressed;
-
-        return (
-          <Pressable
-            accessibilityRole="tab"
-            accessibilityState={{ selected: isSelected }}
-            key={tab.id}
-            onHoverIn={() => {
-              setHoveredTab(tab.id);
-            }}
-            onHoverOut={() => {
-              setHoveredTab((current) => (current === tab.id ? null : current));
-            }}
-            onPress={() => {
-              onChange(tab.id);
-            }}
-            onPressIn={() => {
-              setPressedTab(tab.id);
-            }}
-            onPressOut={() => {
-              setPressedTab((current) => (current === tab.id ? null : current));
-            }}
-            style={[
-              {
-                alignItems: "center",
-                backgroundColor: isSelected
-                  ? atomPalette.text
-                  : isInteractive
-                    ? atomPalette.surfaceRaised
-                    : atomPalette.surfaceLow,
-                borderColor: isSelected
-                  ? atomPalette.text
-                  : isInteractive
-                    ? atomPalette.border
-                    : "transparent",
-                borderRadius: atomRadii.md,
-                borderWidth: 1,
-                flexBasis: 0,
-                flexGrow: 1,
-                flexShrink: 1,
-                height: 40,
-                justifyContent: "center",
-                paddingHorizontal: atomSpacing[2],
-                paddingVertical: 0
-              },
-              Platform.OS === "web"
-                ? ({
-                    cursor: "pointer"
-                  } as ViewStyle)
-                : null
-            ]}
-          >
-            <AppText
-              numberOfLines={1}
-              style={{ textAlign: "center" }}
-              tone={isSelected ? "inverse" : "muted"}
-              variant="label"
-            >
-              {tab.label}
-            </AppText>
-          </Pressable>
-        );
-      })}
-    </View>
   );
 }
 

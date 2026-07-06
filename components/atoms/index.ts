@@ -7,5 +7,6 @@ export * from "@/components/atoms/label";
 export * from "@/components/atoms/link";
 export * from "@/components/atoms/screen";
 export * from "@/components/atoms/section";
+export * from "@/components/atoms/tabs";
 export * from "@/components/atoms/text";
 export * from "@/components/atoms/textarea";
