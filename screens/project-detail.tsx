@@ -67,6 +67,7 @@ export default function ProjectDetailScreen() {
             iconAfter={false}
             onPress={() => router.push(`/projects/${project.id}/edit` as never)}
             size="sm"
+            style={{ alignSelf: "flex-start" }}
           >
             Edit Project
           </AppButton>

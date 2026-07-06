@@ -1,6 +1,7 @@
 import {
   AppButton,
   AppCard,
+  AppHeading,
   AppText,
   FieldMessage,
   PasswordVisibilityToggle,
@@ -252,11 +253,9 @@ export default function ProfileScreen() {
           width: "100%"
         }}
       >
-        <View style={{ gap: atomSpacing[2] }}>
+        <View style={{ gap: atomSpacing[3] }}>
           <AppText variant="eyebrow">Account / Profile</AppText>
-          <AppText style={{ fontSize: 28, lineHeight: 34 }}>
-            {user?.first_name ? `${user.first_name}'s workspace` : "Profile"}
-          </AppText>
+          <AppHeading variant="hero">Profile</AppHeading>
           <AppText tone="muted">{user?.email ?? session?.user.email}</AppText>
         </View>
 
@@ -559,7 +558,8 @@ export default function ProfileScreen() {
             void logOut();
           }}
           size="md"
-          variant="destructive"
+          color="danger"
+          variant="bordered"
         >
           Log Out
         </AppButton>
@@ -634,7 +634,8 @@ function IdentityMethodRow({
           loading={isLoading}
           onPress={onLink}
           size="sm"
-          variant="secondary"
+          color="neutral"
+          variant="bordered"
         >
           Link
         </AppButton>

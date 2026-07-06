@@ -176,7 +176,8 @@ export default function SignUpScreen() {
               }}
               shape="pill"
               size={authSocialButtonSize}
-              variant="secondary"
+              color="neutral"
+              variant="bordered"
             />
             <AppButton
               accessibilityLabel="Continue with Apple"
@@ -190,7 +191,8 @@ export default function SignUpScreen() {
               }}
               shape="pill"
               size={authSocialButtonSize}
-              variant="secondary"
+              color="neutral"
+              variant="bordered"
             />
           </View>
 

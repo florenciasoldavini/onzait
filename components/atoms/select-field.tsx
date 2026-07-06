@@ -1,13 +1,14 @@
 import { AppText } from "@/components/atoms/text";
-import {
-  atomControlHeights,
-  atomPalette,
-  atomRadii,
-  atomSpacing
-} from "@/components/atoms/theme";
+import { atomPalette, atomRadii, atomSpacing } from "@/components/atoms/theme";
 import { FormField } from "@/components/molecules";
 import type { ReactNode } from "react";
-import { Platform, Pressable, View, type ViewStyle } from "react-native";
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+  type ViewStyle
+} from "react-native";
 
 export interface SelectFieldOption<T extends string> {
   label: string;
@@ -49,30 +50,16 @@ export function SelectField<T extends string>({
               onPress={() => {
                 onChange(option.value);
               }}
-              style={({ pressed }) =>
-                [
-                  {
-                    alignItems: "center",
-                    backgroundColor: isSelected
-                      ? `${atomPalette.accent}14`
-                      : atomPalette.surface,
-                    borderColor: isSelected
-                      ? atomPalette.accent
-                      : atomPalette.borderSubtle,
-                    borderRadius: atomRadii.full,
-                    borderWidth: 1,
-                    justifyContent: "center",
-                    minHeight: atomControlHeights.sm,
-                    opacity: pressed ? 0.78 : 1,
-                    paddingHorizontal: atomSpacing[3]
-                  },
-                  Platform.OS === "web"
-                    ? ({ cursor: "pointer" } as ViewStyle)
-                    : null
-                ] as ViewStyle[]
-              }
+              style={StyleSheet.flatten([
+                styles.option,
+                isSelected ? styles.selectedOption : styles.defaultOption,
+                Platform.OS === "web" ? styles.webCursor : null
+              ])}
             >
-              <AppText tone={isSelected ? "accent" : "muted"} variant="label">
+              <AppText
+                tone={isSelected ? "accent" : "muted"}
+                variant="formLabel"
+              >
                 {option.label}
               </AppText>
             </Pressable>
@@ -82,3 +69,26 @@ export function SelectField<T extends string>({
     </FormField>
   );
 }
+
+const styles = StyleSheet.create({
+  defaultOption: {
+    backgroundColor: atomPalette.surface,
+    borderColor: atomPalette.borderSubtle
+  },
+  option: {
+    alignItems: "center",
+    borderRadius: atomRadii.full,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 34,
+    paddingHorizontal: atomSpacing[3],
+    paddingVertical: atomSpacing[1]
+  },
+  selectedOption: {
+    backgroundColor: `${atomPalette.accent}14`,
+    borderColor: atomPalette.accent
+  },
+  webCursor: {
+    cursor: "pointer"
+  } as ViewStyle
+});

@@ -1,24 +1,15 @@
 import {
   AppButton,
-  AppCard,
   AppHeading,
   AppText,
   EmptyState,
   Screen,
-  SelectField,
   TextField
 } from "@/components/atoms";
 import { atomSpacing } from "@/components/atoms/theme";
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { ProjectCardSkeleton } from "@/features/projects/components/project-card-skeleton";
-import {
-  PROJECT_PHASE_LABELS,
-  PROJECT_PHASES,
-  PROJECT_STATUS_LABELS,
-  PROJECT_STATUSES
-} from "@/features/projects/constants";
 import { useProjects, useSoftDeleteProject } from "@/features/projects/hooks";
-import type { ProjectFilters } from "@/features/projects/types";
 import { useRouter } from "expo-router";
 import { FolderPlus, RefreshCw, Search } from "lucide-react-native";
 import { useState } from "react";
@@ -26,77 +17,42 @@ import { View } from "react-native";
 
 export default function ProjectsScreen() {
   const router = useRouter();
-  const [filters, setFilters] = useState<ProjectFilters>({
+  const [query, setQuery] = useState("");
+  const projectsQuery = useProjects({
     phase: "all",
-    query: "",
+    query,
     status: "all"
   });
-  const projectsQuery = useProjects(filters);
   const deleteMutation = useSoftDeleteProject();
-
-  const updateFilter = <K extends keyof ProjectFilters>(
-    key: K,
-    value: ProjectFilters[K]
-  ) => {
-    setFilters((current) => ({ ...current, [key]: value }));
-  };
+  const hasProjects = Boolean(projectsQuery.data?.length);
 
   return (
-    <Screen>
+    <Screen
+      floatingAction={
+        hasProjects ? (
+          <AppButton
+            accessibilityLabel="New project"
+            icon={FolderPlus}
+            layout="icon"
+            onPress={() => router.push("/projects/new" as never)}
+            shape="pill"
+            size="iconLg"
+          />
+        ) : null
+      }
+    >
       <View style={{ gap: atomSpacing[6] }}>
         <View style={{ gap: atomSpacing[3] }}>
           <AppText variant="eyebrow">Projects / Workspace</AppText>
-          <AppHeading variant="hero">Track job sites by project.</AppHeading>
-          <AppText tone="muted">
-            Manage project location, status, phase, and cover context before
-            tasks and field updates arrive.
-          </AppText>
-          <AppButton
-            fullWidth={false}
-            icon={FolderPlus}
-            iconAfter={false}
-            onPress={() => router.push("/projects/new" as never)}
-            size="sm"
-          >
-            New Project
-          </AppButton>
+          <AppHeading variant="hero">Projects</AppHeading>
         </View>
 
-        <AppCard padding="lg" tone="muted">
-          <View style={{ gap: atomSpacing[4] }}>
-            <TextField
-              label="Search"
-              leftIcon={Search}
-              onChangeText={(text) => updateFilter("query", text)}
-              placeholder="Search projects"
-              value={filters.query ?? ""}
-            />
-            <SelectField
-              label="Status"
-              onChange={(status) => updateFilter("status", status)}
-              options={[
-                { label: "All", value: "all" },
-                ...PROJECT_STATUSES.map((value) => ({
-                  label: PROJECT_STATUS_LABELS[value],
-                  value
-                }))
-              ]}
-              value={filters.status ?? "all"}
-            />
-            <SelectField
-              label="Phase"
-              onChange={(phase) => updateFilter("phase", phase)}
-              options={[
-                { label: "All", value: "all" },
-                ...PROJECT_PHASES.map((value) => ({
-                  label: PROJECT_PHASE_LABELS[value],
-                  value
-                }))
-              ]}
-              value={filters.phase ?? "all"}
-            />
-          </View>
-        </AppCard>
+        <TextField
+          leftIcon={Search}
+          onChangeText={setQuery}
+          placeholder="Search projects"
+          value={query}
+        />
 
         {projectsQuery.isLoading ? (
           <View style={{ gap: atomSpacing[4] }}>
@@ -144,6 +100,7 @@ export default function ProjectsScreen() {
                     void deleteMutation.mutateAsync(project.id);
                   }}
                   size="sm"
+                  color="warning"
                   variant="ghost"
                 >
                   Archive project

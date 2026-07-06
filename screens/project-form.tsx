@@ -46,7 +46,13 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { ImagePlus, MapPinned, Save } from "lucide-react-native";
 import { useContext, useEffect, useState } from "react";
-import { Platform, Pressable, View, type ViewStyle } from "react-native";
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+  type ViewStyle
+} from "react-native";
 
 const defaultValues: ProjectFormValues = {
   address: null,
@@ -346,7 +352,8 @@ export function ProjectFormScreen({
                 <AppButton
                   isDisabled={isSubmitting}
                   onPress={() => router.back()}
-                  variant="secondary"
+                  color="neutral"
+                  variant="bordered"
                 >
                   Cancel
                 </AppButton>
@@ -498,27 +505,17 @@ function CoverPicker({
 
   return (
     <View style={{ gap: atomSpacing[3] }}>
-      <AppText variant="label">Cover Image</AppText>
+      <AppText tone="subtle" variant="formLabel">
+        Cover Image
+      </AppText>
       <Pressable
         onPress={() => {
           void pickImage();
         }}
-        style={({ pressed }) =>
-          [
-            {
-              alignItems: "center",
-              backgroundColor: atomPalette.surfaceLow,
-              borderColor: atomPalette.borderSubtle,
-              borderRadius: 14,
-              borderWidth: 1,
-              height: 190,
-              justifyContent: "center",
-              opacity: pressed ? 0.78 : 1,
-              overflow: "hidden"
-            },
-            Platform.OS === "web" ? ({ cursor: "pointer" } as ViewStyle) : null
-          ] as ViewStyle[]
-        }
+        style={StyleSheet.flatten([
+          projectFormStyles.coverPicker,
+          Platform.OS === "web" ? projectFormStyles.webCursor : null
+        ])}
       >
         {previewUri ? (
           <Image
@@ -536,6 +533,22 @@ function CoverPicker({
     </View>
   );
 }
+
+const projectFormStyles = StyleSheet.create({
+  coverPicker: {
+    alignItems: "center",
+    backgroundColor: atomPalette.surfaceLow,
+    borderColor: atomPalette.borderSubtle,
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 132,
+    justifyContent: "center",
+    overflow: "hidden"
+  },
+  webCursor: {
+    cursor: "pointer"
+  } as ViewStyle
+});
 
 function getValuesFromProject(project: Project): ProjectFormValues {
   return {

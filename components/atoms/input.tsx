@@ -9,6 +9,7 @@ import { FormField } from "@/components/molecules";
 import {
   ClosedEyeIcon,
   OpenEyeIcon,
+  appIconSizes,
   type AppIconComponent,
   type AppIconSize
 } from "@/components/icons";
@@ -82,6 +83,7 @@ export function TextField({
   truncate?: boolean;
 }) {
   const config = sizeMap[size];
+  const iconPixelSize = appIconSizes[config.iconSize];
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const isDisabled = editable === false;
@@ -175,7 +177,7 @@ export function TextField({
             {(() => {
               const Icon = leftIcon;
 
-              return <Icon color={iconColor} size={config.iconSize} />;
+              return <Icon color={iconColor} size={iconPixelSize} />;
             })()}
           </InputSlot>
         ) : null}

@@ -55,6 +55,14 @@ Buttons should have clear, differentiable:
 - loading, when the action can be async
 - disabled
 
+Button APIs should separate visual treatment from semantic color:
+
+- `variant` describes treatment: `solid`, `bordered`, or `ghost`.
+- `color` describes intent: `accent`, `neutral`, `warning`, `danger`, or `success`.
+- Do not use `primary`, `secondary`, or destructive meaning as variant names. Express those as combinations such as `solid` + `accent`, `bordered` + `neutral`, or `solid` + `danger`.
+- Use `solid` in general for primary actions.
+- Use `bordered` in general for secondary actions.
+
 Inputs and text areas should have clear, differentiable:
 
 - normal
@@ -83,8 +91,8 @@ Hover states should not change an element's semantic color.
 Hover may only darken or strengthen the element's existing color role. Examples:
 
 - A grey input border becomes a darker grey on hover.
-- A neutral secondary button background becomes a slightly darker neutral on hover.
-- A cobalt primary button becomes a darker cobalt on hover.
+- A bordered neutral button background becomes a slightly darker neutral on hover.
+- A solid accent button becomes a darker accent on hover.
 
 Focus and selected states may change an element's semantic color because they communicate stronger state. Examples:
 

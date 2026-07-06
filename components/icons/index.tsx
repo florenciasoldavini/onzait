@@ -37,7 +37,7 @@ export const appIconSizes = {
 
 export type AppIconProps = {
   color: NonNullable<LucideProps["color"]>;
-  size?: AppIconSize;
+  size?: AppIconSize | number;
   strokeWidth?: LucideProps["strokeWidth"];
 };
 
@@ -49,9 +49,9 @@ function createIcon(Icon: LucideIcon): AppIconComponent {
     size = "md",
     strokeWidth = 1.8
   }: AppIconProps) {
-    return (
-      <Icon color={color} size={appIconSizes[size]} strokeWidth={strokeWidth} />
-    );
+    const resolvedSize = typeof size === "number" ? size : appIconSizes[size];
+
+    return <Icon color={color} size={resolvedSize} strokeWidth={strokeWidth} />;
   };
 }
 
