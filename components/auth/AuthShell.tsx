@@ -34,7 +34,7 @@ const palette = {
   onPrimary: atomPalette.accentText
 } as const;
 
-const authCardMaxWidth = Platform.select({
+export const authCardMaxWidth = Platform.select({
   default: atomLayout.maxWidthFormNative,
   web: 440
 });

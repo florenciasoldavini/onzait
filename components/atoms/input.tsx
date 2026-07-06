@@ -18,6 +18,8 @@ import { useState } from "react";
 import {
   Platform,
   Pressable,
+  Text,
+  View,
   type NativeSyntheticEvent,
   type TextInputFocusEventData,
   type TextStyle,
@@ -54,11 +56,14 @@ export function TextField({
   helperText,
   label,
   leftIcon,
+  multiline,
+  numberOfLines,
   onBlur,
   onFocus,
   required = false,
   rightSlot,
   size = "lg",
+  truncate = false,
   ...props
 }: Omit<React.ComponentProps<typeof UIInputField>, "size"> & {
   accessory?: ReactNode;
@@ -69,6 +74,7 @@ export function TextField({
   required?: boolean;
   rightSlot?: ReactNode;
   size?: FieldSize;
+  truncate?: boolean;
 }) {
   const config = sizeMap[size];
   const [isFocused, setIsFocused] = useState(false);
@@ -102,6 +108,30 @@ export function TextField({
     Platform.OS === "web"
       ? atomTypeScale.bodyMd.lineHeight
       : atomTypeScale.bodyMd.fontSize + 4;
+  const truncateStyle = truncate
+    ? ({
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap"
+      } as unknown as TextStyle)
+    : null;
+  const inputPaddingHorizontal =
+    leftIcon || rightSlot ? atomSpacing[3] : atomSpacing[4];
+  const inputTextStyle = {
+    color: atomPalette.text,
+    fontSize: atomTypeScale.bodyMd.fontSize,
+    letterSpacing: 0,
+    lineHeight: inputLineHeight,
+    ...getSansFontStyle(atomTypeScale.bodyMd.fontWeight)
+  } satisfies TextStyle;
+  const displayValue =
+    typeof props.value === "string"
+      ? props.value
+      : typeof props.defaultValue === "string"
+        ? props.defaultValue
+        : "";
+  const shouldRenderTruncatedText = truncate && editable === false;
+
   return (
     <FormField
       accessory={accessory}
@@ -150,33 +180,56 @@ export function TextField({
             })()}
           </InputSlot>
         ) : null}
-        <UIInputField
-          className="placeholder:text-typography-400"
-          editable={editable}
-          onBlur={(event: NativeSyntheticEvent<TextInputFocusEventData>) => {
-            setIsFocused(false);
-            onBlur?.(event);
-          }}
-          onFocus={(event: NativeSyntheticEvent<TextInputFocusEventData>) => {
-            setIsFocused(true);
-            onFocus?.(event);
-          }}
-          placeholderTextColor={atomPalette.textPlaceholder}
-          style={{
-            color: atomPalette.text,
-            fontSize: atomTypeScale.bodyMd.fontSize,
-            height: config.minHeight,
-            letterSpacing: 0,
-            lineHeight: inputLineHeight,
-            paddingHorizontal:
-              leftIcon || rightSlot ? atomSpacing[3] : atomSpacing[4],
-            paddingVertical: 0,
-            textAlignVertical: "center",
-            ...webInputCursorStyle,
-            ...getSansFontStyle(atomTypeScale.bodyMd.fontWeight)
-          }}
-          {...props}
-        />
+        {shouldRenderTruncatedText ? (
+          <View
+            style={{
+              flex: 1,
+              height: config.minHeight,
+              justifyContent: "center",
+              paddingHorizontal: inputPaddingHorizontal,
+              ...webRootCursorStyle
+            }}
+          >
+            <Text
+              ellipsizeMode="tail"
+              numberOfLines={1}
+              style={{
+                ...inputTextStyle,
+                color: displayValue
+                  ? atomPalette.text
+                  : atomPalette.textPlaceholder
+              }}
+            >
+              {displayValue || props.placeholder}
+            </Text>
+          </View>
+        ) : (
+          <UIInputField
+            className="placeholder:text-typography-400"
+            editable={editable}
+            multiline={truncate ? false : multiline}
+            numberOfLines={truncate ? 1 : numberOfLines}
+            onBlur={(event: NativeSyntheticEvent<TextInputFocusEventData>) => {
+              setIsFocused(false);
+              onBlur?.(event);
+            }}
+            onFocus={(event: NativeSyntheticEvent<TextInputFocusEventData>) => {
+              setIsFocused(true);
+              onFocus?.(event);
+            }}
+            placeholderTextColor={atomPalette.textPlaceholder}
+            style={{
+              ...inputTextStyle,
+              height: config.minHeight,
+              paddingHorizontal: inputPaddingHorizontal,
+              paddingVertical: 0,
+              textAlignVertical: "center",
+              ...truncateStyle,
+              ...webInputCursorStyle
+            }}
+            {...props}
+          />
+        )}
         {rightSlot ? (
           <InputSlot style={{ paddingRight: atomSpacing[4] }}>
             {rightSlot}

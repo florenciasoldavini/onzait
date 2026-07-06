@@ -7,7 +7,7 @@ import { Platform } from "react-native";
 
 WebBrowser.maybeCompleteAuthSession();
 
-type SupportedOAuthProvider = "apple" | "google";
+export type SupportedOAuthProvider = "apple" | "google";
 
 export interface AuthRedirectResult {
   session: Session | null;
@@ -40,8 +40,12 @@ function isExpoGo() {
   return Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 }
 
-function getNativeAuthRedirectUrl(path: "callback" | "reset-password") {
+function getNativeAuthRedirectUrl(
+  path: "callback" | "reset-password",
+  queryParams?: Record<string, string>
+) {
   return Linking.createURL(path, {
+    queryParams,
     scheme: isExpoGo() ? "exp" : "onzait"
   });
 }
@@ -60,7 +64,8 @@ function getCombinedSearchParams(url: URL) {
 }
 
 export function getAuthRedirectUrl(
-  path: "callback" | "reset-password" = "callback"
+  path: "callback" | "reset-password" = "callback",
+  queryParams?: Record<string, string>
 ) {
   if (Platform.OS === "web") {
     const siteUrl = getBrowserOrigin() ?? getConfiguredSiteUrl();
@@ -71,10 +76,13 @@ export function getAuthRedirectUrl(
       );
     }
 
-    return `${siteUrl}/${path}`;
+    const searchParams = new URLSearchParams(queryParams);
+    const search = searchParams.size > 0 ? `?${searchParams.toString()}` : "";
+
+    return `${siteUrl}/${path}${search}`;
   }
 
-  return getNativeAuthRedirectUrl(path);
+  return getNativeAuthRedirectUrl(path, queryParams);
 }
 
 export function getAuthParamsFromUrl(url: string) {
@@ -205,6 +213,60 @@ export async function startOAuthSignIn(provider: SupportedOAuthProvider) {
   return completeAuthSessionFromUrl(result.url);
 }
 
+export async function startOAuthIdentityLink(provider: SupportedOAuthProvider) {
+  if (!supabase) {
+    throw new Error(getSupabaseErrorMessage("Supabase is not configured."));
+  }
+
+  const redirectTo = getAuthRedirectUrl("callback", { next: "/profile" });
+  const providerLabel = provider === "google" ? "Google" : "Apple";
+
+  if (Platform.OS === "web") {
+    const { data, error } = await supabase.auth.linkIdentity({
+      provider,
+      options: { redirectTo }
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  }
+
+  const { data, error } = await supabase.auth.linkIdentity({
+    provider,
+    options: {
+      redirectTo,
+      skipBrowserRedirect: true
+    }
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data?.url) {
+    throw new Error(
+      `${providerLabel} linking could not start because Supabase did not return an OAuth URL.`
+    );
+  }
+
+  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
+  if (result.type !== "success" || !("url" in result) || !result.url) {
+    const redirectHelp = isExpoGo()
+      ? `Add the current Expo Go redirect URL (${redirectTo}) to Supabase Auth redirect URLs, or test ${providerLabel} linking in a development build using onzait://callback.`
+      : `Add ${redirectTo} to Supabase Auth redirect URLs.`;
+
+    throw new Error(
+      `${providerLabel} linking did not return to the app. ${redirectHelp}`
+    );
+  }
+
+  return completeAuthSessionFromUrl(result.url);
+}
+
 export async function sendPasswordResetEmail(email: string) {
   if (!supabase) {
     throw new Error(getSupabaseErrorMessage("Supabase is not configured."));
@@ -251,12 +313,23 @@ export async function updatePassword(password: string) {
   return data;
 }
 
-export function getPostAuthRedirectPath(authType: string | null) {
+function getSafePostAuthRedirectPath(nextPath: string | null) {
+  if (!nextPath || !nextPath.startsWith("/") || nextPath.startsWith("//")) {
+    return "/";
+  }
+
+  return nextPath;
+}
+
+export function getPostAuthRedirectPath(
+  authType: string | null,
+  nextPath: string | null = null
+) {
   if (authType === "recovery") {
     return "/reset-password";
   }
 
-  return "/";
+  return getSafePostAuthRedirectPath(nextPath);
 }
 
 export function clearWebAuthUrlArtifacts() {

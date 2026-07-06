@@ -9,6 +9,8 @@ export default function TabsLayout() {
   const tabIconSize = 20;
   const nativeLabelSize = 10;
   const nativeLetterSpacing = 0.35;
+  const nativeTabBarHeight = 78;
+  const isWeb = Platform.OS === "web";
 
   return (
     <Tabs
@@ -19,24 +21,25 @@ export default function TabsLayout() {
         tabBarLabelPosition: "below-icon",
         tabBarStyle: {
           backgroundColor: designTokens.colors.semantic.bg.canvas,
-          borderTopColor: designTokens.colors.semantic.border.subtle
+          borderTopColor: designTokens.colors.semantic.border.subtle,
+          height: isWeb ? 64 : nativeTabBarHeight,
+          paddingBottom: isWeb ? 8 : 14,
+          paddingTop: 6
         },
         tabBarItemStyle: {
           gap: 2,
           minWidth: 0,
-          paddingTop: 6
+          paddingTop: isWeb ? 0 : 2
         },
         tabBarIconStyle: {
           marginBottom: 0
         },
         tabBarLabelStyle: {
-          fontSize:
-            Platform.OS === "web" ? tabLabelToken.fontSize : nativeLabelSize,
+          fontSize: isWeb ? tabLabelToken.fontSize : nativeLabelSize,
           lineHeight: 14,
-          letterSpacing:
-            Platform.OS === "web"
-              ? tabLabelToken.letterSpacing
-              : nativeLetterSpacing,
+          letterSpacing: isWeb
+            ? tabLabelToken.letterSpacing
+            : nativeLetterSpacing,
           textTransform: tabLabelToken.textTransform,
           ...getMonoFontStyle(tabLabelToken.fontWeight)
         }
