@@ -9,12 +9,13 @@ import {
   clearWebAuthUrlArtifacts,
   completeAuthSessionFromUrl,
   getActiveAuthUrl,
+  getAuthParamsFromUrl,
   getPostAuthRedirectPath,
   urlHasAuthPayload
 } from "@/lib/auth";
 import { getSupabaseErrorMessage } from "@/lib/supabase";
 import * as Linking from "expo-linking";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
@@ -38,6 +39,7 @@ export default function AuthCallbackScreen() {
 
     const finishAuth = async () => {
       try {
+        const params = getAuthParamsFromUrl(activeUrl);
         const { type } = await completeAuthSessionFromUrl(activeUrl);
 
         if (!isMounted) {
@@ -45,7 +47,9 @@ export default function AuthCallbackScreen() {
         }
 
         clearWebAuthUrlArtifacts();
-        router.replace(getPostAuthRedirectPath(type));
+        router.replace(
+          getPostAuthRedirectPath(type, params.get("next")) as Href
+        );
       } catch (error) {
         if (!isMounted) {
           return;

@@ -3,7 +3,7 @@
 Purpose: tracked Supabase schema, migration, RLS, and auth URL guidance
 Source of truth for: current Supabase bootstrap scope, migration expectations, and direct client-access policy
 Update when: migrations, RLS policy, auth redirect configuration, or client data-access rules change
-Last reviewed: 2026-05-12
+Last reviewed: 2026-07-03
 
 This folder is the starting point for tracked Supabase database changes.
 
@@ -50,12 +50,26 @@ In Supabase Auth, set:
 - `Site URL`: `https://onzait.vercel.app`
 - additional redirect URLs for local web: `http://localhost:8081/**` (adjust if Expo web is running on a different port)
 - additional redirect URLs for production web paths: `https://onzait.vercel.app/**`
+- additional redirect URLs for native app auth:
+  - `onzait://callback`
+  - `onzait://reset-password`
 
 If you want auth links to work on Vercel preview deploys too, add your preview wildcard once you confirm the account slug. Supabase's current Vercel pattern is:
 
 - `https://*-<your-vercel-account-or-team-slug>.vercel.app/**`
 
-The app also has the native scheme `onzait`, so if you later add email confirmation, password reset, or OAuth flows for iPhone/Android, include native deep-link URLs too.
+Expo Go uses temporary `exp://.../--/<path>` links instead of the production native scheme. When testing Google or Apple OAuth in Expo Go, add the exact current Expo Go callback URL, such as `exp://<host>:8081/--/callback`, to Supabase Auth redirect URLs. This URL can change with the dev server host or port, so a development build is more reliable for ongoing OAuth testing.
+
+## Pending auth branding
+
+Google account selection currently shows the Supabase project callback domain (`wuaiwcppoefmprzoupaf.supabase.co`) in the "Go to..." line because Supabase Auth owns the OAuth callback URL.
+
+Before launch, review whether auth should use branded OAuth presentation:
+
+- set the Google OAuth consent screen app name and branding to `Onzait`
+- consider a branded Supabase Auth custom domain such as `auth.onzait.com`
+- if a custom auth domain is enabled, add its Supabase callback URL to the Google OAuth client redirect URIs, for example `https://auth.onzait.com/auth/v1/callback`
+- keep the existing Supabase project callback URI configured until the custom domain flow has been tested end to end
 
 ## Notes
 

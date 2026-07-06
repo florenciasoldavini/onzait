@@ -10,34 +10,34 @@ import {
 } from "@/components/atoms";
 import { atomPalette, atomSpacing } from "@/components/atoms/theme";
 import {
-  ArrowRight,
-  AtSign,
-  Bell,
-  Lock,
-  Plus,
-  Trash2
-} from "lucide-react-native";
+  ArrowRightIcon,
+  AtSignIcon,
+  BellIcon,
+  LockIcon,
+  PlusIcon,
+  TrashIcon
+} from "@/components/icons";
 import { useState } from "react";
 import { View } from "react-native";
 
 const buttonVariants = [
   {
-    icon: ArrowRight,
+    icon: ArrowRightIcon,
     label: "Primary",
     variant: "primary"
   },
   {
-    icon: Plus,
+    icon: PlusIcon,
     label: "Secondary",
     variant: "secondary"
   },
   {
-    icon: Bell,
+    icon: BellIcon,
     label: "Ghost",
     variant: "ghost"
   },
   {
-    icon: Trash2,
+    icon: TrashIcon,
     label: "Destructive",
     variant: "destructive"
   }
@@ -120,7 +120,7 @@ export default function HomeScreen() {
               autoComplete="email"
               keyboardType="email-address"
               label="Email Address"
-              leftIcon={AtSign}
+              leftIcon={AtSignIcon}
               onChangeText={setEmail}
               placeholder="architect@onzait.com"
               type="text"
@@ -131,7 +131,7 @@ export default function HomeScreen() {
               autoComplete="password"
               helperText="This preview keeps the field live so we can check spacing and placeholder behavior."
               label="Password"
-              leftIcon={Lock}
+              leftIcon={LockIcon}
               onChangeText={setPassword}
               placeholder="••••••••••••"
               type="password"

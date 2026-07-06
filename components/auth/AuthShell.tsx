@@ -34,7 +34,7 @@ const palette = {
   onPrimary: atomPalette.accentText
 } as const;
 
-const authCardMaxWidth = Platform.select({
+export const authCardMaxWidth = Platform.select({
   default: atomLayout.maxWidthFormNative,
   web: 440
 });
@@ -152,7 +152,7 @@ export function AuthShell({
   title: string;
 }) {
   return (
-    <Screen centered>
+    <Screen centered keyboardSafe>
       <View
         style={{
           alignSelf: "center",
@@ -210,6 +210,7 @@ export const authPalette = palette;
 export const authCardRadius = atomRadii.xl;
 export const authControlHeight = atomControlHeights.lg;
 export const authControlRadius = atomControlRadius;
+export const authFormStackGap = atomSpacing[6];
 export const authFormControlSize = Platform.select({
   default: "lg",
   web: "sm"

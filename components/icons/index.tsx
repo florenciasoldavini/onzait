@@ -1,56 +1,80 @@
 import {
+  ArrowRight,
+  AtSign,
+  Bell,
+  Camera,
+  CheckCircle2,
   CircleUserRound,
   Eye,
-  EyeClosed,
+  EyeOff,
   FolderKanban,
+  FolderPlus,
+  HardHat,
   House,
-  ListTodo
+  Link2,
+  ListTodo,
+  Lock,
+  LogOut,
+  Mail,
+  MapPinned,
+  Phone,
+  Plus,
+  Trash2,
+  UserRound,
+  type LucideIcon,
+  type LucideProps
 } from "lucide-react-native";
+import type { ComponentType } from "react";
 
-export const HomeIcon = ({ color, size }: { color: string; size: number }) => {
-  return <House size={size} color={color} />;
+export type AppIconSize = "xs" | "sm" | "md" | "lg";
+
+export const appIconSizes = {
+  xs: 14,
+  sm: 16,
+  md: 20,
+  lg: 24
+} as const satisfies Record<AppIconSize, number>;
+
+export type AppIconProps = {
+  color: NonNullable<LucideProps["color"]>;
+  size?: AppIconSize;
+  strokeWidth?: LucideProps["strokeWidth"];
 };
 
-export const ToDoIcon = ({ color, size }: { color: string; size: number }) => {
-  return <ListTodo size={size} color={color} />;
-};
+export type AppIconComponent = ComponentType<AppIconProps>;
 
-export const ProfileIcon = ({
-  color,
-  size
-}: {
-  color: string;
-  size: number;
-}) => {
-  return <CircleUserRound size={size} color={color} />;
-};
+function createIcon(Icon: LucideIcon): AppIconComponent {
+  return function AppIcon({
+    color,
+    size = "md",
+    strokeWidth = 1.8
+  }: AppIconProps) {
+    return (
+      <Icon color={color} size={appIconSizes[size]} strokeWidth={strokeWidth} />
+    );
+  };
+}
 
-export const ProjectsIcon = ({
-  color,
-  size
-}: {
-  color: string;
-  size: number;
-}) => {
-  return <FolderKanban size={size} color={color} />;
-};
-
-export const OpenEyeIcon = ({
-  color,
-  size
-}: {
-  color: string;
-  size: number;
-}) => {
-  return <Eye size={size} color={color} />;
-};
-
-export const ClosedEyeIcon = ({
-  color,
-  size
-}: {
-  color: string;
-  size: number;
-}) => {
-  return <EyeClosed size={size} color={color} />;
-};
+export const ArrowRightIcon = createIcon(ArrowRight);
+export const AtSignIcon = createIcon(AtSign);
+export const BellIcon = createIcon(Bell);
+export const CameraIcon = createIcon(Camera);
+export const CheckCircleIcon = createIcon(CheckCircle2);
+export const ClosedEyeIcon = createIcon(EyeOff);
+export const FolderPlusIcon = createIcon(FolderPlus);
+export const HardHatIcon = createIcon(HardHat);
+export const HomeIcon = createIcon(House);
+export const LinkIcon = createIcon(Link2);
+export const LockIcon = createIcon(Lock);
+export const LogoutIcon = createIcon(LogOut);
+export const MailIcon = createIcon(Mail);
+export const MapPinIcon = createIcon(MapPinned);
+export const OpenEyeIcon = createIcon(Eye);
+export const PlusIcon = createIcon(Plus);
+export const ProfileIcon = createIcon(CircleUserRound);
+export const ProjectsIcon = createIcon(FolderKanban);
+export const TasksIcon = createIcon(ListTodo);
+export const ToDoIcon = TasksIcon;
+export const TrashIcon = createIcon(Trash2);
+export const UserIcon = createIcon(UserRound);
+export const PhoneIcon = createIcon(Phone);

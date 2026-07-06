@@ -36,7 +36,6 @@ Use `npm` for this repository. The repo is checked in with `package-lock.json`, 
    ```
 
 2. Create local envs:
-
    - Frontend secrets live in `.env.local`
    - `.env.example` is generated from `env-sync.config.json`
 
@@ -98,6 +97,15 @@ Supported flows:
 - Google OAuth
 - Apple OAuth
 - Password reset
+
+Supabase Auth redirect URLs must include every callback target used by the app:
+
+- `https://onzait.vercel.app/callback`
+- `https://onzait.vercel.app/reset-password`
+- `onzait://callback`
+- `onzait://reset-password`
+
+Expo Go uses a temporary `exp://.../--/callback` URL for native OAuth testing. Add the exact current Expo Go URL shown by the app/dev session to Supabase Auth redirect URLs, or use a development build so OAuth can return to `onzait://callback`.
 
 Important files:
 
