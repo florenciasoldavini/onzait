@@ -80,6 +80,10 @@ Current app-facing env vars:
 
 Backend-only env vars currently tracked in `.env.example`:
 
+- `RESEND_API_KEY`
+- `EMAIL_FROM`
+- `EMAIL_REPLY_TO`
+- `SITE_URL`
 - `DATABASE_URL`
 - `DIRECT_URL`
 

@@ -10,6 +10,7 @@ exports.UserSchema = zod_1.z.object({
     email: zod_1.z.string(),
     phone_number: zod_1.z.string().nullable(),
     role: zod_1.z.string(),
+    welcome_email_sent_at: zod_1.z.date().nullable(),
     created_at: zod_1.z.date(),
     updated_at: zod_1.z.date().nullable(),
     deleted_at: zod_1.z.date().nullable(),

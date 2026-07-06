@@ -82,6 +82,36 @@
       "comment": "Optional helper to distinguish development/preview/production in runtime telemetry.",
       "example": "development"
     },
+    "RESEND_API_KEY": {
+      "section": "Email / Server",
+      "comment": "Server-side Resend API key for transactional emails.",
+      "example": "re_your_resend_api_key",
+      "vercel": {
+        "environments": ["preview", "production"],
+        "sensitive": true
+      }
+    },
+    "EMAIL_FROM": {
+      "comment": "Default sender for server-side product emails.",
+      "example": "Onzait <onboarding@resend.dev>",
+      "vercel": {
+        "environments": ["preview", "production"]
+      }
+    },
+    "EMAIL_REPLY_TO": {
+      "comment": "Optional reply-to mailbox for product emails.",
+      "example": "hello@example.com",
+      "vercel": {
+        "environments": ["preview", "production"]
+      }
+    },
+    "SITE_URL": {
+      "comment": "Canonical app URL used in server-rendered product emails.",
+      "example": "https://onzait.vercel.app",
+      "vercel": {
+        "environments": ["preview", "production"]
+      }
+    },
     "DATABASE_URL": {
       "section": "Backend / Prisma",
       "example": "postgresql://postgres.your-project-ref:[YOUR-PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
