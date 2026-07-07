@@ -149,6 +149,15 @@ Form fields and their primary CTA should have enough vertical separation to read
 - The primary CTA should have at least the same breathing room from the last field as fields have from each other.
 - Shared form stacks should use reusable spacing constants instead of per-screen margin tweaks.
 
+## Form Completion Rules
+
+Forms should make completion state obvious before the user submits.
+
+- Submit buttons stay disabled until every required input is complete.
+- Use one labeling convention per form, not both required and optional markers.
+- The current shared convention is to label optional fields with a discreet `(optional)` hint and leave required fields unmarked.
+- Disabled submit buttons are guidance only; validation and authorization still belong in schemas, services, repositories, and database policies.
+
 ## Responsive Size Rules
 
 Size variants should be reviewed across mobile, tablet, and desktop before they become part of the design system.

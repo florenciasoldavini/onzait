@@ -218,6 +218,7 @@ export default function SignUpScreen() {
               }
             }}
             placeholder="name@company.com"
+            required
             size={authFieldSize}
             type="text"
             value={email}
@@ -243,6 +244,7 @@ export default function SignUpScreen() {
               }
             }}
             placeholder="min 8 characters"
+            required
             rightSlot={
               <PasswordVisibilityToggle
                 onPress={() => {

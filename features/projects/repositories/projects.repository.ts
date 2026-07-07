@@ -62,9 +62,22 @@ export async function getProjectRow(projectId: string) {
 
 export async function insertProjectRow(input: CreateProjectInput) {
   const client = requireSupabase();
+  const {
+    data: { user },
+    error: authError
+  } = await client.auth.getUser();
+
+  if (authError) {
+    throw toRepositoryError(authError);
+  }
+
+  if (!user) {
+    throw new Error("You must be signed in to save projects.");
+  }
+
   const { data, error } = await client
     .from("projects")
-    .insert(input)
+    .insert({ ...input, owner_id: user.id })
     .select()
     .single();
 

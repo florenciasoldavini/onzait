@@ -147,6 +147,7 @@ Last reviewed: 2026-07-06
 
 - Every feature must include appropriate tests for the work: unit tests for reusable logic, database/RLS tests for Supabase access rules, and flow/UI tests for user-critical behavior.
 - Every async surface must handle loading explicitly with an appropriate spinner, skeleton, disabled state, optimistic state, or other clear indicator.
+- Form submit buttons must stay disabled until every required input is complete. When a form mixes required and optional fields, use one label convention only: optional fields show the shared discreet `(optional)` hint, and required fields are left unmarked.
 - Use the dependency direction `screens/components -> hooks -> services -> repositories -> Supabase/Storage/Edge Functions`.
 - UI components should not call Supabase, Storage, Google, or other external services directly; use feature hooks.
 - Hooks should own React Query/cache behavior only and call feature services for workflows.

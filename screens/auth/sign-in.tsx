@@ -206,6 +206,7 @@ export default function SignInScreen() {
               }
             }}
             placeholder="architect@onzait.com"
+            required
             size={authFieldSize}
             textContentType="emailAddress"
             type="text"
@@ -232,6 +233,7 @@ export default function SignInScreen() {
               }
             }}
             placeholder="••••••••••••"
+            required
             rightSlot={
               <PasswordVisibilityToggle
                 onPress={() => {

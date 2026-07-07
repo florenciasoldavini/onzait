@@ -29,7 +29,7 @@ const validValues: ProjectFormValues = {
   estimated_start_date: "2026-07-01",
   name: "Corrientes Renovation",
   phase: "design",
-  progress_percentage: "15",
+  progress_percentage: 15,
   project_type: "renovation",
   start_date: "",
   status: "planned"
@@ -50,7 +50,6 @@ describe("project validation", () => {
     expect(result.values).not.toBeNull();
 
     const input = toCreateProjectInput({
-      ownerId: "owner-id",
       values: result.values as ProjectFormValues & {
         address: NonNullable<ProjectFormValues["address"]>;
       }
@@ -60,9 +59,9 @@ describe("project validation", () => {
       address: "Av. Corrientes 1234, Buenos Aires",
       description: "Lobby renovation",
       google_place_id: "google-place-id",
-      owner_id: "owner-id",
       progress_percentage: 15
     });
+    expect(input).not.toHaveProperty("owner_id");
   });
 
   it("rejects invalid date ordering", () => {

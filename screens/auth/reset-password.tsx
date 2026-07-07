@@ -253,6 +253,7 @@ export default function ResetPasswordScreen() {
                 }
               }}
               placeholder="name@company.com"
+              required
               size={authFieldSize}
               type="text"
               value={email}
@@ -290,6 +291,7 @@ export default function ResetPasswordScreen() {
                   }
                 }}
                 placeholder="new-password"
+                required
                 rightSlot={
                   <PasswordVisibilityToggle
                     onPress={() => {
@@ -328,6 +330,7 @@ export default function ResetPasswordScreen() {
                   }
                 }}
                 placeholder="confirm-password"
+                required
                 rightSlot={
                   <PasswordVisibilityToggle
                     onPress={() => {

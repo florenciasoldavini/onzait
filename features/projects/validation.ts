@@ -38,12 +38,12 @@ export const projectFormSchema = z
     name: z.string().trim().min(2).max(120),
     phase: z.enum(PROJECT_PHASES),
     progress_percentage: z
-      .string()
-      .trim()
-      .refine((value) => /^\d+$/.test(value), {
-        message: "Progress must be a number."
+      .number()
+      .int({ message: "Progress must be a whole number." })
+      .min(0, {
+        message: "Progress must be between 0 and 100."
       })
-      .refine((value) => Number(value) >= 0 && Number(value) <= 100, {
+      .max(100, {
         message: "Progress must be between 0 and 100."
       }),
     project_type: z.enum(PROJECT_TYPES),
@@ -112,10 +112,8 @@ export function validateProjectForm(values: ProjectFormValues): {
 }
 
 export function toCreateProjectInput({
-  ownerId,
   values
 }: {
-  ownerId: string;
   values: Omit<ProjectFormValues, "coverAsset"> & {
     address: ResolvedProjectAddress;
   };
@@ -131,9 +129,8 @@ export function toCreateProjectInput({
     latitude: values.address.latitude,
     longitude: values.address.longitude,
     name: values.name.trim(),
-    owner_id: ownerId,
     phase: values.phase,
-    progress_percentage: Number(values.progress_percentage),
+    progress_percentage: values.progress_percentage,
     project_type: values.project_type,
     start_date: normalizeNullableText(values.start_date),
     status: values.status
@@ -145,12 +142,7 @@ export function toUpdateProjectInput(
     address: ResolvedProjectAddress;
   }
 ): UpdateProjectInput {
-  const { owner_id: _ownerId, ...input } = toCreateProjectInput({
-    ownerId: "00000000-0000-4000-8000-000000000000",
-    values
-  });
-
-  return input;
+  return toCreateProjectInput({ values });
 }
 
 export function normalizeProjectFilters(filters: ProjectFilters = {}) {

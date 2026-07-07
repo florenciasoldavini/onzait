@@ -21,6 +21,7 @@ export function SelectField<T extends string>({
   label,
   onChange,
   options,
+  required = false,
   value
 }: {
   errorText?: string | null;
@@ -28,10 +29,16 @@ export function SelectField<T extends string>({
   label: ReactNode;
   onChange: (value: T) => void;
   options: SelectFieldOption<T>[];
+  required?: boolean;
   value: T;
 }) {
   return (
-    <FormField errorText={errorText} helperText={helperText} label={label}>
+    <FormField
+      errorText={errorText}
+      helperText={helperText}
+      label={label}
+      required={required}
+    >
       <View
         style={{
           flexDirection: "row",

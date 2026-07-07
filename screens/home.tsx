@@ -128,6 +128,7 @@ export default function HomeScreen() {
               leftIcon={AtSignIcon}
               onChangeText={setEmail}
               placeholder="architect@onzait.com"
+              required
               type="text"
               value={email}
             />
@@ -139,6 +140,7 @@ export default function HomeScreen() {
               leftIcon={LockIcon}
               onChangeText={setPassword}
               placeholder="••••••••••••"
+              required
               type="password"
               value={password}
             />

@@ -52,9 +52,24 @@ export function useProject(projectId?: string) {
 
 export function useCreateProject() {
   const queryClient = useQueryClient();
+  const { createUser, session, user } = useContext(AuthContext);
 
   return useMutation({
-    mutationFn: (input: CreateProjectInput) => createProject(input),
+    mutationFn: async (input: CreateProjectInput) => {
+      if (!session) {
+        throw new Error("You must be signed in to save projects.");
+      }
+
+      const currentUser = user ?? (await createUser(session));
+
+      if (!currentUser) {
+        throw new Error(
+          "We could not finish setting up your account. Sign out and back in, then try again."
+        );
+      }
+
+      return createProject(input);
+    },
     onSuccess: async (project) => {
       await queryClient.invalidateQueries({ queryKey: projectsKey });
       queryClient.setQueryData([...projectsKey, "detail", project.id], project);

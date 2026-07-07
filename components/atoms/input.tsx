@@ -19,13 +19,19 @@ import {
   InputField as UIInputField
 } from "@/components/ui/input";
 import { getSansFontStyle } from "@/theme/fonts";
-import type { ReactNode } from "react";
+import {
+  createElement,
+  type ChangeEvent,
+  type ClipboardEvent,
+  type CSSProperties,
+  type KeyboardEvent,
+  type ReactNode
+} from "react";
 import { useState } from "react";
 import {
   Platform,
   Pressable,
   Text,
-  View,
   type NativeSyntheticEvent,
   type TextInputFocusEventData,
   type TextStyle,
@@ -33,6 +39,20 @@ import {
 } from "react-native";
 
 type FieldSize = "sm" | "md" | "lg";
+type TextFieldProps = Omit<
+  React.ComponentProps<typeof UIInputField>,
+  "size"
+> & {
+  accessory?: ReactNode;
+  errorText?: string | null;
+  helperText?: string | null;
+  label?: ReactNode;
+  leftIcon?: AppIconComponent;
+  required?: boolean;
+  rightSlot?: ReactNode;
+  size?: FieldSize;
+  truncate?: boolean;
+};
 
 const sizeMap = {
   sm: {
@@ -72,17 +92,7 @@ export function TextField({
   size = "lg",
   truncate = false,
   ...props
-}: Omit<React.ComponentProps<typeof UIInputField>, "size"> & {
-  accessory?: ReactNode;
-  errorText?: string | null;
-  helperText?: string | null;
-  label?: ReactNode;
-  leftIcon?: AppIconComponent;
-  required?: boolean;
-  rightSlot?: ReactNode;
-  size?: FieldSize;
-  truncate?: boolean;
-}) {
+}: TextFieldProps) {
   const config = sizeMap[size];
   const iconPixelSize = appIconSizes[config.iconSize];
   const [isFocused, setIsFocused] = useState(false);
@@ -245,6 +255,293 @@ export function TextField({
       </Input>
     </FormField>
   );
+}
+
+export function NumericField({
+  accessory,
+  editable = true,
+  errorText,
+  helperText,
+  label,
+  leftIcon,
+  max,
+  min,
+  onChangeNumber,
+  placeholder,
+  required = false,
+  rightSlot,
+  size = "lg",
+  value,
+  ...props
+}: Omit<
+  TextFieldProps,
+  "defaultValue" | "inputMode" | "keyboardType" | "onChangeText" | "value"
+> & {
+  max?: number;
+  min?: number;
+  onChangeNumber: (value: number) => void;
+  value: number;
+}) {
+  if (Platform.OS === "web") {
+    return (
+      <WebNumericField
+        accessory={accessory}
+        editable={editable}
+        errorText={errorText}
+        helperText={helperText}
+        label={label}
+        leftIcon={leftIcon}
+        max={max}
+        min={min}
+        onChangeNumber={onChangeNumber}
+        placeholder={placeholder}
+        required={required}
+        rightSlot={rightSlot}
+        size={size}
+        value={value}
+      />
+    );
+  }
+
+  return (
+    <TextField
+      {...props}
+      inputMode="numeric"
+      keyboardType="numeric"
+      placeholder={placeholder}
+      onChangeText={(text) => {
+        if (text === "") {
+          onChangeNumber(getNumericFallback(min));
+          return;
+        }
+
+        if (!/^\d+$/.test(text)) {
+          return;
+        }
+
+        const numericValue = Number(text);
+
+        if (
+          (typeof min === "number" && numericValue < min) ||
+          (typeof max === "number" && numericValue > max)
+        ) {
+          return;
+        }
+
+        onChangeNumber(numericValue);
+      }}
+      accessory={accessory}
+      editable={editable}
+      errorText={errorText}
+      helperText={helperText}
+      label={label}
+      leftIcon={leftIcon}
+      required={required}
+      rightSlot={rightSlot}
+      size={size}
+      value={String(value)}
+    />
+  );
+}
+
+function WebNumericField({
+  accessory,
+  editable,
+  errorText,
+  helperText,
+  label,
+  leftIcon,
+  max,
+  min,
+  onChangeNumber,
+  placeholder,
+  required,
+  rightSlot,
+  size,
+  value
+}: Pick<
+  TextFieldProps,
+  | "accessory"
+  | "editable"
+  | "errorText"
+  | "helperText"
+  | "label"
+  | "leftIcon"
+  | "placeholder"
+  | "required"
+  | "rightSlot"
+  | "size"
+> & {
+  max?: number;
+  min?: number;
+  onChangeNumber: (value: number) => void;
+  value: number;
+}) {
+  const config = sizeMap[size ?? "lg"];
+  const iconPixelSize = appIconSizes[config.iconSize];
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const isDisabled = editable === false;
+  const borderColor = getFieldBorderColor({
+    errorText,
+    isDisabled,
+    isFocused,
+    isHovered
+  });
+  const iconColor = getFieldIconColor({
+    errorText,
+    isDisabled,
+    isFocused,
+    isHovered
+  });
+  const inputPaddingHorizontal =
+    leftIcon || rightSlot ? atomSpacing[3] : atomSpacing[4];
+  const webFontStyle = getSansFontStyle(
+    atomTypeScale.bodyMd.fontWeight
+  ) as CSSProperties;
+  const inputStyle: CSSProperties = {
+    appearance: "textfield",
+    backgroundColor: "transparent",
+    border: 0,
+    color: String(atomPalette.text),
+    cursor: isDisabled ? "not-allowed" : "text",
+    flex: 1,
+    fontSize: atomTypeScale.bodyMd.fontSize,
+    height: Number(config.minHeight),
+    letterSpacing: 0,
+    lineHeight: `${atomTypeScale.bodyMd.lineHeight}px`,
+    minWidth: 0,
+    outline: "none",
+    padding: `0 ${Number(inputPaddingHorizontal)}px`,
+    width: "100%",
+    ...webFontStyle
+  };
+
+  return (
+    <FormField
+      accessory={accessory}
+      errorText={errorText}
+      helperText={helperText}
+      label={label}
+      required={required}
+    >
+      <Input
+        isInvalid={Boolean(errorText)}
+        onPointerEnter={() => {
+          setIsHovered(true);
+        }}
+        onPointerLeave={() => {
+          setIsHovered(false);
+        }}
+        size={config.input}
+        style={
+          {
+            backgroundColor: isDisabled
+              ? atomPalette.surfaceLow
+              : atomPalette.surface,
+            borderColor,
+            borderRadius: config.radius,
+            cursor: isDisabled ? "not-allowed" : "text",
+            height: config.minHeight,
+            minHeight: config.minHeight
+          } as unknown as ViewStyle
+        }
+      >
+        {leftIcon ? (
+          <InputSlot
+            style={{
+              height: config.minHeight,
+              minWidth: atomSpacing[10],
+              paddingLeft: atomSpacing[4]
+            }}
+          >
+            {(() => {
+              const Icon = leftIcon;
+
+              return <Icon color={iconColor} size={iconPixelSize} />;
+            })()}
+          </InputSlot>
+        ) : null}
+        {createElement("input", {
+          disabled: isDisabled,
+          inputMode: "numeric",
+          max,
+          min,
+          onBlur: () => {
+            setIsFocused(false);
+          },
+          onChange: (event: ChangeEvent<HTMLInputElement>) => {
+            const nextValue = event.currentTarget.value;
+
+            if (nextValue === "") {
+              onChangeNumber(getNumericFallback(min));
+              return;
+            }
+
+            if (!/^\d+$/.test(nextValue)) {
+              return;
+            }
+
+            const numericValue = Number(nextValue);
+
+            if (
+              (typeof min === "number" && numericValue < min) ||
+              (typeof max === "number" && numericValue > max)
+            ) {
+              return;
+            }
+
+            onChangeNumber(numericValue);
+          },
+          onFocus: () => {
+            setIsFocused(true);
+          },
+          onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => {
+            if (event.metaKey || event.ctrlKey || event.altKey) {
+              return;
+            }
+
+            const allowedKeys = new Set([
+              "ArrowDown",
+              "ArrowLeft",
+              "ArrowRight",
+              "ArrowUp",
+              "Backspace",
+              "Delete",
+              "End",
+              "Enter",
+              "Home",
+              "Tab"
+            ]);
+
+            if (!allowedKeys.has(event.key) && !/^\d$/.test(event.key)) {
+              event.preventDefault();
+            }
+          },
+          onPaste: (event: ClipboardEvent<HTMLInputElement>) => {
+            const pastedText = event.clipboardData.getData("text");
+
+            if (!/^\d*$/.test(pastedText)) {
+              event.preventDefault();
+            }
+          },
+          placeholder,
+          style: inputStyle,
+          type: "number",
+          value: String(value)
+        })}
+        {rightSlot ? (
+          <InputSlot style={{ paddingRight: atomSpacing[4] }}>
+            {rightSlot}
+          </InputSlot>
+        ) : null}
+      </Input>
+    </FormField>
+  );
+}
+
+function getNumericFallback(min?: number) {
+  return typeof min === "number" && min > 0 ? min : 0;
 }
 
 export function PasswordVisibilityToggle({

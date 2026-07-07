@@ -101,6 +101,10 @@ export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
   const uploadAvatarMutation = useUploadProfileAvatar();
   const isProfileSaving = isSaving || uploadAvatarMutation.isPending;
+  const isProfileSaveDisabled = isProfileSaving || !firstName.trim();
+  const isPasswordChangeValid =
+    validatePassword(password) === null &&
+    validateConfirmPassword(confirmPassword, password) === null;
 
   const linkedProviders = useMemo(() => {
     return new Set(
@@ -341,6 +345,7 @@ export default function ProfileScreen() {
                     }
                   }}
                   placeholder="First name"
+                  required
                   size="md"
                   value={firstName}
                 />
@@ -375,7 +380,7 @@ export default function ProfileScreen() {
 
               <View style={{ gap: atomSpacing[3] }}>
                 <AppButton
-                  isDisabled={isProfileSaving}
+                  isDisabled={isProfileSaveDisabled}
                   loading={isProfileSaving}
                   onPress={() => {
                     void saveProfile();
@@ -430,6 +435,7 @@ export default function ProfileScreen() {
                       }
                     }}
                     placeholder="new-password"
+                    required
                     rightSlot={
                       <PasswordVisibilityToggle
                         onPress={() => {
@@ -464,6 +470,7 @@ export default function ProfileScreen() {
                       setSecurityStatus(null);
                     }}
                     placeholder="confirm-password"
+                    required
                     rightSlot={
                       <PasswordVisibilityToggle
                         onPress={() => {
@@ -479,7 +486,7 @@ export default function ProfileScreen() {
                   />
 
                   <AppButton
-                    isDisabled={isUpdatingPassword}
+                    isDisabled={!isPasswordChangeValid || isUpdatingPassword}
                     loading={isUpdatingPassword}
                     onPress={() => {
                       void changePassword();

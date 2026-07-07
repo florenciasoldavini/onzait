@@ -64,7 +64,7 @@ export interface ProjectFormValues {
   estimated_start_date: string;
   name: string;
   phase: ProjectPhase;
-  progress_percentage: string;
+  progress_percentage: number;
   project_type: ProjectType;
   start_date: string;
   status: ProjectStatus;
@@ -81,7 +81,6 @@ export interface CreateProjectInput {
   latitude: number;
   longitude: number;
   name: string;
-  owner_id: string;
   phase: ProjectPhase;
   progress_percentage: number;
   project_type: ProjectType;
@@ -89,9 +88,7 @@ export interface CreateProjectInput {
   status: ProjectStatus;
 }
 
-export type UpdateProjectInput = Partial<
-  Omit<CreateProjectInput, "owner_id">
-> & {
+export type UpdateProjectInput = Partial<CreateProjectInput> & {
   cover_image_path?: string | null;
 };
 

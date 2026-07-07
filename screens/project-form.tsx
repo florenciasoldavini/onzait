@@ -2,8 +2,10 @@ import {
   AppButton,
   AppCard,
   FieldMessage,
+  FieldLabel,
   AppHeading,
   AppText,
+  NumericField,
   Screen,
   SelectField,
   SkeletonBlock,
@@ -82,13 +84,27 @@ const defaultValues: ProjectFormValues = {
   estimated_start_date: "",
   name: "",
   phase: "concept",
-  progress_percentage: "0",
+  progress_percentage: 0,
   project_type: "new_build",
   start_date: "",
   status: "planned"
 };
 
 const mapMarkerImage = require("@/assets/images/map-marker.png");
+
+function areProjectRequiredFieldsComplete(values: ProjectFormValues) {
+  return Boolean(
+    values.name.trim().length >= 2 &&
+      values.address &&
+      values.status &&
+      values.phase &&
+      values.project_type &&
+      values.building_type &&
+      Number.isInteger(values.progress_percentage) &&
+      values.progress_percentage >= 0 &&
+      values.progress_percentage <= 100
+  );
+}
 
 export function ProjectFormScreen({
   mode,
@@ -98,7 +114,7 @@ export function ProjectFormScreen({
   projectId?: string;
 }) {
   const router = useRouter();
-  const { user } = useContext(AuthContext);
+  const { session } = useContext(AuthContext);
   const [values, setValues] = useState<ProjectFormValues>(defaultValues);
   const [errors, setErrors] = useState<ProjectFormErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -110,6 +126,7 @@ export function ProjectFormScreen({
     createMutation.isPending ||
     updateMutation.isPending ||
     uploadMutation.isPending;
+  const areRequiredFieldsComplete = areProjectRequiredFieldsComplete(values);
 
   useEffect(() => {
     if (mode === "edit" && projectQuery.data) {
@@ -126,7 +143,7 @@ export function ProjectFormScreen({
   };
 
   const handleSubmit = async () => {
-    if (!user) {
+    if (!session) {
       setFormError("You must be signed in to save projects.");
       return;
     }
@@ -145,7 +162,6 @@ export function ProjectFormScreen({
       if (mode === "create") {
         const project = await createMutation.mutateAsync(
           toCreateProjectInput({
-            ownerId: user.id,
             values: result.values as Omit<ProjectFormValues, "coverAsset"> & {
               address: ResolvedProjectAddress;
             }
@@ -248,6 +264,7 @@ export function ProjectFormScreen({
               label="Project Name"
               onChangeText={(text) => setField("name", text)}
               placeholder="Foundation Package"
+              required
               value={values.name}
             />
 
@@ -262,6 +279,7 @@ export function ProjectFormScreen({
             <AddressField
               errorText={errors.address}
               onChange={(address) => setField("address", address)}
+              required
               value={values.address}
             />
 
@@ -272,6 +290,7 @@ export function ProjectFormScreen({
                 label: PROJECT_STATUS_LABELS[value],
                 value
               }))}
+              required
               value={values.status}
             />
 
@@ -282,6 +301,7 @@ export function ProjectFormScreen({
                 label: PROJECT_PHASE_LABELS[value],
                 value
               }))}
+              required
               value={values.phase}
             />
 
@@ -292,6 +312,7 @@ export function ProjectFormScreen({
                 label: PROJECT_TYPE_LABELS[value],
                 value
               }))}
+              required
               value={values.project_type}
             />
 
@@ -302,55 +323,46 @@ export function ProjectFormScreen({
                 label: PROJECT_BUILDING_TYPE_LABELS[value],
                 value
               }))}
+              required
               value={values.building_type}
             />
 
-            <TextField
+            <NumericField
               errorText={errors.progress_percentage}
-              keyboardType="number-pad"
               label="Progress Percentage"
-              onChangeText={(text) => setField("progress_percentage", text)}
+              max={100}
+              min={0}
+              onChangeNumber={(value) => setField("progress_percentage", value)}
               placeholder="0"
+              required
               value={values.progress_percentage}
             />
 
             <View style={{ gap: atomSpacing[4] }}>
-              <View style={{ flexDirection: "row", gap: atomSpacing[3] }}>
-                <View style={{ flex: 1 }}>
-                  <CalendarDateField
-                    errorText={errors.estimated_start_date}
-                    label="Estimated Start"
-                    onChange={(date) => setField("estimated_start_date", date)}
-                    value={values.estimated_start_date}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <CalendarDateField
-                    errorText={errors.estimated_end_date}
-                    label="Estimated End"
-                    onChange={(date) => setField("estimated_end_date", date)}
-                    value={values.estimated_end_date}
-                  />
-                </View>
-              </View>
-              <View style={{ flexDirection: "row", gap: atomSpacing[3] }}>
-                <View style={{ flex: 1 }}>
-                  <CalendarDateField
-                    errorText={errors.start_date}
-                    label="Actual Start"
-                    onChange={(date) => setField("start_date", date)}
-                    value={values.start_date}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <CalendarDateField
-                    errorText={errors.end_date}
-                    label="Actual End"
-                    onChange={(date) => setField("end_date", date)}
-                    value={values.end_date}
-                  />
-                </View>
-              </View>
+              <CalendarDateField
+                errorText={errors.estimated_start_date}
+                label="Estimated Start"
+                onChange={(date) => setField("estimated_start_date", date)}
+                value={values.estimated_start_date}
+              />
+              <CalendarDateField
+                errorText={errors.estimated_end_date}
+                label="Estimated End"
+                onChange={(date) => setField("estimated_end_date", date)}
+                value={values.estimated_end_date}
+              />
+              <CalendarDateField
+                errorText={errors.start_date}
+                label="Actual Start"
+                onChange={(date) => setField("start_date", date)}
+                value={values.start_date}
+              />
+              <CalendarDateField
+                errorText={errors.end_date}
+                label="Actual End"
+                onChange={(date) => setField("end_date", date)}
+                value={values.end_date}
+              />
             </View>
 
             {formError ? (
@@ -373,6 +385,7 @@ export function ProjectFormScreen({
               <View style={{ flex: 1 }}>
                 <AppButton
                   icon={Save}
+                  isDisabled={!areRequiredFieldsComplete || isSubmitting}
                   loading={isSubmitting}
                   onPress={handleSubmit}
                 >
@@ -390,10 +403,12 @@ export function ProjectFormScreen({
 function AddressField({
   errorText,
   onChange,
+  required = false,
   value
 }: {
   errorText?: string | null;
   onChange: (address: ResolvedProjectAddress | null) => void;
+  required?: boolean;
   value: ResolvedProjectAddress | null;
 }) {
   const [query, setQuery] = useState(value?.address ?? "");
@@ -485,6 +500,7 @@ function AddressField({
           openSuggestions();
         }}
         placeholder="Search with Google Maps"
+        required={required}
         rightSlot={
           (canSearch && suggestionsQuery.isPending) ||
           suggestionsQuery.isFetching ||
@@ -831,9 +847,7 @@ function CoverPicker({
 
   return (
     <View style={{ gap: atomSpacing[3] }}>
-      <AppText tone="subtle" variant="formLabel">
-        Cover Image
-      </AppText>
+      <FieldLabel>Cover Image</FieldLabel>
       <Pressable
         accessibilityLabel="Choose project cover image"
         accessibilityRole="button"
@@ -1092,7 +1106,7 @@ function getValuesFromProject(project: Project): ProjectFormValues {
     estimated_start_date: project.estimated_start_date ?? "",
     name: project.name,
     phase: project.phase,
-    progress_percentage: String(project.progress_percentage),
+    progress_percentage: project.progress_percentage,
     project_type: project.project_type,
     start_date: project.start_date ?? "",
     status: project.status

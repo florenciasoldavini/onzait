@@ -8,38 +8,47 @@ import { Platform } from "react-native";
 export function HapticTab(props: BottomTabBarButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
   const isWeb = Platform.OS === "web";
+  const {
+    children: originalChildren,
+    onHoverIn,
+    onHoverOut,
+    onPressIn,
+    style,
+    ...pressableProps
+  } = props;
   const isSelected = Boolean(
     props.accessibilityState?.selected || props["aria-selected"]
   );
   const shouldTintContent = isWeb && isHovered && !isSelected;
   const children = shouldTintContent
     ? tintTabChildren(
-        props.children,
+        originalChildren,
         designTokens.colors.semantic.text.secondary
       )
-    : props.children;
+    : originalChildren;
 
   return (
     <PlatformPressable
-      {...props}
-      children={children}
+      {...pressableProps}
       onHoverIn={(event) => {
         setIsHovered(true);
-        props.onHoverIn?.(event);
+        onHoverIn?.(event);
       }}
       onHoverOut={(event) => {
         setIsHovered(false);
-        props.onHoverOut?.(event);
+        onHoverOut?.(event);
       }}
       onPressIn={(ev) => {
         if (process.env.EXPO_OS === "ios") {
           // Add a soft haptic feedback when pressing down on the tabs.
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
-        props.onPressIn?.(ev);
+        onPressIn?.(ev);
       }}
-      style={props.style}
-    />
+      style={style}
+    >
+      {children}
+    </PlatformPressable>
   );
 }
 
