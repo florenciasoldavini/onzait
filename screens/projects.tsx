@@ -14,6 +14,11 @@ import { useRouter } from "expo-router";
 import { FolderPlus, RefreshCw, Search } from "lucide-react-native";
 import { useState } from "react";
 import { useWindowDimensions, View, type ViewStyle } from "react-native";
+import Animated, {
+  FadeInUp,
+  FadeOut,
+  LinearTransition
+} from "react-native-reanimated";
 
 export default function ProjectsScreen() {
   const router = useRouter();
@@ -57,7 +62,7 @@ export default function ProjectsScreen() {
 
         {projectsQuery.isLoading ? (
           <View style={projectGrid.containerStyle}>
-            {[0, 1, 2].map((item) => (
+            {[0, 1, 2, 3].map((item) => (
               <View key={item} style={projectGrid.itemStyle}>
                 <ProjectCardSkeleton />
               </View>
@@ -81,15 +86,23 @@ export default function ProjectsScreen() {
           />
         ) : projectsQuery.data && projectsQuery.data.length > 0 ? (
           <View style={projectGrid.containerStyle}>
-            {projectsQuery.data.map((project) => (
-              <View key={project.id} style={projectGrid.itemStyle}>
+            {projectsQuery.data.map((project, index) => (
+              <Animated.View
+                entering={FadeInUp.duration(240).delay(
+                  Math.min(index, 6) * 36
+                )}
+                exiting={FadeOut.duration(140)}
+                key={project.id}
+                layout={LinearTransition.duration(220)}
+                style={projectGrid.itemStyle}
+              >
                 <ProjectCard
                   onPress={() =>
                     router.push(`/projects/${project.id}` as never)
                   }
                   project={project}
                 />
-              </View>
+              </Animated.View>
             ))}
           </View>
         ) : (
@@ -122,7 +135,9 @@ function getProjectGridMetrics(screenWidth: number) {
   );
   const gap = atomSpacing[4];
   const columns =
-    availableWidth >= 1200
+    availableWidth >= 1080
+      ? 4
+      : availableWidth >= 900
       ? 3
       : availableWidth >= atomLayout.breakpointTablet
         ? 2
