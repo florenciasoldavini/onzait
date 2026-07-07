@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
+import { consumeGoogleMapsMonthlyLimit } from "../_shared/google-maps-usage-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Headers":
@@ -61,6 +62,16 @@ Deno.serve(async (request) => {
 
     if (cached) {
       return json(cached);
+    }
+
+    const usageLimit = await consumeGoogleMapsMonthlyLimit({
+      defaultLimit: 100,
+      envName: "GOOGLE_MAPS_PLACE_DETAILS_MONTHLY_LIMIT",
+      service: "places_resolve"
+    });
+
+    if (!usageLimit.allowed) {
+      return json({ error: usageLimit.message }, usageLimit.status);
     }
 
     const url = new URL(

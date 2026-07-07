@@ -1,6 +1,7 @@
 import {
   AppButton,
   AppCard,
+  FieldMessage,
   AppHeading,
   AppText,
   Screen,
@@ -9,9 +10,15 @@ import {
   TextAreaField,
   TextField
 } from "@/components/atoms";
-import { atomPalette, atomSpacing } from "@/components/atoms/theme";
-import { Spinner } from "@/components/ui/spinner";
 import { AuthContext } from "@/contexts/auth";
+import { FormField } from "@/components/molecules";
+import {
+  atomControlHeights,
+  atomControlRadius,
+  atomPalette,
+  atomSpacing
+} from "@/components/atoms/theme";
+import { Spinner } from "@/components/ui/spinner";
 import {
   PROJECT_BUILDING_TYPE_LABELS,
   PROJECT_BUILDING_TYPES,
@@ -44,13 +51,23 @@ import {
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { ImagePlus, MapPinned, Save } from "lucide-react-native";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  ImagePlus,
+  MapPinned,
+  Save
+} from "lucide-react-native";
 import { useContext, useEffect, useState } from "react";
 import {
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
+  Text,
   View,
+  type GestureResponderEvent,
   type ViewStyle
 } from "react-native";
 
@@ -297,44 +314,36 @@ export function ProjectFormScreen({
             <View style={{ gap: atomSpacing[4] }}>
               <View style={{ flexDirection: "row", gap: atomSpacing[3] }}>
                 <View style={{ flex: 1 }}>
-                  <TextField
+                  <CalendarDateField
                     errorText={errors.estimated_start_date}
                     label="Estimated Start"
-                    onChangeText={(text) =>
-                      setField("estimated_start_date", text)
-                    }
-                    placeholder="YYYY-MM-DD"
+                    onChange={(date) => setField("estimated_start_date", date)}
                     value={values.estimated_start_date}
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <TextField
+                  <CalendarDateField
                     errorText={errors.estimated_end_date}
                     label="Estimated End"
-                    onChangeText={(text) =>
-                      setField("estimated_end_date", text)
-                    }
-                    placeholder="YYYY-MM-DD"
+                    onChange={(date) => setField("estimated_end_date", date)}
                     value={values.estimated_end_date}
                   />
                 </View>
               </View>
               <View style={{ flexDirection: "row", gap: atomSpacing[3] }}>
                 <View style={{ flex: 1 }}>
-                  <TextField
+                  <CalendarDateField
                     errorText={errors.start_date}
                     label="Actual Start"
-                    onChangeText={(text) => setField("start_date", text)}
-                    placeholder="YYYY-MM-DD"
+                    onChange={(date) => setField("start_date", date)}
                     value={values.start_date}
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <TextField
+                  <CalendarDateField
                     errorText={errors.end_date}
                     label="Actual End"
-                    onChangeText={(text) => setField("end_date", text)}
-                    placeholder="YYYY-MM-DD"
+                    onChange={(date) => setField("end_date", date)}
                     value={values.end_date}
                   />
                 </View>
@@ -389,6 +398,17 @@ function AddressField({
   const suggestionsQuery = useAddressAutocomplete(query, sessionToken);
   const resolveMutation = useResolveAddress();
   const suggestions = suggestionsQuery.data ?? [];
+  const canSearch = query.trim().length >= 3 && !value;
+  const shouldShowNoResults =
+    canSearch &&
+    !suggestionsQuery.isPending &&
+    !suggestionsQuery.isFetching &&
+    !suggestionsQuery.isError &&
+    suggestions.length === 0;
+  const autocompleteError =
+    suggestionsQuery.error instanceof Error
+      ? suggestionsQuery.error.message
+      : "Address suggestions are unavailable right now.";
 
   useEffect(() => {
     if (value?.address && value.address !== query) {
@@ -418,7 +438,9 @@ function AddressField({
         }}
         placeholder="Search with Google Maps"
         rightSlot={
-          suggestionsQuery.isFetching || resolveMutation.isPending ? (
+          (canSearch && suggestionsQuery.isPending) ||
+          suggestionsQuery.isFetching ||
+          resolveMutation.isPending ? (
             <Spinner color={atomPalette.accent} size="small" />
           ) : null
         }
@@ -426,7 +448,11 @@ function AddressField({
       />
 
       {suggestions.length > 0 ? (
-        <AppCard padding="sm" tone="muted">
+        <AppCard
+          padding="sm"
+          style={projectFormStyles.addressSuggestionsCard}
+          tone="muted"
+        >
           <View style={{ gap: atomSpacing[2] }}>
             {suggestions.map((suggestion) => (
               <Pressable
@@ -457,6 +483,22 @@ function AddressField({
         </AppCard>
       ) : null}
 
+      {suggestionsQuery.isError && canSearch ? (
+        <FieldMessage tone="error">{autocompleteError}</FieldMessage>
+      ) : null}
+
+      {shouldShowNoResults ? (
+        <AppCard
+          padding="sm"
+          style={projectFormStyles.addressSuggestionsCard}
+          tone="muted"
+        >
+          <AppText tone="subtle" variant="bodySm">
+            No matching addresses found.
+          </AppText>
+        </AppCard>
+      ) : null}
+
       {value ? (
         <AppText tone="success" variant="bodySm">
           Coordinates selected from Google Maps: {value.latitude.toFixed(5)},{" "}
@@ -464,6 +506,194 @@ function AddressField({
         </AppText>
       ) : null}
     </View>
+  );
+}
+
+function CalendarDateField({
+  errorText,
+  label,
+  onChange,
+  value
+}: {
+  errorText?: string | null;
+  label: string;
+  onChange: (date: string) => void;
+  value: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [visibleMonth, setVisibleMonth] = useState(() =>
+    getCalendarMonth(value)
+  );
+  const selectedDate = parseCalendarDate(value);
+  const calendarDays = getCalendarDays(visibleMonth);
+
+  useEffect(() => {
+    if (isOpen) {
+      setVisibleMonth(getCalendarMonth(value));
+    }
+  }, [isOpen, value]);
+
+  const selectDate = (date: Date) => {
+    onChange(toCalendarDateValue(date));
+    setIsOpen(false);
+  };
+
+  return (
+    <FormField errorText={errorText} label={label}>
+      <Pressable
+        accessibilityLabel={`${label} date picker`}
+        accessibilityRole="button"
+        onPress={() => setIsOpen(true)}
+        style={StyleSheet.flatten([
+          projectFormStyles.datePickerButton,
+          errorText ? projectFormStyles.datePickerButtonError : null,
+          Platform.OS === "web" ? projectFormStyles.webCursor : null
+        ])}
+      >
+        <CalendarDays
+          color={value ? atomPalette.text : atomPalette.textMuted}
+          size={18}
+        />
+        <AppText tone={value ? "default" : "subtle"} variant="body">
+          {value || "Select date"}
+        </AppText>
+      </Pressable>
+
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setIsOpen(false)}
+        transparent
+        visible={isOpen}
+      >
+        <View style={projectFormStyles.calendarBackdrop}>
+          <View style={projectFormStyles.calendarModal}>
+            <View style={projectFormStyles.calendarHeader}>
+              <CalendarIconButton
+                accessibilityLabel="Previous month"
+                icon={ChevronLeft}
+                onPress={() =>
+                  setVisibleMonth(
+                    (current) =>
+                      new Date(current.getFullYear(), current.getMonth() - 1, 1)
+                  )
+                }
+              />
+              <AppHeading variant="section">
+                {formatCalendarMonth(visibleMonth)}
+              </AppHeading>
+              <CalendarIconButton
+                accessibilityLabel="Next month"
+                icon={ChevronRight}
+                onPress={() =>
+                  setVisibleMonth(
+                    (current) =>
+                      new Date(current.getFullYear(), current.getMonth() + 1, 1)
+                  )
+                }
+              />
+            </View>
+
+            <View style={projectFormStyles.calendarWeekdays}>
+              {calendarWeekdayLabels.map((weekday) => (
+                <Text key={weekday} style={projectFormStyles.calendarWeekday}>
+                  {weekday}
+                </Text>
+              ))}
+            </View>
+
+            <View style={projectFormStyles.calendarGrid}>
+              {calendarDays.map((day) => {
+                const isSelected =
+                  selectedDate &&
+                  toCalendarDateValue(selectedDate) ===
+                    toCalendarDateValue(day.date);
+
+                return (
+                  <Pressable
+                    accessibilityLabel={`Select ${toCalendarDateValue(
+                      day.date
+                    )}`}
+                    accessibilityRole="button"
+                    key={day.key}
+                    onPress={() => selectDate(day.date)}
+                    style={StyleSheet.flatten([
+                      projectFormStyles.calendarDay,
+                      day.isCurrentMonth
+                        ? null
+                        : projectFormStyles.calendarDayOutside,
+                      isSelected ? projectFormStyles.calendarDaySelected : null,
+                      Platform.OS === "web"
+                        ? projectFormStyles.webCursor
+                        : null
+                    ])}
+                  >
+                    <Text
+                      style={StyleSheet.flatten([
+                        projectFormStyles.calendarDayText,
+                        day.isCurrentMonth
+                          ? null
+                          : projectFormStyles.calendarDayTextOutside,
+                        isSelected
+                          ? projectFormStyles.calendarDayTextSelected
+                          : null
+                      ])}
+                    >
+                      {day.date.getDate()}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <View style={projectFormStyles.calendarActions}>
+              <AppButton
+                color="neutral"
+                fullWidth={false}
+                onPress={() => {
+                  onChange("");
+                  setIsOpen(false);
+                }}
+                size="sm"
+                variant="bordered"
+              >
+                Clear
+              </AppButton>
+              <AppButton
+                fullWidth={false}
+                onPress={() => setIsOpen(false)}
+                size="sm"
+              >
+                Done
+              </AppButton>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </FormField>
+  );
+}
+
+function CalendarIconButton({
+  accessibilityLabel,
+  icon: Icon,
+  onPress
+}: {
+  accessibilityLabel: string;
+  icon: typeof ChevronLeft;
+  onPress: (event: GestureResponderEvent) => void;
+}) {
+  return (
+    <Pressable
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={StyleSheet.flatten([
+        projectFormStyles.calendarIconButton,
+        Platform.OS === "web" ? projectFormStyles.webCursor : null
+      ])}
+    >
+      <Icon color={atomPalette.text} size={20} />
+    </Pressable>
   );
 }
 
@@ -536,7 +766,169 @@ function CoverPicker({
   );
 }
 
+const calendarWeekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const calendarMonthLabels = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December"
+];
+
+function getCalendarMonth(value: string) {
+  const parsed = parseCalendarDate(value);
+  const today = new Date();
+  const source = parsed ?? today;
+
+  return new Date(source.getFullYear(), source.getMonth(), 1);
+}
+
+function getCalendarDays(visibleMonth: Date) {
+  const year = visibleMonth.getFullYear();
+  const month = visibleMonth.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const firstWeekday = firstDay.getDay();
+  const days: Array<{ date: Date; isCurrentMonth: boolean; key: string }> = [];
+
+  for (let offset = 0; offset < 42; offset += 1) {
+    const date = new Date(year, month, offset - firstWeekday + 1);
+
+    days.push({
+      date,
+      isCurrentMonth: date.getMonth() === month,
+      key: toCalendarDateValue(date)
+    });
+  }
+
+  return days;
+}
+
+function parseCalendarDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+function formatCalendarMonth(date: Date) {
+  return `${calendarMonthLabels[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+function toCalendarDateValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 const projectFormStyles = StyleSheet.create({
+  addressSuggestionsCard: {
+    elevation: 2,
+    overflow: "visible",
+    zIndex: 20
+  },
+  calendarActions: {
+    flexDirection: "row",
+    gap: atomSpacing[3],
+    justifyContent: "flex-end"
+  },
+  calendarBackdrop: {
+    alignItems: "center",
+    backgroundColor: "rgba(18, 18, 18, 0.28)",
+    flex: 1,
+    justifyContent: "center",
+    padding: atomSpacing[5]
+  },
+  calendarDay: {
+    alignItems: "center",
+    aspectRatio: 1,
+    borderRadius: 999,
+    justifyContent: "center",
+    width: `${100 / 7}%`
+  },
+  calendarDayOutside: {
+    opacity: 0.42
+  },
+  calendarDaySelected: {
+    backgroundColor: atomPalette.accent
+  },
+  calendarDayText: {
+    color: atomPalette.text,
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 18
+  },
+  calendarDayTextOutside: {
+    color: atomPalette.textMuted
+  },
+  calendarDayTextSelected: {
+    color: atomPalette.accentText
+  },
+  calendarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap"
+  },
+  calendarHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  calendarIconButton: {
+    alignItems: "center",
+    backgroundColor: atomPalette.surfaceLow,
+    borderColor: atomPalette.borderSubtle,
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: "center",
+    width: 40
+  },
+  calendarModal: {
+    backgroundColor: atomPalette.surface,
+    borderColor: atomPalette.border,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: atomSpacing[5],
+    maxWidth: 360,
+    padding: atomSpacing[5],
+    width: "100%"
+  },
+  calendarWeekday: {
+    color: atomPalette.textMuted,
+    flex: 1,
+    fontSize: 11,
+    fontWeight: "800",
+    lineHeight: 16,
+    textAlign: "center",
+    textTransform: "uppercase"
+  },
+  calendarWeekdays: {
+    flexDirection: "row"
+  },
   coverPicker: {
     alignItems: "center",
     backgroundColor: atomPalette.surfaceLow,
@@ -546,6 +938,20 @@ const projectFormStyles = StyleSheet.create({
     height: 132,
     justifyContent: "center",
     overflow: "hidden"
+  },
+  datePickerButton: {
+    alignItems: "center",
+    backgroundColor: atomPalette.surface,
+    borderColor: atomPalette.border,
+    borderRadius: atomControlRadius,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: atomSpacing[3],
+    minHeight: atomControlHeights.lg,
+    paddingHorizontal: atomSpacing[4]
+  },
+  datePickerButtonError: {
+    borderColor: atomPalette.error
   },
   webCursor: {
     cursor: "pointer"

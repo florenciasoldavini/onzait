@@ -2,6 +2,7 @@ import {
   mapAddressSuggestions,
   mapResolvedAddress
 } from "@/features/projects/maps";
+import { getMapsFunctionErrorMessage } from "@/features/projects/maps-errors";
 import { buildProjectListQueryPlan } from "@/features/projects/query-builders";
 import type { ProjectFormValues } from "@/features/projects/types";
 import {
@@ -154,6 +155,22 @@ describe("Google Maps response mapping", () => {
       longitude: -58,
       placeId: "place-1"
     });
+  });
+});
+
+describe("Google Maps repository errors", () => {
+  it("preserves Edge Function error payload messages", async () => {
+    const error = new Error(
+      "Edge Function returned a non-2xx status code"
+    ) as Error & { context: Response };
+    error.context = new Response(
+      JSON.stringify({ error: "Google Maps is not configured." }),
+      { status: 500 }
+    );
+
+    await expect(getMapsFunctionErrorMessage(error)).resolves.toBe(
+      "Google Maps is not configured."
+    );
   });
 });
 

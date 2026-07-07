@@ -2,6 +2,7 @@ import {
   mapAddressSuggestions,
   mapResolvedAddress
 } from "@/features/projects/maps";
+import { getMapsFunctionErrorMessage } from "@/features/projects/maps-errors";
 import {
   requireSupabase,
   toRepositoryError
@@ -24,7 +25,7 @@ export async function autocompleteAddressSuggestions({
   });
 
   if (error) {
-    throw toRepositoryError(error);
+    throw await toMapsFunctionError(error);
   }
 
   return mapAddressSuggestions(data);
@@ -43,8 +44,18 @@ export async function resolveAddressSuggestion({
   });
 
   if (error) {
-    throw toRepositoryError(error);
+    throw await toMapsFunctionError(error);
   }
 
   return mapResolvedAddress(data);
+}
+
+export async function toMapsFunctionError(error: unknown) {
+  const message = await getMapsFunctionErrorMessage(error);
+
+  if (message) {
+    return new Error(message);
+  }
+
+  return toRepositoryError(error);
 }
