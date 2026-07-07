@@ -1,3 +1,4 @@
+import { HapticTab } from "@/components/HapticTab";
 import { ProfileIcon, ProjectsIcon, ToDoIcon } from "@/components/icons";
 import { getMonoFontStyle } from "@/theme/fonts";
 import { designTokens } from "@/theme/tokens";
@@ -34,6 +35,7 @@ export default function TabsLayout() {
         tabBarIconStyle: {
           marginBottom: 0
         },
+        tabBarButton: (props) => <HapticTab {...props} />,
         tabBarLabelStyle: {
           fontSize: isWeb ? tabLabelToken.fontSize : nativeLabelSize,
           lineHeight: 14,
