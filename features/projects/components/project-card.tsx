@@ -10,15 +10,14 @@ import {
   PROJECT_STATUS_LABELS,
   PROJECT_TYPE_LABELS
 } from "@/features/projects/constants";
-import type { Project } from "@/features/projects/types";
+import type { Project, ProjectStatus } from "@/features/projects/types";
 import { Image } from "expo-image";
 import { ImageOff, MapPinned } from "lucide-react-native";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Platform,
   Pressable,
   View,
-  type DimensionValue,
   type ViewStyle
 } from "react-native";
 import Animated, {
@@ -86,7 +85,8 @@ export function ProjectCard({
               </View>
             )}
             <ProjectStatusCornerLabel
-              status={PROJECT_STATUS_LABELS[project.status]}
+              label={PROJECT_STATUS_LABELS[project.status]}
+              status={project.status}
             />
           </View>
 
@@ -170,7 +170,7 @@ function ProjectMetaLabel({ value }: { value: string }) {
   );
 }
 
-function ProjectProgressIndicator({ progress }: { progress: number }) {
+export function ProjectProgressIndicator({ progress }: { progress: number }) {
   const clampedProgress = Math.min(Math.max(progress, 0), 100);
 
   return (
@@ -199,12 +199,28 @@ function ProjectProgressIndicator({ progress }: { progress: number }) {
 }
 
 function ProjectProgressBar({ progress }: { progress: number }) {
-  const progressWidth: DimensionValue =
-    progress === 0 ? 12 : `${progress}%`;
+  const [trackWidth, setTrackWidth] = useState(0);
+  const animatedProgress = useSharedValue(0);
+  const fillStyle = useAnimatedStyle(() => ({
+    width:
+      animatedProgress.value > 0 && trackWidth > 0
+        ? Math.max(4, trackWidth * (animatedProgress.value / 100))
+        : 0
+  }));
+
+  useEffect(() => {
+    animatedProgress.value = withTiming(progress, {
+      duration: 650,
+      easing: Easing.out(Easing.cubic)
+    });
+  }, [animatedProgress, progress]);
 
   return (
     <View
       accessibilityLabel={`Project progress ${progress}%`}
+      onLayout={(event) => {
+        setTrackWidth(event.nativeEvent.layout.width);
+      }}
       style={{
         backgroundColor: `${atomPalette.accent}1A`,
         borderRadius: atomRadii.full,
@@ -213,13 +229,15 @@ function ProjectProgressBar({ progress }: { progress: number }) {
         position: "relative"
       }}
     >
-      <View
-        style={{
-          backgroundColor: atomPalette.accent,
-          borderRadius: atomRadii.full,
-          height: "100%",
-          width: progressWidth
-        }}
+      <Animated.View
+        style={[
+          {
+            backgroundColor: atomPalette.accent,
+            borderRadius: atomRadii.full,
+            height: "100%"
+          },
+          fillStyle
+        ]}
       />
     </View>
   );
@@ -233,10 +251,23 @@ function formatMonoLabel(value: string) {
   return value.trim().toUpperCase().replaceAll(" ", "_");
 }
 
-function ProjectStatusCornerLabel({ status }: { status: string }) {
+function ProjectStatusCornerLabel({
+  label,
+  status
+}: {
+  label: string;
+  status: ProjectStatus;
+}) {
   const pulse = useSharedValue(0);
+  const shouldPulse = status === "in_progress";
 
   useEffect(() => {
+    if (!shouldPulse) {
+      cancelAnimation(pulse);
+      pulse.value = 0;
+      return;
+    }
+
     pulse.value = withRepeat(
       withSequence(
         withTiming(1, {
@@ -254,14 +285,14 @@ function ProjectStatusCornerLabel({ status }: { status: string }) {
     return () => {
       cancelAnimation(pulse);
     };
-  }, [pulse]);
+  }, [pulse, shouldPulse]);
 
   const pulseHaloStyle = useAnimatedStyle(() => ({
-    opacity: 0.38 * (1 - pulse.value),
+    opacity: shouldPulse ? 0.38 * (1 - pulse.value) : 0,
     transform: [{ scale: 1 + pulse.value * 1.4 }]
   }));
   const pulseDotStyle = useAnimatedStyle(() => ({
-    opacity: 1 - pulse.value * 0.28,
+    opacity: shouldPulse ? 1 - pulse.value * 0.28 : 1,
     transform: [{ scale: 1 + pulse.value * 0.28 }]
   }));
 
@@ -321,7 +352,7 @@ function ProjectStatusCornerLabel({ status }: { status: string }) {
         />
       </View>
       <AppText tone="accent" variant="meta">
-        {status.toUpperCase().replaceAll(" ", "_")}
+        {label.toUpperCase().replaceAll(" ", "_")}
       </AppText>
     </View>
   );

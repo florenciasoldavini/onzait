@@ -8,6 +8,7 @@ import {
   SkeletonBlock
 } from "@/components/atoms";
 import { atomSpacing } from "@/components/atoms/theme";
+import { ProjectProgressIndicator } from "@/features/projects/components/project-card";
 import { useProject } from "@/features/projects/hooks";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Pencil } from "lucide-react-native";
@@ -89,6 +90,7 @@ export default function ProjectDetailScreen() {
             <AppHeading variant="section">
               Project detail page is ready.
             </AppHeading>
+            <ProjectProgressIndicator progress={project.progress_percentage} />
             <AppText tone="muted">
               The route, loading state, permission-aware fetch, and edit action
               are wired. The operational detail modules can be added in the next
