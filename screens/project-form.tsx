@@ -1,6 +1,7 @@
 import {
   AppButton,
   AppCard,
+  Breadcrumb,
   FieldMessage,
   FieldLabel,
   AppHeading,
@@ -237,9 +238,16 @@ export function ProjectFormScreen({
     <Screen>
       <View style={{ gap: atomSpacing[6] }}>
         <View style={{ gap: atomSpacing[3] }}>
-          <AppText variant="eyebrow">
-            Projects / {mode === "create" ? "New" : "Edit"}
-          </AppText>
+          <Breadcrumb
+            items={[
+              {
+                accessibilityLabel: "Back to projects",
+                label: "Projects",
+                onPress: () => router.replace("/projects" as never)
+              },
+              { label: mode === "create" ? "New" : "Edit" }
+            ]}
+          />
           <AppHeading variant="hero">
             {mode === "create"
               ? "Create a project."

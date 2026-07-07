@@ -1,30 +1,31 @@
 import {
   AppButton,
+  Breadcrumb,
   AppHeading,
-  AppText,
   EmptyState,
   Screen,
   TextField
 } from "@/components/atoms";
-import { atomSpacing } from "@/components/atoms/theme";
+import { atomLayout, atomSpacing } from "@/components/atoms/theme";
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { ProjectCardSkeleton } from "@/features/projects/components/project-card-skeleton";
-import { useProjects, useSoftDeleteProject } from "@/features/projects/hooks";
+import { useProjects } from "@/features/projects/hooks";
 import { useRouter } from "expo-router";
 import { FolderPlus, RefreshCw, Search } from "lucide-react-native";
 import { useState } from "react";
-import { View } from "react-native";
+import { useWindowDimensions, View, type ViewStyle } from "react-native";
 
 export default function ProjectsScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const [query, setQuery] = useState("");
   const projectsQuery = useProjects({
     phase: "all",
     query,
     status: "all"
   });
-  const deleteMutation = useSoftDeleteProject();
   const hasProjects = Boolean(projectsQuery.data?.length);
+  const projectGrid = getProjectGridMetrics(width);
 
   return (
     <Screen
@@ -43,7 +44,7 @@ export default function ProjectsScreen() {
     >
       <View style={{ gap: atomSpacing[6] }}>
         <View style={{ gap: atomSpacing[3] }}>
-          <AppText variant="eyebrow">Projects / Workspace</AppText>
+          <Breadcrumb items={[{ label: "Projects" }, { label: "Workspace" }]} />
           <AppHeading variant="hero">Projects</AppHeading>
         </View>
 
@@ -55,10 +56,12 @@ export default function ProjectsScreen() {
         />
 
         {projectsQuery.isLoading ? (
-          <View style={{ gap: atomSpacing[4] }}>
-            <ProjectCardSkeleton />
-            <ProjectCardSkeleton />
-            <ProjectCardSkeleton />
+          <View style={projectGrid.containerStyle}>
+            {[0, 1, 2].map((item) => (
+              <View key={item} style={projectGrid.itemStyle}>
+                <ProjectCardSkeleton />
+              </View>
+            ))}
           </View>
         ) : projectsQuery.isError ? (
           <EmptyState
@@ -77,34 +80,15 @@ export default function ProjectsScreen() {
             title="Projects unavailable"
           />
         ) : projectsQuery.data && projectsQuery.data.length > 0 ? (
-          <View style={{ gap: atomSpacing[4] }}>
+          <View style={projectGrid.containerStyle}>
             {projectsQuery.data.map((project) => (
-              <View key={project.id} style={{ gap: atomSpacing[2] }}>
+              <View key={project.id} style={projectGrid.itemStyle}>
                 <ProjectCard
-                  isDeleting={
-                    deleteMutation.isPending &&
-                    deleteMutation.variables === project.id
-                  }
                   onPress={() =>
                     router.push(`/projects/${project.id}` as never)
                   }
                   project={project}
                 />
-                <AppButton
-                  isDisabled={deleteMutation.isPending}
-                  loading={
-                    deleteMutation.isPending &&
-                    deleteMutation.variables === project.id
-                  }
-                  onPress={() => {
-                    void deleteMutation.mutateAsync(project.id);
-                  }}
-                  size="sm"
-                  color="warning"
-                  variant="ghost"
-                >
-                  Archive project
-                </AppButton>
               </View>
             ))}
           </View>
@@ -123,4 +107,42 @@ export default function ProjectsScreen() {
       </View>
     </Screen>
   );
+}
+
+function getProjectGridMetrics(screenWidth: number) {
+  const horizontalPadding =
+    screenWidth >= atomLayout.breakpointDesktop
+      ? atomLayout.marginDesktop
+      : screenWidth >= atomLayout.breakpointTablet
+        ? atomLayout.marginTablet
+        : atomLayout.marginMobile;
+  const availableWidth = Math.max(
+    0,
+    Math.min(screenWidth, atomLayout.maxWidthContent) - horizontalPadding * 2
+  );
+  const gap = atomSpacing[4];
+  const columns =
+    availableWidth >= 1200
+      ? 3
+      : availableWidth >= atomLayout.breakpointTablet
+        ? 2
+        : 1;
+  const itemWidth =
+    columns === 1
+      ? ("100%" as const)
+      : (availableWidth - gap * (columns - 1)) / columns;
+
+  return {
+    containerStyle: {
+      alignItems: "stretch" as const,
+      flexDirection: columns === 1 ? ("column" as const) : ("row" as const),
+      flexWrap: "wrap" as const,
+      gap
+    } satisfies ViewStyle,
+    itemStyle: {
+      flexGrow: 0,
+      flexShrink: 0,
+      width: itemWidth
+    } satisfies ViewStyle
+  };
 }

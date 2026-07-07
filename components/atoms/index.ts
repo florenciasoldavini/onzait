@@ -1,5 +1,6 @@
 export * from "@/components/atoms/button";
 export * from "@/components/atoms/badge";
+export * from "@/components/atoms/breadcrumb";
 export * from "@/components/atoms/card";
 export * from "@/components/atoms/empty-state";
 export * from "@/components/atoms/field-message";

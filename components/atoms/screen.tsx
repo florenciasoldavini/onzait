@@ -40,7 +40,7 @@ export function Screen({
   const contentWidth = Math.min(width, atomLayout.maxWidthContent);
   const contentSideOffset = (width - contentWidth) / 2 + horizontalPadding;
   const floatingBottomOffset =
-    insets.bottom + (Platform.OS === "web" ? 64 : 78) + atomSpacing[4];
+    Platform.OS === "web" ? atomSpacing[4] : insets.bottom + atomSpacing[3];
 
   const container = (
     <View

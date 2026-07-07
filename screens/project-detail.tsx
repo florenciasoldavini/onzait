@@ -1,5 +1,6 @@
 import {
   AppButton,
+  Breadcrumb,
   AppCard,
   AppHeading,
   AppText,
@@ -56,7 +57,16 @@ export default function ProjectDetailScreen() {
     <Screen>
       <View style={{ gap: atomSpacing[6] }}>
         <View style={{ gap: atomSpacing[3] }}>
-          <AppText variant="eyebrow">Project Detail</AppText>
+          <Breadcrumb
+            items={[
+              {
+                accessibilityLabel: "Back to projects",
+                label: "Projects",
+                onPress: () => router.replace("/projects" as never)
+              },
+              { label: "Project Detail" }
+            ]}
+          />
           <AppHeading variant="hero">{project.name}</AppHeading>
           <AppText selectable tone="muted">
             {project.address}

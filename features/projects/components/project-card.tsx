@@ -7,7 +7,7 @@ import {
 } from "@/features/projects/constants";
 import type { Project } from "@/features/projects/types";
 import { Image } from "expo-image";
-import { CalendarDays, MapPinned } from "lucide-react-native";
+import { CalendarDays, ImageOff, MapPinned } from "lucide-react-native";
 import { Platform, Pressable, View, type ViewStyle } from "react-native";
 
 export function ProjectCard({
@@ -35,7 +35,7 @@ export function ProjectCard({
         ] as ViewStyle[]
       }
     >
-      <AppCard padding="md" tone="raised">
+      <AppCard padding="md">
         <View style={{ gap: atomSpacing[4] }}>
           <View
             style={{
@@ -59,7 +59,7 @@ export function ProjectCard({
                   justifyContent: "center"
                 }}
               >
-                <MapPinned color={atomPalette.textSubtle} size={28} />
+                <ImageOff color={atomPalette.textSubtle} size={28} />
               </View>
             )}
           </View>

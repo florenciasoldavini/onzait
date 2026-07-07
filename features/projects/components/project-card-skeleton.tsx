@@ -4,7 +4,7 @@ import { View } from "react-native";
 
 export function ProjectCardSkeleton() {
   return (
-    <AppCard padding="md" tone="raised">
+    <AppCard padding="md">
       <View style={{ gap: atomSpacing[4] }}>
         <SkeletonBlock height={150} radius={12} />
         <View style={{ gap: atomSpacing[3] }}>
