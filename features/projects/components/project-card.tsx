@@ -39,16 +39,31 @@ export function ProjectCard({
   onPress: () => void;
   project: Project;
 }) {
+  const [isHovered, setIsHovered] = useState(false);
   const pressScale = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pressScale.value }]
   }));
+  const cardBorderColor =
+    Platform.OS === "web" && isHovered
+      ? atomPalette.border
+      : atomPalette.borderSubtle;
 
   return (
     <Animated.View style={pressStyle}>
       <Pressable
         accessibilityRole="button"
         disabled={isDeleting}
+        onHoverIn={() => {
+          if (!isDeleting && Platform.OS === "web") {
+            setIsHovered(true);
+          }
+        }}
+        onHoverOut={() => {
+          if (Platform.OS === "web") {
+            setIsHovered(false);
+          }
+        }}
         onPress={onPress}
         onPressIn={() => {
           if (!isDeleting) {
@@ -75,7 +90,7 @@ export function ProjectCard({
           ] as ViewStyle[]
         }
       >
-        <AppCard>
+        <AppCard style={{ borderColor: cardBorderColor }}>
           <View style={{ gap: atomSpacing[4], marginBottom: atomSpacing[5] }}>
             <View
               style={{
@@ -105,6 +120,7 @@ export function ProjectCard({
                 </View>
               )}
               <ProjectStatusCornerLabel
+                borderColor={cardBorderColor}
                 label={PROJECT_STATUS_LABELS[project.status]}
                 status={project.status}
               />
@@ -172,7 +188,6 @@ export function ProjectCard({
     </Animated.View>
   );
 }
-
 function ProjectMetaLabel({ value }: { value: string }) {
   return (
     <View
@@ -273,9 +288,11 @@ function formatMonoLabel(value: string) {
 }
 
 function ProjectStatusCornerLabel({
+  borderColor,
   label,
   status
 }: {
+  borderColor: string;
   label: string;
   status: ProjectStatus;
 }) {
@@ -320,10 +337,10 @@ function ProjectStatusCornerLabel({
       style={{
         alignItems: "center",
         backgroundColor: `${atomPalette.surface}E6`,
-        borderBottomColor: atomPalette.border,
+        borderBottomColor: borderColor,
         borderBottomLeftRadius: atomCardRadius,
         borderBottomWidth: 1,
-        borderLeftColor: atomPalette.border,
+        borderLeftColor: borderColor,
         borderLeftWidth: 1,
         borderTopRightRadius: atomCardRadius,
         flexDirection: "row",
