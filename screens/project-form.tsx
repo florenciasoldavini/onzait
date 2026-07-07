@@ -47,11 +47,11 @@ import type {
   ResolvedProjectAddress
 } from "@/features/projects/types";
 import {
-  type ProjectFormErrors,
+  projectFormSchema,
   toCreateProjectInput,
-  toUpdateProjectInput,
-  validateProjectForm
+  toUpdateProjectInput
 } from "@/features/projects/validation";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
@@ -64,6 +64,7 @@ import {
   Save
 } from "lucide-react-native";
 import { useContext, useEffect, useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   Modal,
   Platform,
@@ -116,43 +117,46 @@ export function ProjectFormScreen({
 }) {
   const router = useRouter();
   const { session } = useContext(AuthContext);
-  const [values, setValues] = useState<ProjectFormValues>(defaultValues);
-  const [errors, setErrors] = useState<ProjectFormErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const projectQuery = useProject(mode === "edit" ? projectId : undefined);
   const createMutation = useCreateProject();
   const updateMutation = useUpdateProject(projectId ?? "");
   const uploadMutation = useUploadProjectCover(projectId);
+  const form = useForm<ProjectFormValues>({
+    defaultValues,
+    mode: "onChange",
+    resolver: zodResolver(projectFormSchema)
+  });
+  const {
+    control,
+    formState: { isDirty, isValid },
+    handleSubmit,
+    reset,
+    setValue,
+    trigger,
+    watch
+  } = form;
+  const values = watch();
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
     uploadMutation.isPending;
   const areRequiredFieldsComplete = areProjectRequiredFieldsComplete(values);
+  const hasProjectChanges = mode === "create" || isDirty;
 
   useEffect(() => {
     if (mode === "edit" && projectQuery.data) {
-      setValues(getValuesFromProject(projectQuery.data));
+      reset(getValuesFromProject(projectQuery.data));
     }
-  }, [mode, projectQuery.data]);
+  }, [mode, projectQuery.data, reset]);
 
-  const setField = <K extends keyof ProjectFormValues>(
-    key: K,
-    value: ProjectFormValues[K]
-  ) => {
-    setValues((current) => ({ ...current, [key]: value }));
-    setErrors((current) => ({ ...current, [key]: undefined }));
-  };
-
-  const handleSubmit = async () => {
+  const submitProject = handleSubmit(async (formValues) => {
     if (!session) {
       setFormError("You must be signed in to save projects.");
       return;
     }
 
-    const result = validateProjectForm(values);
-    setErrors(result.errors);
-
-    if (!result.values || !result.values.address) {
+    if (!formValues.address) {
       setFormError("Review the highlighted fields before saving.");
       return;
     }
@@ -160,18 +164,20 @@ export function ProjectFormScreen({
     setFormError(null);
 
     try {
+      const projectValues = formValues as Omit<ProjectFormValues, "coverAsset"> & {
+        address: ResolvedProjectAddress;
+      };
+
       if (mode === "create") {
         const project = await createMutation.mutateAsync(
           toCreateProjectInput({
-            values: result.values as Omit<ProjectFormValues, "coverAsset"> & {
-              address: ResolvedProjectAddress;
-            }
+            values: projectValues
           })
         );
 
-        if (values.coverAsset) {
+        if (formValues.coverAsset) {
           await uploadMutation.mutateAsync({
-            asset: values.coverAsset,
+            asset: formValues.coverAsset,
             projectId: project.id
           });
         }
@@ -184,16 +190,10 @@ export function ProjectFormScreen({
         throw new Error("Missing project id.");
       }
 
-      await updateMutation.mutateAsync(
-        toUpdateProjectInput(
-          result.values as Omit<ProjectFormValues, "coverAsset"> & {
-            address: ResolvedProjectAddress;
-          }
-        )
-      );
+      await updateMutation.mutateAsync(toUpdateProjectInput(projectValues));
 
-      if (values.coverAsset) {
-        await uploadMutation.mutateAsync({ asset: values.coverAsset });
+      if (formValues.coverAsset) {
+        await uploadMutation.mutateAsync({ asset: formValues.coverAsset });
       }
 
       router.replace(`/projects/${projectId}` as never);
@@ -202,7 +202,7 @@ export function ProjectFormScreen({
         error instanceof Error ? error.message : "Project could not be saved."
       );
     }
-  };
+  });
 
   if (mode === "edit" && projectQuery.isLoading) {
     return (
@@ -263,113 +263,233 @@ export function ProjectFormScreen({
           <View style={{ gap: atomSpacing[5] }}>
             <CoverPicker
               currentUrl={projectQuery.data?.cover_image_url ?? null}
-              onChange={(asset) => setField("coverAsset", asset)}
+              onChange={(asset) => {
+                setValue("coverAsset", asset, {
+                  shouldDirty: true,
+                  shouldValidate: true
+                });
+                setFormError(null);
+              }}
               value={values.coverAsset ?? null}
             />
 
-            <TextField
-              errorText={errors.name}
-              label="Project Name"
-              onChangeText={(text) => setField("name", text)}
-              placeholder="Foundation Package"
-              required
-              value={values.name}
+            <Controller
+              control={control}
+              name="name"
+              render={({ field, fieldState }) => (
+                <TextField
+                  errorText={fieldState.error?.message}
+                  label="Project Name"
+                  onBlur={field.onBlur}
+                  onChangeText={(text) => {
+                    field.onChange(text);
+                    setFormError(null);
+                  }}
+                  placeholder="Foundation Package"
+                  required
+                  value={field.value}
+                />
+              )}
             />
 
-            <TextAreaField
-              errorText={errors.description}
-              label="Description"
-              onChangeText={(text) => setField("description", text)}
-              placeholder="Scope, crew notes, client context..."
-              value={values.description}
+            <Controller
+              control={control}
+              name="description"
+              render={({ field, fieldState }) => (
+                <TextAreaField
+                  errorText={fieldState.error?.message}
+                  label="Description"
+                  onBlur={field.onBlur}
+                  onChangeText={(text) => {
+                    field.onChange(text);
+                    setFormError(null);
+                  }}
+                  placeholder="Scope, crew notes, client context..."
+                  value={field.value}
+                />
+              )}
             />
 
-            <AddressField
-              errorText={errors.address}
-              onChange={(address) => setField("address", address)}
-              required
-              value={values.address}
+            <Controller
+              control={control}
+              name="address"
+              render={({ fieldState }) => (
+                <AddressField
+                  errorText={fieldState.error?.message}
+                  onChange={(address) => {
+                    setValue("address", address, {
+                      shouldDirty: true,
+                      shouldValidate: true
+                    });
+                    setFormError(null);
+                  }}
+                  required
+                  value={values.address}
+                />
+              )}
             />
 
-            <SelectField
-              label="Status"
-              onChange={(value) => setField("status", value)}
-              options={PROJECT_STATUSES.map((value) => ({
-                label: PROJECT_STATUS_LABELS[value],
-                value
-              }))}
-              required
-              value={values.status}
+            <Controller
+              control={control}
+              name="status"
+              render={({ field }) => (
+                <SelectField
+                  label="Status"
+                  onChange={(value) => {
+                    field.onChange(value);
+                    setFormError(null);
+                  }}
+                  options={PROJECT_STATUSES.map((value) => ({
+                    label: PROJECT_STATUS_LABELS[value],
+                    value
+                  }))}
+                  required
+                  value={field.value}
+                />
+              )}
             />
 
-            <SelectField
-              label="Phase"
-              onChange={(value) => setField("phase", value)}
-              options={PROJECT_PHASES.map((value) => ({
-                label: PROJECT_PHASE_LABELS[value],
-                value
-              }))}
-              required
-              value={values.phase}
+            <Controller
+              control={control}
+              name="phase"
+              render={({ field }) => (
+                <SelectField
+                  label="Phase"
+                  onChange={(value) => {
+                    field.onChange(value);
+                    setFormError(null);
+                  }}
+                  options={PROJECT_PHASES.map((value) => ({
+                    label: PROJECT_PHASE_LABELS[value],
+                    value
+                  }))}
+                  required
+                  value={field.value}
+                />
+              )}
             />
 
-            <SelectField
-              label="Project Type"
-              onChange={(value) => setField("project_type", value)}
-              options={PROJECT_TYPES.map((value) => ({
-                label: PROJECT_TYPE_LABELS[value],
-                value
-              }))}
-              required
-              value={values.project_type}
+            <Controller
+              control={control}
+              name="project_type"
+              render={({ field }) => (
+                <SelectField
+                  label="Project Type"
+                  onChange={(value) => {
+                    field.onChange(value);
+                    setFormError(null);
+                  }}
+                  options={PROJECT_TYPES.map((value) => ({
+                    label: PROJECT_TYPE_LABELS[value],
+                    value
+                  }))}
+                  required
+                  value={field.value}
+                />
+              )}
             />
 
-            <SelectField
-              label="Building Type"
-              onChange={(value) => setField("building_type", value)}
-              options={PROJECT_BUILDING_TYPES.map((value) => ({
-                label: PROJECT_BUILDING_TYPE_LABELS[value],
-                value
-              }))}
-              required
-              value={values.building_type}
+            <Controller
+              control={control}
+              name="building_type"
+              render={({ field }) => (
+                <SelectField
+                  label="Building Type"
+                  onChange={(value) => {
+                    field.onChange(value);
+                    setFormError(null);
+                  }}
+                  options={PROJECT_BUILDING_TYPES.map((value) => ({
+                    label: PROJECT_BUILDING_TYPE_LABELS[value],
+                    value
+                  }))}
+                  required
+                  value={field.value}
+                />
+              )}
             />
 
-            <NumericField
-              errorText={errors.progress_percentage}
-              label="Progress Percentage"
-              max={100}
-              min={0}
-              onChangeNumber={(value) => setField("progress_percentage", value)}
-              placeholder="0"
-              required
-              value={values.progress_percentage}
+            <Controller
+              control={control}
+              name="progress_percentage"
+              render={({ field, fieldState }) => (
+                <NumericField
+                  errorText={fieldState.error?.message}
+                  label="Progress Percentage"
+                  max={100}
+                  min={0}
+                  onBlur={field.onBlur}
+                  onChangeNumber={(value) => {
+                    field.onChange(value);
+                    setFormError(null);
+                  }}
+                  placeholder="0"
+                  required
+                  value={field.value}
+                />
+              )}
             />
 
             <View style={{ gap: atomSpacing[4] }}>
-              <CalendarDateField
-                errorText={errors.estimated_start_date}
-                label="Estimated Start"
-                onChange={(date) => setField("estimated_start_date", date)}
-                value={values.estimated_start_date}
+              <Controller
+                control={control}
+                name="estimated_start_date"
+                render={({ field, fieldState }) => (
+                  <CalendarDateField
+                    errorText={fieldState.error?.message}
+                    label="Estimated Start"
+                    onChange={(date) => {
+                      field.onChange(date);
+                      setFormError(null);
+                    }}
+                    value={field.value}
+                  />
+                )}
               />
-              <CalendarDateField
-                errorText={errors.estimated_end_date}
-                label="Estimated End"
-                onChange={(date) => setField("estimated_end_date", date)}
-                value={values.estimated_end_date}
+              <Controller
+                control={control}
+                name="estimated_end_date"
+                render={({ field, fieldState }) => (
+                  <CalendarDateField
+                    errorText={fieldState.error?.message}
+                    label="Estimated End"
+                    onChange={(date) => {
+                      field.onChange(date);
+                      setFormError(null);
+                    }}
+                    value={field.value}
+                  />
+                )}
               />
-              <CalendarDateField
-                errorText={errors.start_date}
-                label="Actual Start"
-                onChange={(date) => setField("start_date", date)}
-                value={values.start_date}
+              <Controller
+                control={control}
+                name="start_date"
+                render={({ field, fieldState }) => (
+                  <CalendarDateField
+                    errorText={fieldState.error?.message}
+                    label="Actual Start"
+                    onChange={(date) => {
+                      field.onChange(date);
+                      setFormError(null);
+                    }}
+                    value={field.value}
+                  />
+                )}
               />
-              <CalendarDateField
-                errorText={errors.end_date}
-                label="Actual End"
-                onChange={(date) => setField("end_date", date)}
-                value={values.end_date}
+              <Controller
+                control={control}
+                name="end_date"
+                render={({ field, fieldState }) => (
+                  <CalendarDateField
+                    errorText={fieldState.error?.message}
+                    label="Actual End"
+                    onChange={(date) => {
+                      field.onChange(date);
+                      setFormError(null);
+                    }}
+                    value={field.value}
+                  />
+                )}
               />
             </View>
 
@@ -393,9 +513,17 @@ export function ProjectFormScreen({
               <View style={{ flex: 1 }}>
                 <AppButton
                   icon={Save}
-                  isDisabled={!areRequiredFieldsComplete || isSubmitting}
+                  isDisabled={
+                    !areRequiredFieldsComplete ||
+                    !isValid ||
+                    !hasProjectChanges ||
+                    isSubmitting
+                  }
                   loading={isSubmitting}
-                  onPress={handleSubmit}
+                  onDisabledPress={() => {
+                    void trigger();
+                  }}
+                  onPress={submitProject}
                 >
                   {mode === "create" ? "Create" : "Save"}
                 </AppButton>

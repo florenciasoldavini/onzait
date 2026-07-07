@@ -27,10 +27,20 @@ const addressSchema = z.object({
   placeId: z.string().trim().min(3)
 });
 
+const coverAssetSchema = z
+  .object({
+    fileName: z.string().nullable().optional(),
+    mimeType: z.string().nullable().optional(),
+    uri: z.string().trim().min(1)
+  })
+  .nullable()
+  .optional();
+
 export const projectFormSchema = z
   .object({
     address: addressSchema.nullable(),
     building_type: z.enum(PROJECT_BUILDING_TYPES),
+    coverAsset: coverAssetSchema,
     description: z.string().max(2000),
     end_date: optionalDateSchema,
     estimated_end_date: optionalDateSchema,

@@ -19,11 +19,18 @@ import {
   urlHasAuthPayload
 } from "@/lib/auth";
 import { getSupabaseErrorMessage } from "@/lib/supabase";
-import { emailSchema } from "@/schemas/fields";
+import {
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  type ForgotPasswordInput,
+  type ResetPasswordInput
+} from "@/schemas/auth";
 import { AtSignIcon, LockIcon } from "@/components/icons";
+import { zodResolver } from "@hookform/resolvers/zod";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { View } from "react-native";
 
 type ResetMode = "request" | "update";
@@ -31,83 +38,34 @@ type ResetMode = "request" | "update";
 export default function ResetPasswordScreen() {
   const router = useRouter();
   const linkingUrl = Linking.useURL();
-  const [email, setEmail] = useState("");
-  const [confirmPasswordError, setConfirmPasswordError] = useState<
-    string | null
-  >(null);
-  const [emailError, setEmailError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<ResetMode>("request");
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [touchedFields, setTouchedFields] = useState({
-    confirmPassword: false,
-    email: false,
-    password: false
+  const requestForm = useForm<ForgotPasswordInput>({
+    defaultValues: {
+      email: ""
+    },
+    mode: "onChange",
+    resolver: zodResolver(forgotPasswordSchema)
   });
-  const validateEmail = (value: string) => {
-    const result = emailSchema.safeParse(value);
-
-    if (result.success) {
-      return null;
-    }
-
-    return result.error.issues[0]?.message ?? "Invalid email address";
-  };
-  const validatePassword = (value: string) => {
-    if (!value.trim()) {
-      return "Password is required";
-    }
-
-    if (value.length < 8) {
-      return "Use at least 8 characters for your new password";
-    }
-
-    return null;
-  };
-  const validateConfirmPassword = (
-    confirmValue: string,
-    passwordValue: string
-  ) => {
-    if (!confirmValue.trim()) {
-      return "Please confirm your new password";
-    }
-
-    if (confirmValue !== passwordValue) {
-      return "The passwords do not match";
-    }
-
-    return null;
-  };
+  const updateForm = useForm<ResetPasswordInput>({
+    defaultValues: {
+      confirmPassword: "",
+      password: ""
+    },
+    mode: "onChange",
+    resolver: zodResolver(resetPasswordSchema)
+  });
   const revealResetRequestValidation = () => {
-    const nextEmailError = validateEmail(email);
-
-    setTouchedFields((current) => ({ ...current, email: true }));
-    setEmailError(nextEmailError);
+    void requestForm.trigger();
   };
   const revealPasswordUpdateValidation = () => {
-    const nextPasswordError = validatePassword(password);
-    const nextConfirmPasswordError = validateConfirmPassword(
-      confirmPassword,
-      password
-    );
-
-    setTouchedFields((current) => ({
-      ...current,
-      confirmPassword: true,
-      password: true
-    }));
-    setPasswordError(nextPasswordError);
-    setConfirmPasswordError(nextConfirmPasswordError);
+    void updateForm.trigger();
   };
-  const isResetRequestValid = validateEmail(email) === null;
-  const isPasswordUpdateValid =
-    validatePassword(password) === null &&
-    validateConfirmPassword(confirmPassword, password) === null;
+  const isResetRequestValid = requestForm.formState.isValid;
+  const isPasswordUpdateValid = updateForm.formState.isValid;
   const isSubmitDisabled =
     isLoading ||
     (mode === "update" ? !isPasswordUpdateValid : !isResetRequestValid);
@@ -135,16 +93,11 @@ export default function ResetPasswordScreen() {
         clearWebAuthUrlArtifacts();
 
         if (type === "recovery" || session) {
-          setConfirmPassword("");
-          setConfirmPasswordError(null);
-          setEmailError(null);
           setMode("update");
-          setPassword("");
-          setPasswordError(null);
-          setTouchedFields({
-            confirmPassword: false,
-            email: false,
-            password: false
+          requestForm.clearErrors();
+          updateForm.reset({
+            confirmPassword: "",
+            password: ""
           });
         }
       } catch (error) {
@@ -167,15 +120,7 @@ export default function ResetPasswordScreen() {
     };
   }, [linkingUrl]);
 
-  async function handleResetRequest() {
-    const nextEmailError = validateEmail(email);
-
-    revealResetRequestValidation();
-
-    if (nextEmailError) {
-      return;
-    }
-
+  const handleResetRequest = requestForm.handleSubmit(async ({ email }) => {
     setIsLoading(true);
     setFormError(null);
 
@@ -188,21 +133,9 @@ export default function ResetPasswordScreen() {
     } finally {
       setIsLoading(false);
     }
-  }
+  });
 
-  async function handlePasswordUpdate() {
-    const nextPasswordError = validatePassword(password);
-    const nextConfirmPasswordError = validateConfirmPassword(
-      confirmPassword,
-      password
-    );
-
-    revealPasswordUpdateValidation();
-
-    if (nextPasswordError || nextConfirmPasswordError) {
-      return;
-    }
-
+  const handlePasswordUpdate = updateForm.handleSubmit(async ({ password }) => {
     setIsLoading(true);
     setFormError(null);
 
@@ -215,7 +148,7 @@ export default function ResetPasswordScreen() {
     } finally {
       setIsLoading(false);
     }
-  }
+  });
 
   return (
     <AuthShell
@@ -230,118 +163,103 @@ export default function ResetPasswordScreen() {
       <View style={{ gap: atomSpacing[6] }}>
         <View style={{ gap: atomSpacing[4] }}>
           {mode === "request" ? (
-            <TextField
-              autoCapitalize="none"
-              autoComplete="email"
-              errorText={emailError}
-              helperText={
-                !emailError ? "Enter the email tied to your account." : null
-              }
-              keyboardType="email-address"
-              label="Email"
-              leftIcon={AtSignIcon}
-              onBlur={() => {
-                setTouchedFields((current) => ({ ...current, email: true }));
-                setEmailError(validateEmail(email));
-              }}
-              onChangeText={(value) => {
-                setEmail(value);
-                setFormError(null);
-
-                if (touchedFields.email || emailError) {
-                  setEmailError(validateEmail(value));
-                }
-              }}
-              placeholder="name@company.com"
-              required
-              size={authFieldSize}
-              type="text"
-              value={email}
+            <Controller
+              control={requestForm.control}
+              name="email"
+              render={({ field, fieldState }) => (
+                <TextField
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  errorText={fieldState.error?.message}
+                  helperText={
+                    !fieldState.error
+                      ? "Enter the email tied to your account."
+                      : null
+                  }
+                  keyboardType="email-address"
+                  label="Email"
+                  leftIcon={AtSignIcon}
+                  onBlur={field.onBlur}
+                  onChangeText={(value) => {
+                    field.onChange(value);
+                    setFormError(null);
+                  }}
+                  placeholder="name@company.com"
+                  required
+                  size={authFieldSize}
+                  type="text"
+                  value={field.value}
+                />
+              )}
             />
           ) : (
             <>
-              <TextField
-                autoCapitalize="none"
-                autoComplete="new-password"
-                errorText={passwordError}
-                helperText={
-                  !passwordError ? "Use at least 8 characters." : null
-                }
-                label="New Password"
-                leftIcon={LockIcon}
-                onBlur={() => {
-                  setTouchedFields((current) => ({
-                    ...current,
-                    password: true
-                  }));
-                  setPasswordError(validatePassword(password));
-                }}
-                onChangeText={(value) => {
-                  setPassword(value);
-                  setFormError(null);
-
-                  if (touchedFields.password || passwordError) {
-                    setPasswordError(validatePassword(value));
-                  }
-
-                  if (touchedFields.confirmPassword || confirmPasswordError) {
-                    setConfirmPasswordError(
-                      validateConfirmPassword(confirmPassword, value)
-                    );
-                  }
-                }}
-                placeholder="new-password"
-                required
-                rightSlot={
-                  <PasswordVisibilityToggle
-                    onPress={() => {
-                      setPasswordVisible((current) => !current);
+              <Controller
+                control={updateForm.control}
+                name="password"
+                render={({ field, fieldState }) => (
+                  <TextField
+                    autoCapitalize="none"
+                    autoComplete="new-password"
+                    errorText={fieldState.error?.message}
+                    helperText={
+                      !fieldState.error
+                        ? "Use 8+ chars with uppercase, number, and symbol."
+                        : null
+                    }
+                    label="New Password"
+                    leftIcon={LockIcon}
+                    onBlur={field.onBlur}
+                    onChangeText={(value) => {
+                      field.onChange(value);
+                      setFormError(null);
                     }}
-                    visible={passwordVisible}
+                    placeholder="new-password"
+                    required
+                    rightSlot={
+                      <PasswordVisibilityToggle
+                        onPress={() => {
+                          setPasswordVisible((current) => !current);
+                        }}
+                        visible={passwordVisible}
+                      />
+                    }
+                    size={authFieldSize}
+                    type={passwordVisible ? "text" : "password"}
+                    value={field.value}
                   />
-                }
-                size={authFieldSize}
-                type={passwordVisible ? "text" : "password"}
-                value={password}
+                )}
               />
-              <TextField
-                autoCapitalize="none"
-                autoComplete="new-password"
-                errorText={confirmPasswordError}
-                label="Confirm Password"
-                leftIcon={LockIcon}
-                onBlur={() => {
-                  setTouchedFields((current) => ({
-                    ...current,
-                    confirmPassword: true
-                  }));
-                  setConfirmPasswordError(
-                    validateConfirmPassword(confirmPassword, password)
-                  );
-                }}
-                onChangeText={(value) => {
-                  setConfirmPassword(value);
-                  setFormError(null);
-
-                  if (touchedFields.confirmPassword || confirmPasswordError) {
-                    setConfirmPasswordError(
-                      validateConfirmPassword(value, password)
-                    );
-                  }
-                }}
-                placeholder="confirm-password"
-                required
-                rightSlot={
-                  <PasswordVisibilityToggle
-                    onPress={() => {
-                      setConfirmPasswordVisible((current) => !current);
+              <Controller
+                control={updateForm.control}
+                name="confirmPassword"
+                render={({ field, fieldState }) => (
+                  <TextField
+                    autoCapitalize="none"
+                    autoComplete="new-password"
+                    errorText={fieldState.error?.message}
+                    label="Confirm Password"
+                    leftIcon={LockIcon}
+                    onBlur={field.onBlur}
+                    onChangeText={(value) => {
+                      field.onChange(value);
+                      setFormError(null);
                     }}
-                    visible={confirmPasswordVisible}
+                    placeholder="confirm-password"
+                    required
+                    rightSlot={
+                      <PasswordVisibilityToggle
+                        onPress={() => {
+                          setConfirmPasswordVisible((current) => !current);
+                        }}
+                        visible={confirmPasswordVisible}
+                      />
+                    }
+                    size={authFieldSize}
+                    type={confirmPasswordVisible ? "text" : "password"}
+                    value={field.value}
                   />
-                }
-                size={authFieldSize}
-                type={confirmPasswordVisible ? "text" : "password"}
-                value={confirmPassword}
+                )}
               />
             </>
           )}

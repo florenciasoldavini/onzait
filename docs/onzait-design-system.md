@@ -183,7 +183,10 @@ Form fields and their primary CTA should have enough vertical separation to read
 
 Forms should make completion state obvious before the user submits.
 
+- Production submit forms should use `react-hook-form` with a Zod schema resolver. Form state, field errors, validity, submission, and edit dirty-state should come from that form controller rather than duplicated local `useState` validation.
+- Local component state is still appropriate for transient UI-only behavior such as password visibility, picker open state, autocomplete popovers, and non-submit search/filter fields.
 - Submit buttons stay disabled until every required input is complete.
+- Edit-form submit buttons also stay disabled until `react-hook-form` reports a dirty field or an attached asset picker has a pending change.
 - Use one labeling convention per form, not both required and optional markers.
 - The current shared convention is to label optional fields with a discreet `(optional)` hint and leave required fields unmarked.
 - Disabled submit buttons are guidance only; validation and authorization still belong in schemas, services, repositories, and database policies.
