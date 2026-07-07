@@ -15,6 +15,8 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { Platform, type TextStyle, type ViewStyle } from "react-native";
 
+const textAreaHeight = atomControlHeights.lg * 2 + atomSpacing[6];
+
 export function TextAreaField({
   accessory,
   editable = true,
@@ -77,7 +79,8 @@ export function TextAreaField({
             : atomPalette.surface,
           borderColor,
           borderRadius: atomControlRadius,
-          minHeight: atomControlHeights.lg * 2 + atomSpacing[6],
+          height: textAreaHeight,
+          minHeight: textAreaHeight,
           ...webRootCursorStyle
         }}
       >
@@ -95,9 +98,12 @@ export function TextAreaField({
           style={{
             color: atomPalette.text,
             fontSize: atomTypeScale.bodyMd.fontSize,
+            height: textAreaHeight,
             lineHeight: atomTypeScale.bodyMd.lineHeight,
+            minHeight: textAreaHeight,
             paddingHorizontal: atomSpacing[4],
             paddingVertical: atomSpacing[3],
+            textAlignVertical: "top",
             ...webInputCursorStyle,
             ...getSansFontStyle(atomTypeScale.bodyMd.fontWeight)
           }}

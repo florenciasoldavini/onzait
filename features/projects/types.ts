@@ -99,3 +99,8 @@ export interface AddressSuggestion {
   placeId: string;
   text: string;
 }
+
+export interface StaticMapPreview {
+  attribution: string;
+  imageDataUrl: string;
+}

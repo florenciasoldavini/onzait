@@ -1,6 +1,7 @@
 import {
   mapAddressSuggestions,
-  mapResolvedAddress
+  mapResolvedAddress,
+  mapStaticMapPreview
 } from "@/features/projects/maps";
 import { getMapsFunctionErrorMessage } from "@/features/projects/maps-errors";
 import {
@@ -9,7 +10,8 @@ import {
 } from "@/features/projects/repositories/supabase.repository";
 import type {
   AddressSuggestion,
-  ResolvedProjectAddress
+  ResolvedProjectAddress,
+  StaticMapPreview
 } from "@/features/projects/types";
 
 export async function autocompleteAddressSuggestions({
@@ -48,6 +50,25 @@ export async function resolveAddressSuggestion({
   }
 
   return mapResolvedAddress(data);
+}
+
+export async function getStaticMapPreview({
+  latitude,
+  longitude
+}: {
+  latitude: number;
+  longitude: number;
+}): Promise<StaticMapPreview> {
+  const client = requireSupabase();
+  const { data, error } = await client.functions.invoke("maps-static-preview", {
+    body: { latitude, longitude }
+  });
+
+  if (error) {
+    throw await toMapsFunctionError(error);
+  }
+
+  return mapStaticMapPreview(data);
 }
 
 export async function toMapsFunctionError(error: unknown) {

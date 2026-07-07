@@ -198,7 +198,7 @@ The backend is not the main auth path today, but if MVP features start using it:
 - Trusted API boundaries must validate inputs, authenticate users when data is user-scoped, rate-limit abusive call patterns, and cache only where provider terms allow.
 - Paid trusted API boundaries must enforce a durable usage cap before calling the provider when provider-side quotas cannot be lowered enough for development safety.
 - Google Maps address lookup must keep the API key server-side, enforce monthly hard caps before Google calls, store selected `place_id` and coordinates only as project data, and show required Google Maps attribution near suggestions or resolved address content.
-- Google Maps API keys should remain restricted to the specific APIs currently used. Before adding a feature that needs another Maps API or SDK, remind the project owner to update the Google Cloud key restrictions and confirm the new API is intentionally enabled.
+- Google Maps API keys should remain restricted to the specific APIs currently used. Project address lookup currently needs Places API (New), and selected-address map previews need Maps Static API. Before adding a feature that needs another Maps API or SDK, remind the project owner to update the Google Cloud key restrictions and confirm the new API is intentionally enabled.
 
 ## Logging and monitoring
 

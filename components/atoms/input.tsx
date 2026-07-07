@@ -66,6 +66,7 @@ export function TextField({
   numberOfLines,
   onBlur,
   onFocus,
+  onPressIn,
   required = false,
   rightSlot,
   size = "lg",
@@ -137,7 +138,8 @@ export function TextField({
       : typeof props.defaultValue === "string"
         ? props.defaultValue
         : "";
-  const shouldRenderTruncatedText = truncate && editable === false;
+  const shouldRenderTruncatedText =
+    truncate && !isFocused && displayValue.length > 0;
 
   return (
     <FormField
@@ -162,6 +164,7 @@ export function TextField({
             : atomPalette.surface,
           borderColor,
           borderRadius: config.radius,
+          height: config.minHeight,
           minHeight: config.minHeight,
           ...webRootCursorStyle
         }}
@@ -182,7 +185,9 @@ export function TextField({
           </InputSlot>
         ) : null}
         {shouldRenderTruncatedText ? (
-          <View
+          <Pressable
+            disabled={!editable}
+            onPressIn={onPressIn}
             style={{
               flex: 1,
               height: config.minHeight,
@@ -203,7 +208,7 @@ export function TextField({
             >
               {displayValue || props.placeholder}
             </Text>
-          </View>
+          </Pressable>
         ) : (
           <UIInputField
             className="placeholder:text-typography-400"
@@ -229,6 +234,7 @@ export function TextField({
               ...webInputCursorStyle
             }}
             {...props}
+            onPressIn={onPressIn}
           />
         )}
         {rightSlot ? (

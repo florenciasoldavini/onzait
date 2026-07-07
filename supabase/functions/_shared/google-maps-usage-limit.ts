@@ -1,6 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
 
-type GoogleMapsUsageService = "places_autocomplete" | "places_resolve";
+type GoogleMapsUsageService =
+  | "maps_static_preview"
+  | "places_autocomplete"
+  | "places_resolve";
 
 export async function consumeGoogleMapsMonthlyLimit({
   defaultLimit,

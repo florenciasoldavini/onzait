@@ -1,6 +1,7 @@
 import { AuthContext } from "@/contexts/auth";
 import {
   autocompleteProjectAddress,
+  getProjectAddressMapPreview,
   resolveProjectAddress
 } from "@/features/projects/services/address.service";
 import {
@@ -121,11 +122,16 @@ export function useUploadProjectCover(defaultProjectId?: string) {
   });
 }
 
-export function useAddressAutocomplete(input: string, sessionToken: string) {
+export function useAddressAutocomplete(
+  input: string,
+  sessionToken: string,
+  enabled = true
+) {
   const debouncedInput = useDebouncedValue(input, 350);
 
   return useQuery({
-    enabled: debouncedInput.trim().length >= 3 && sessionToken.length > 0,
+    enabled:
+      enabled && debouncedInput.trim().length >= 3 && sessionToken.length > 0,
     queryFn: () =>
       autocompleteProjectAddress({
         input: debouncedInput.trim(),
@@ -145,6 +151,26 @@ export function useResolveAddress() {
       placeId: string;
       sessionToken: string;
     }) => resolveProjectAddress({ placeId, sessionToken })
+  });
+}
+
+export function useAddressMapPreview({
+  latitude,
+  longitude
+}: {
+  latitude?: number;
+  longitude?: number;
+}) {
+  return useQuery({
+    enabled: typeof latitude === "number" && typeof longitude === "number",
+    queryFn: () =>
+      getProjectAddressMapPreview({
+        latitude: latitude!,
+        longitude: longitude!
+      }),
+    queryKey: ["address-map-preview", latitude, longitude],
+    retry: 1,
+    staleTime: 30 * 60_000
   });
 }
 

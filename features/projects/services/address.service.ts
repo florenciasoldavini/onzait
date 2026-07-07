@@ -1,5 +1,6 @@
 import {
   autocompleteAddressSuggestions,
+  getStaticMapPreview,
   resolveAddressSuggestion
 } from "@/features/projects/repositories/maps.repository";
 
@@ -21,4 +22,14 @@ export async function resolveProjectAddress({
   sessionToken: string;
 }) {
   return resolveAddressSuggestion({ placeId, sessionToken });
+}
+
+export async function getProjectAddressMapPreview({
+  latitude,
+  longitude
+}: {
+  latitude: number;
+  longitude: number;
+}) {
+  return getStaticMapPreview({ latitude, longitude });
 }

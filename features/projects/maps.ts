@@ -1,6 +1,7 @@
 import type {
   AddressSuggestion,
-  ResolvedProjectAddress
+  ResolvedProjectAddress,
+  StaticMapPreview
 } from "@/features/projects/types";
 
 export function mapAddressSuggestions(payload: unknown): AddressSuggestion[] {
@@ -54,4 +55,23 @@ export function mapResolvedAddress(payload: unknown): ResolvedProjectAddress {
   }
 
   return { address, latitude, longitude, placeId };
+}
+
+export function mapStaticMapPreview(payload: unknown): StaticMapPreview {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Map preview returned an invalid response.");
+  }
+
+  const attribution = (payload as { attribution?: unknown }).attribution;
+  const imageDataUrl = (payload as { imageDataUrl?: unknown }).imageDataUrl;
+
+  if (
+    typeof attribution !== "string" ||
+    typeof imageDataUrl !== "string" ||
+    !imageDataUrl.startsWith("data:image/")
+  ) {
+    throw new Error("Map preview returned an incomplete image.");
+  }
+
+  return { attribution, imageDataUrl };
 }

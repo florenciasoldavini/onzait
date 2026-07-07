@@ -31,6 +31,7 @@ import {
 } from "@/features/projects/constants";
 import {
   useAddressAutocomplete,
+  useAddressMapPreview,
   useCreateProject,
   useProject,
   useResolveAddress,
@@ -59,7 +60,7 @@ import {
   MapPinned,
   Save
 } from "lucide-react-native";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import {
   Modal,
   Platform,
@@ -86,6 +87,8 @@ const defaultValues: ProjectFormValues = {
   start_date: "",
   status: "planned"
 };
+
+const mapMarkerImage = require("@/assets/images/map-marker.png");
 
 export function ProjectFormScreen({
   mode,
@@ -394,11 +397,21 @@ function AddressField({
   value: ResolvedProjectAddress | null;
 }) {
   const [query, setQuery] = useState(value?.address ?? "");
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [sessionToken, setSessionToken] = useState(() => createSessionToken());
-  const suggestionsQuery = useAddressAutocomplete(query, sessionToken);
+  const closeSuggestionsTimeout = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const canSearch = isSuggestionsOpen && query.trim().length >= 3;
+  const suggestionsQuery = useAddressAutocomplete(
+    query,
+    sessionToken,
+    canSearch
+  );
   const resolveMutation = useResolveAddress();
   const suggestions = suggestionsQuery.data ?? [];
-  const canSearch = query.trim().length >= 3 && !value;
+  const shouldShowSuggestions =
+    canSearch && suggestions.length > 0 && !resolveMutation.isPending;
   const shouldShowNoResults =
     canSearch &&
     !suggestionsQuery.isPending &&
@@ -416,7 +429,31 @@ function AddressField({
     }
   }, [query, value]);
 
+  useEffect(
+    () => () => {
+      if (closeSuggestionsTimeout.current) {
+        clearTimeout(closeSuggestionsTimeout.current);
+      }
+    },
+    []
+  );
+
+  const openSuggestions = () => {
+    if (closeSuggestionsTimeout.current) {
+      clearTimeout(closeSuggestionsTimeout.current);
+      closeSuggestionsTimeout.current = null;
+    }
+
+    setIsSuggestionsOpen(true);
+  };
+
+  const closeSuggestions = () => {
+    setIsSuggestionsOpen(false);
+  };
+
   const handleSuggestionPress = async (placeId: string) => {
+    closeSuggestions();
+
     const resolved = await resolveMutation.mutateAsync({
       placeId,
       sessionToken
@@ -432,9 +469,20 @@ function AddressField({
         errorText={errorText}
         label="Project Address"
         leftIcon={MapPinned}
+        onBlur={() => {
+          closeSuggestionsTimeout.current = setTimeout(closeSuggestions, 150);
+        }}
         onChangeText={(text) => {
+          openSuggestions();
           setQuery(text);
-          onChange(null);
+
+          if (text !== value?.address) {
+            onChange(null);
+          }
+        }}
+        onFocus={openSuggestions}
+        onPressIn={() => {
+          openSuggestions();
         }}
         placeholder="Search with Google Maps"
         rightSlot={
@@ -444,10 +492,11 @@ function AddressField({
             <Spinner color={atomPalette.accent} size="small" />
           ) : null
         }
+        truncate
         value={query}
       />
 
-      {suggestions.length > 0 ? (
+      {shouldShowSuggestions ? (
         <AppCard
           padding="sm"
           style={projectFormStyles.addressSuggestionsCard}
@@ -500,13 +549,60 @@ function AddressField({
       ) : null}
 
       {value ? (
-        <AppText tone="success" variant="bodySm">
-          Coordinates selected from Google Maps: {value.latitude.toFixed(5)},{" "}
-          {value.longitude.toFixed(5)}
-        </AppText>
+        <AddressLocationPreview value={value} />
       ) : null}
     </View>
   );
+}
+
+function AddressLocationPreview({
+  value
+}: {
+  value: ResolvedProjectAddress;
+}) {
+  const mapPreviewQuery = useAddressMapPreview({
+    latitude: value.latitude,
+    longitude: value.longitude
+  });
+
+  if (mapPreviewQuery.isLoading) {
+    return <SkeletonBlock height={260} />;
+  }
+
+  if (mapPreviewQuery.isError) {
+    const message =
+      mapPreviewQuery.error instanceof Error
+        ? mapPreviewQuery.error.message
+        : "Map preview is unavailable right now.";
+
+    return <FieldMessage tone="error">{message}</FieldMessage>;
+  }
+
+  if (mapPreviewQuery.data) {
+    return (
+      <View
+        accessibilityLabel={`Selected project location: ${value.address}`}
+        style={projectFormStyles.addressMapPreview}
+      >
+        <Image
+          alt="Selected project location map preview"
+          contentFit="cover"
+          source={{ uri: mapPreviewQuery.data.imageDataUrl }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={projectFormStyles.addressMapMarker}>
+          <Image
+            alt=""
+            contentFit="contain"
+            source={mapMarkerImage}
+            style={projectFormStyles.addressMapMarkerImage}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  return null;
 }
 
 function CalendarDateField({
@@ -846,6 +942,28 @@ function toCalendarDateValue(date: Date) {
 }
 
 const projectFormStyles = StyleSheet.create({
+  addressMapMarker: {
+    alignItems: "center",
+    height: 30,
+    justifyContent: "center",
+    left: "50%",
+    position: "absolute",
+    top: "50%",
+    transform: [{ translateX: -15 }, { translateY: -27 }],
+    width: 30
+  },
+  addressMapMarkerImage: {
+    height: 30,
+    width: 30
+  },
+  addressMapPreview: {
+    backgroundColor: atomPalette.surfaceLow,
+    borderRadius: 18,
+    height: 260,
+    overflow: "hidden",
+    position: "relative",
+    width: "100%"
+  },
   addressSuggestionsCard: {
     elevation: 2,
     overflow: "visible",

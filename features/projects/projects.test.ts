@@ -1,6 +1,7 @@
 import {
   mapAddressSuggestions,
-  mapResolvedAddress
+  mapResolvedAddress,
+  mapStaticMapPreview
 } from "@/features/projects/maps";
 import { getMapsFunctionErrorMessage } from "@/features/projects/maps-errors";
 import { buildProjectListQueryPlan } from "@/features/projects/query-builders";
@@ -154,6 +155,18 @@ describe("Google Maps response mapping", () => {
       latitude: -34,
       longitude: -58,
       placeId: "place-1"
+    });
+  });
+
+  it("maps static map preview image responses", () => {
+    expect(
+      mapStaticMapPreview({
+        attribution: "Google Maps",
+        imageDataUrl: "data:image/png;base64,abc"
+      })
+    ).toEqual({
+      attribution: "Google Maps",
+      imageDataUrl: "data:image/png;base64,abc"
     });
   });
 });

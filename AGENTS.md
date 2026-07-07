@@ -154,7 +154,7 @@ Last reviewed: 2026-07-06
 - Repositories should own raw persistence or external transport calls only.
 - External APIs that require secret keys, expensive quotas, or abuse protection must go through a trusted server boundary with validation, caching where allowed, and rate limiting.
 - Paid external API boundaries must include durable hard caps before provider calls when provider-side quotas cannot be safely lowered.
-- The Google Maps API key is expected to be restricted to only the APIs currently used, such as Places API (New) for project address lookup. If a future feature needs a different Google Maps API or SDK, remind the project owner to update the Google Cloud API key restrictions before rollout.
+- The Google Maps API key is expected to be restricted to only the APIs currently used. Project address lookup currently needs Places API (New), and selected-address map previews need Maps Static API. If a future feature needs a different Google Maps API or SDK, remind the project owner to update the Google Cloud API key restrictions before rollout.
 - Do not persistently cache third-party API content unless that provider's terms allow it; store only product data the user selected or created.
 
 ## Web / Hosting Notes
