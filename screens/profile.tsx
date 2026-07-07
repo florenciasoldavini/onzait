@@ -14,11 +14,7 @@ import { authCardMaxWidth } from "@/components/auth/AuthShell";
 import { AuthContext } from "@/contexts/auth";
 import { useUploadProfileAvatar } from "@/features/profile/hooks";
 import type { ProfileAvatarAsset } from "@/features/profile/repositories/profile-avatar.repository";
-import {
-  startOAuthIdentityLink,
-  updatePassword,
-  type SupportedOAuthProvider
-} from "@/lib/auth";
+import { updatePassword } from "@/lib/auth";
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
 import type { UserIdentity } from "@supabase/supabase-js";
 import { Image } from "expo-image";
@@ -26,7 +22,6 @@ import * as ImagePicker from "expo-image-picker";
 import {
   CameraIcon,
   CheckCircleIcon,
-  LinkIcon,
   LockIcon,
   LogoutIcon,
   MailIcon,
@@ -96,8 +91,6 @@ export default function ProfileScreen() {
   const [identities, setIdentities] = useState<UserIdentity[]>([]);
   const [identityError, setIdentityError] = useState<string | null>(null);
   const [identityLoading, setIdentityLoading] = useState(false);
-  const [linkingProvider, setLinkingProvider] =
-    useState<SupportedOAuthProvider | null>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
   const uploadAvatarMutation = useUploadProfileAvatar();
   const isProfileSaving = isSaving || uploadAvatarMutation.isPending;
@@ -201,22 +194,6 @@ export default function ProfileScreen() {
       setFormError(getSupabaseErrorMessage(error));
     } finally {
       setIsSaving(false);
-    }
-  }
-
-  async function linkProvider(provider: SupportedOAuthProvider) {
-    setLinkingProvider(provider);
-    setIdentityError(null);
-    setStatusMessage(null);
-
-    try {
-      await startOAuthIdentityLink(provider);
-      await refreshIdentities();
-      setStatusMessage(`${providerCopy[provider].label} linked`);
-    } catch (error) {
-      setIdentityError(getSupabaseErrorMessage(error));
-    } finally {
-      setLinkingProvider(null);
     }
   }
 
@@ -523,18 +500,10 @@ export default function ProfileScreen() {
                 />
                 <IdentityMethodRow
                   isLinked={linkedProviders.has("google")}
-                  isLoading={linkingProvider === "google"}
-                  onLink={() => {
-                    void linkProvider("google");
-                  }}
                   provider="google"
                 />
                 <IdentityMethodRow
                   isLinked={linkedProviders.has("apple")}
-                  isLoading={linkingProvider === "apple"}
-                  onLink={() => {
-                    void linkProvider("apple");
-                  }}
                   provider="apple"
                 />
               </View>
@@ -667,17 +636,12 @@ const profileStyles = StyleSheet.create({
 
 function IdentityMethodRow({
   isLinked,
-  isLoading = false,
-  onLink,
   provider
 }: {
   isLinked: boolean;
-  isLoading?: boolean;
-  onLink?: () => void;
   provider: IdentityProvider;
 }) {
   const copy = providerCopy[provider];
-  const isOAuthProvider = provider === "google" || provider === "apple";
 
   return (
     <View
@@ -722,20 +686,6 @@ function IdentityMethodRow({
             Linked
           </AppText>
         </View>
-      ) : isOAuthProvider ? (
-        <AppButton
-          fullWidth={false}
-          icon={LinkIcon}
-          iconAfter={false}
-          isDisabled={isLoading}
-          loading={isLoading}
-          onPress={onLink}
-          size="sm"
-          color="neutral"
-          variant="bordered"
-        >
-          Link
-        </AppButton>
       ) : null}
     </View>
   );

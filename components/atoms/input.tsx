@@ -23,11 +23,12 @@ import {
   createElement,
   type ChangeEvent,
   type ClipboardEvent,
+  type ComponentRef,
   type CSSProperties,
   type KeyboardEvent,
   type ReactNode
 } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -52,6 +53,10 @@ type TextFieldProps = Omit<
   rightSlot?: ReactNode;
   size?: FieldSize;
   truncate?: boolean;
+};
+
+type FocusableInputRef = ComponentRef<typeof UIInputField> & {
+  focus?: () => void;
 };
 
 const sizeMap = {
@@ -95,8 +100,10 @@ export function TextField({
 }: TextFieldProps) {
   const config = sizeMap[size];
   const iconPixelSize = appIconSizes[config.iconSize];
+  const inputRef = useRef<FocusableInputRef>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isEditingTruncated, setIsEditingTruncated] = useState(false);
   const isDisabled = editable === false;
   const borderColor = getFieldBorderColor({
     errorText,
@@ -149,7 +156,15 @@ export function TextField({
         ? props.defaultValue
         : "";
   const shouldRenderTruncatedText =
-    truncate && !isFocused && displayValue.length > 0;
+    truncate && !isFocused && !isEditingTruncated && displayValue.length > 0;
+
+  useEffect(() => {
+    if (!isEditingTruncated || isDisabled) {
+      return;
+    }
+
+    inputRef.current?.focus?.();
+  }, [isDisabled, isEditingTruncated]);
 
   return (
     <FormField
@@ -197,7 +212,10 @@ export function TextField({
         {shouldRenderTruncatedText ? (
           <Pressable
             disabled={!editable}
-            onPressIn={onPressIn}
+            onPressIn={(event) => {
+              setIsEditingTruncated(true);
+              onPressIn?.(event);
+            }}
             style={{
               flex: 1,
               height: config.minHeight,
@@ -221,12 +239,14 @@ export function TextField({
           </Pressable>
         ) : (
           <UIInputField
+            ref={inputRef}
             className="placeholder:text-typography-400"
             editable={editable}
             multiline={truncate ? false : multiline}
             numberOfLines={truncate ? 1 : numberOfLines}
             onBlur={(event: NativeSyntheticEvent<TextInputFocusEventData>) => {
               setIsFocused(false);
+              setIsEditingTruncated(false);
               onBlur?.(event);
             }}
             onFocus={(event: NativeSyntheticEvent<TextInputFocusEventData>) => {

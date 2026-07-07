@@ -35,7 +35,7 @@ Current policy rules:
 - feature tables default to owner access for normal users and admin-wide access for `users.role = 'admin'`
 - get/list queries and policies must exclude soft-deleted rows with `deleted_at is null`
 - clients may add owner filters for normal users for performance, but RLS remains the real authorization boundary
-- product emails can use `users.welcome_email_sent_at` as a non-sensitive idempotency marker
+- product emails can use `users.welcome_email_sent_at` as a non-sensitive idempotency marker, but Edge Functions should own marker writes so client sessions cannot repeatedly trigger the same email
 
 Everything else should be added later with its own schema migration plus its own RLS pass when the app starts reading or writing that table from the client.
 
