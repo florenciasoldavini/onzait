@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(11);
+select plan(14);
 
 insert into public.users (
   id,
@@ -204,6 +204,63 @@ select is(
   ),
   1,
   'admin can read any non-deleted project cover object'
+);
+
+select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000001', true);
+
+select lives_ok(
+  $$
+    insert into storage.objects (
+      bucket_id,
+      name,
+      owner,
+      metadata
+    )
+    values (
+      'user-avatars',
+      'users/00000000-0000-4000-8000-000000000001/avatar/profile.jpg',
+      '00000000-0000-4000-8000-000000000001',
+      '{"mimetype":"image/jpeg"}'::jsonb
+    )
+  $$,
+  'user can insert own avatar object'
+);
+
+select results_eq(
+  $$
+    with updated as (
+      update storage.objects
+      set metadata = '{"mimetype":"image/jpeg","updated":true}'::jsonb
+      where bucket_id = 'user-avatars'
+        and name = 'users/00000000-0000-4000-8000-000000000001/avatar/profile.jpg'
+      returning 1
+    )
+    select count(*)::integer from updated
+  $$,
+  $$ values (1) $$,
+  'user can update own avatar object'
+);
+
+select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000002', true);
+
+select throws_ok(
+  $$
+    insert into storage.objects (
+      bucket_id,
+      name,
+      owner,
+      metadata
+    )
+    values (
+      'user-avatars',
+      'users/00000000-0000-4000-8000-000000000001/avatar/hack.jpg',
+      '00000000-0000-4000-8000-000000000002',
+      '{"mimetype":"image/jpeg"}'::jsonb
+    )
+  $$,
+  '42501',
+  null,
+  'user cannot insert avatar object under another user folder'
 );
 
 select * from finish();

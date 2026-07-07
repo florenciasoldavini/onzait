@@ -509,6 +509,8 @@ function CoverPicker({
         Cover Image
       </AppText>
       <Pressable
+        accessibilityLabel="Choose project cover image"
+        accessibilityRole="button"
         onPress={() => {
           void pickImage();
         }}

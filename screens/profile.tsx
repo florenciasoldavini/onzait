@@ -12,6 +12,8 @@ import {
 import { atomPalette, atomRadii, atomSpacing } from "@/components/atoms/theme";
 import { authCardMaxWidth } from "@/components/auth/AuthShell";
 import { AuthContext } from "@/contexts/auth";
+import { useUploadProfileAvatar } from "@/features/profile/hooks";
+import type { ProfileAvatarAsset } from "@/features/profile/repositories/profile-avatar.repository";
 import {
   startOAuthIdentityLink,
   updatePassword,
@@ -19,6 +21,8 @@ import {
 } from "@/lib/auth";
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
 import type { UserIdentity } from "@supabase/supabase-js";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import {
   CameraIcon,
   CheckCircleIcon,
@@ -30,7 +34,13 @@ import {
   UserIcon
 } from "@/components/icons";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Image, View } from "react-native";
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+  type ViewStyle
+} from "react-native";
 
 const appleLogo = require("@/assets/images/auth/apple-logo.png");
 const googleLogo = require("@/assets/images/auth/google-logo.png");
@@ -62,6 +72,9 @@ const profileTabs = [
 export default function ProfileScreen() {
   const { logOut, session, updateUserProfile, user } = useContext(AuthContext);
   const [avatar, setAvatar] = useState(user?.avatar ?? "");
+  const [avatarAsset, setAvatarAsset] = useState<ProfileAvatarAsset | null>(
+    null
+  );
   const [firstName, setFirstName] = useState(user?.first_name ?? "");
   const [lastName, setLastName] = useState(user?.last_name ?? "");
   const [phoneNumber, setPhoneNumber] = useState(user?.phone_number ?? "");
@@ -86,6 +99,8 @@ export default function ProfileScreen() {
   const [linkingProvider, setLinkingProvider] =
     useState<SupportedOAuthProvider | null>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
+  const uploadAvatarMutation = useUploadProfileAvatar();
+  const isProfileSaving = isSaving || uploadAvatarMutation.isPending;
 
   const linkedProviders = useMemo(() => {
     return new Set(
@@ -119,6 +134,7 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     setAvatar(user?.avatar ?? "");
+    setAvatarAsset(null);
     setFirstName(user?.first_name ?? "");
     setLastName(user?.last_name ?? "");
     setPhoneNumber(user?.phone_number ?? "");
@@ -143,6 +159,11 @@ export default function ProfileScreen() {
   async function saveProfile() {
     const nextFirstName = firstName.trim();
 
+    if (!user) {
+      setFormError("You must be signed in to update your profile.");
+      return;
+    }
+
     if (!nextFirstName) {
       setFirstNameError("First name is required");
       return;
@@ -153,14 +174,23 @@ export default function ProfileScreen() {
     setStatusMessage(null);
 
     try {
+      const avatarUrl = avatarAsset
+        ? await uploadAvatarMutation.mutateAsync({
+            asset: avatarAsset,
+            userId: user.id
+          })
+        : avatar;
+
       const updatedUser = await updateUserProfile({
-        avatar,
+        avatar: avatarUrl,
         first_name: nextFirstName,
         last_name: lastName,
         phone_number: phoneNumber
       });
 
       if (updatedUser) {
+        setAvatar(updatedUser.avatar ?? "");
+        setAvatarAsset(null);
         setStatusMessage("Profile updated");
       }
     } catch (error) {
@@ -280,55 +310,16 @@ export default function ProfileScreen() {
                     gap: atomSpacing[3]
                   }}
                 >
-                  <View
-                    style={{
-                      alignItems: "center",
-                      backgroundColor: atomPalette.surfaceLow,
-                      borderColor: atomPalette.border,
-                      borderRadius: atomRadii.full,
-                      borderWidth: 1,
-                      height: 96,
-                      justifyContent: "center",
-                      overflow: "hidden",
-                      width: 96
+                  <AvatarPicker
+                    currentUrl={avatar}
+                    onChange={(asset) => {
+                      setAvatarAsset(asset);
+                      setFormError(null);
+                      setStatusMessage(null);
                     }}
-                  >
-                    {avatar.trim() ? (
-                      <Image
-                        source={{ uri: avatar.trim() }}
-                        style={{
-                          height: "100%",
-                          width: "100%"
-                        }}
-                      />
-                    ) : (
-                      <CameraIcon color={atomPalette.textSubtle} size="lg" />
-                    )}
-                  </View>
-                  <AppText
-                    style={{ maxWidth: 240, textAlign: "center" }}
-                    tone="muted"
-                    variant="bodySm"
-                  >
-                    Use an image URL for now. File upload will come later with
-                    storage.
-                  </AppText>
+                    value={avatarAsset}
+                  />
                 </View>
-
-                <TextField
-                  autoCapitalize="none"
-                  autoComplete="url"
-                  keyboardType="url"
-                  label="Avatar URL"
-                  leftIcon={CameraIcon}
-                  onChangeText={(value) => {
-                    setAvatar(value);
-                    setFormError(null);
-                  }}
-                  placeholder="https://..."
-                  size="md"
-                  value={avatar}
-                />
 
                 <TextField
                   errorText={firstNameError}
@@ -384,8 +375,8 @@ export default function ProfileScreen() {
 
               <View style={{ gap: atomSpacing[3] }}>
                 <AppButton
-                  isDisabled={isSaving}
-                  loading={isSaving}
+                  isDisabled={isProfileSaving}
+                  loading={isProfileSaving}
                   onPress={() => {
                     void saveProfile();
                   }}
@@ -567,6 +558,105 @@ export default function ProfileScreen() {
     </Screen>
   );
 }
+
+function AvatarPicker({
+  currentUrl,
+  onChange,
+  value
+}: {
+  currentUrl: string;
+  onChange: (asset: ProfileAvatarAsset) => void;
+  value: ProfileAvatarAsset | null;
+}) {
+  const previewUri = value?.uri ?? currentUrl.trim();
+
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.82
+    });
+
+    if (result.canceled || !result.assets[0]) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    onChange({
+      fileName: asset.fileName,
+      mimeType: asset.mimeType,
+      uri: asset.uri
+    });
+  };
+
+  return (
+    <Pressable
+      accessibilityLabel="Change profile photo"
+      accessibilityRole="button"
+      onPress={() => {
+        void pickImage();
+      }}
+      style={StyleSheet.flatten([
+        profileStyles.avatarPicker,
+        Platform.OS === "web" ? profileStyles.webCursor : null
+      ])}
+    >
+      {previewUri ? (
+        <Image
+          contentFit="cover"
+          source={{ uri: previewUri }}
+          style={profileStyles.avatarImage}
+        />
+      ) : (
+        <CameraIcon color={atomPalette.textSubtle} size="lg" />
+      )}
+      <View style={profileStyles.avatarPickerBadge}>
+        <CameraIcon color={atomPalette.accentText} size="sm" />
+      </View>
+    </Pressable>
+  );
+}
+
+const profileStyles = StyleSheet.create({
+  avatarImage: {
+    height: "100%",
+    width: "100%"
+  },
+  avatarPicker: {
+    alignItems: "center",
+    backgroundColor: atomPalette.surfaceLow,
+    borderColor: atomPalette.border,
+    borderRadius: atomRadii.full,
+    borderWidth: 1,
+    height: 104,
+    justifyContent: "center",
+    overflow: "hidden",
+    width: 104
+  },
+  avatarPickerBadge: {
+    alignItems: "center",
+    backgroundColor: atomPalette.accent,
+    borderColor: atomPalette.surface,
+    borderRadius: atomRadii.full,
+    borderWidth: 2,
+    bottom: 4,
+    height: 32,
+    justifyContent: "center",
+    position: "absolute",
+    right: 4,
+    width: 32
+  },
+  webCursor: {
+    cursor: "pointer"
+  } as ViewStyle
+});
 
 function IdentityMethodRow({
   isLinked,
