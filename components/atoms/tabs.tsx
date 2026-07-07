@@ -36,6 +36,7 @@ export function SegmentedTabs<TValue extends string>({
         borderRadius: atomRadii.lg,
         borderWidth: 1,
         flexDirection: "row",
+        gap: atomSpacing[1],
         minHeight: 48,
         padding: atomSpacing[1],
         width: "100%"
