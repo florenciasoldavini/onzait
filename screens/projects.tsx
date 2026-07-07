@@ -6,6 +6,7 @@ import {
   Screen,
   TextField
 } from "@/components/atoms";
+import { atomMotion } from "@/components/atoms/motion";
 import { atomLayout, atomSpacing } from "@/components/atoms/theme";
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { ProjectCardSkeleton } from "@/features/projects/components/project-card-skeleton";
@@ -15,7 +16,7 @@ import { FolderPlus, RefreshCw, Search } from "lucide-react-native";
 import { useState } from "react";
 import { useWindowDimensions, View, type ViewStyle } from "react-native";
 import Animated, {
-  FadeInUp,
+  FadeIn,
   FadeOut,
   LinearTransition
 } from "react-native-reanimated";
@@ -88,12 +89,12 @@ export default function ProjectsScreen() {
           <View style={projectGrid.containerStyle}>
             {projectsQuery.data.map((project, index) => (
               <Animated.View
-                entering={FadeInUp.duration(240).delay(
+                entering={FadeIn.duration(atomMotion.duration.enter).delay(
                   Math.min(index, 6) * 36
                 )}
-                exiting={FadeOut.duration(140)}
+                exiting={FadeOut.duration(atomMotion.duration.exit)}
                 key={project.id}
-                layout={LinearTransition.duration(220)}
+                layout={LinearTransition.duration(atomMotion.duration.layout)}
                 style={projectGrid.itemStyle}
               >
                 <ProjectCard

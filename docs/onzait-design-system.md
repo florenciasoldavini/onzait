@@ -3,7 +3,7 @@
 Purpose: active design-system source of truth for reusable UI decisions, component rules, and interaction behavior
 Source of truth for: design rules, token usage, component state expectations, and reusable UI patterns
 Update when: a reusable visual rule is decided, a token changes meaning, a component gains a new standard state, or a screen teaches us a pattern that should be reused
-Last reviewed: 2026-07-06
+Last reviewed: 2026-07-07
 
 ## Active Sources
 
@@ -11,6 +11,7 @@ Last reviewed: 2026-07-06
 - Visual foundation: `docs/onzait-step-2-foundations.md`
 - Token source: `theme/tokens.js`
 - App token facade: `components/atoms/theme.ts`
+- Motion token facade: `components/atoms/motion.ts`
 - Reusable app primitives: `components/atoms/`
 - Auth layout primitives: `components/auth/AuthShell.tsx`
 
@@ -83,6 +84,35 @@ Selectable items such as tabs, nav buttons, segmented controls, checklist items,
 State styling should be designed as a full set. Do not add only the happy-path state and leave the rest to default library behavior unless the default has been reviewed and intentionally accepted.
 
 Feature screens should not silently block while data loads. Lists, cards, forms, uploads, autocomplete results, and destructive actions all need explicit loading feedback.
+
+## Motion Rules
+
+Motion should reinforce the same technical architectural blueprint feeling as the visual system: precise, subtle, intentional, and operational. It should feel like interface instrumentation and live data resolving into place, not playful decoration.
+
+Use `components/atoms/motion.ts` as the source of truth for reusable animation durations, easing, and scale values. Future reusable motion should add or reuse `atomMotion` tokens instead of introducing one-off timing values in screens.
+
+Default motion behavior:
+
+- Prefer short measured timing animations over springs.
+- Use Reanimated for reusable app motion.
+- Keep transforms very small. Press compression should confirm input without visibly bouncing or squishing the control.
+- Use opacity, subtle scale, linear scans, measured thumb movement, and progress/data fills before decorative movement.
+- Keep motion under control surfaces and data surfaces: focus states, selected states, loading skeletons, progress bars, active status indicators, and list/layout changes.
+
+Avoid motion that feels cheerful, toy-like, or decorative:
+
+- Do not use bounce presets, springy rebounds, large overshoot, elastic scaling, confetti-like effects, or ornamental loops in product UI.
+- Do not make cards float upward as a default list entrance. Prefer fade-in or measured layout movement so content feels like it resolves into view.
+- Do not pulse every status. Reserve pulsing for semantically live or active states such as `IN_PROGRESS`.
+
+Current reusable patterns:
+
+- Button and card press feedback uses tiny timed compression with no spring rebound.
+- Input focus may use a very subtle accent glow in addition to the accent border.
+- Segmented controls and pill selects move the active thumb with measured timing.
+- Skeleton loading uses a low-opacity scanner pass rather than a shiny shimmer.
+- Progress bars should animate visibly enough to read as data filling in; keep the fill measured, not playful.
+- Active status dots pulse opacity at a fixed size, like an indicator light, rather than expanding as a halo.
 
 ## Hover, Focus, And Selected Rules
 

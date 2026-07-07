@@ -1,8 +1,8 @@
+import { atomMotion } from "@/components/atoms/motion";
 import { atomPalette, atomRadii } from "@/components/atoms/theme";
 import { useEffect } from "react";
 import { useWindowDimensions, type ViewStyle } from "react-native";
 import Animated, {
-  Easing,
   cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
@@ -27,29 +27,26 @@ export function SkeletonBlock({
   const numericWidth = typeof width === "number" ? width : viewportWidth;
   const shimmerTravel = Math.max(numericWidth, viewportWidth) + 180;
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: 0.82 + pulse.value * 0.18
+    opacity: 0.86 + pulse.value * 0.06
   }));
   const shimmerStyle = useAnimatedStyle(() => ({
-    opacity: 0.18 + pulse.value * 0.1,
-    transform: [
-      { translateX: -120 + shimmer.value * shimmerTravel },
-      { rotate: "10deg" }
-    ]
+    opacity: 0.08 + pulse.value * 0.04,
+    transform: [{ translateX: -120 + shimmer.value * shimmerTravel }]
   }));
 
   useEffect(() => {
     pulse.value = withRepeat(
       withTiming(1, {
-        duration: 1400,
-        easing: Easing.inOut(Easing.ease)
+        duration: atomMotion.duration.scan,
+        easing: atomMotion.easing.status
       }),
       -1,
       true
     );
     shimmer.value = withRepeat(
       withTiming(1, {
-        duration: 1500,
-        easing: Easing.inOut(Easing.cubic)
+        duration: atomMotion.duration.scan,
+        easing: atomMotion.easing.scan
       }),
       -1,
       false

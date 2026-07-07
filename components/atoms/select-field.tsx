@@ -1,3 +1,4 @@
+import { atomMotion } from "@/components/atoms/motion";
 import { AppText } from "@/components/atoms/text";
 import { atomPalette, atomRadii, atomSpacing } from "@/components/atoms/theme";
 import { FormField } from "@/components/molecules";
@@ -12,7 +13,6 @@ import {
   type ViewStyle
 } from "react-native";
 import Animated, {
-  Easing,
   useAnimatedStyle,
   useSharedValue,
   withTiming
@@ -63,8 +63,8 @@ export function SelectField<T extends string>({
     }
 
     const timingConfig = {
-      duration: 220,
-      easing: Easing.out(Easing.cubic)
+      duration: atomMotion.duration.thumb,
+      easing: atomMotion.easing.measured
     };
 
     thumbX.value = withTiming(selectedLayout.x, timingConfig);

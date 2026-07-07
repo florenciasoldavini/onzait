@@ -5,6 +5,7 @@ import {
   atomSpacing,
   atomTypeScale
 } from "@/components/atoms/theme";
+import { atomMotion } from "@/components/atoms/motion";
 import { FormField } from "@/components/molecules";
 import {
   ClosedEyeIcon,
@@ -33,11 +34,17 @@ import {
   Platform,
   Pressable,
   Text,
+  View,
   type NativeSyntheticEvent,
   type TextInputFocusEventData,
   type TextStyle,
   type ViewStyle
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming
+} from "react-native-reanimated";
 
 type FieldSize = "sm" | "md" | "lg";
 type TextFieldProps = Omit<
@@ -104,6 +111,7 @@ export function TextField({
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isEditingTruncated, setIsEditingTruncated] = useState(false);
+  const focusGlow = useSharedValue(0);
   const isDisabled = editable === false;
   const borderColor = getFieldBorderColor({
     errorText,
@@ -157,6 +165,10 @@ export function TextField({
         : "";
   const shouldRenderTruncatedText =
     truncate && !isFocused && !isEditingTruncated && displayValue.length > 0;
+  const focusGlowStyle = useAnimatedStyle(() => ({
+    opacity: focusGlow.value,
+    transform: [{ scale: 1 + focusGlow.value * atomMotion.scale.focusGlow }]
+  }));
 
   useEffect(() => {
     if (!isEditingTruncated || isDisabled) {
@@ -166,6 +178,13 @@ export function TextField({
     inputRef.current?.focus?.();
   }, [isDisabled, isEditingTruncated]);
 
+  useEffect(() => {
+    focusGlow.value = withTiming(isFocused && !isDisabled ? 1 : 0, {
+      duration: atomMotion.duration.focus,
+      easing: atomMotion.easing.measured
+    });
+  }, [focusGlow, isDisabled, isFocused]);
+
   return (
     <FormField
       accessory={accessory}
@@ -174,105 +193,128 @@ export function TextField({
       label={label}
       required={required}
     >
-      <Input
-        isInvalid={Boolean(errorText)}
-        onPointerEnter={() => {
-          setIsHovered(true);
-        }}
-        onPointerLeave={() => {
-          setIsHovered(false);
-        }}
-        size={config.input}
-        style={{
-          backgroundColor: isDisabled
-            ? atomPalette.surfaceLow
-            : atomPalette.surface,
-          borderColor,
-          borderRadius: config.radius,
-          height: config.minHeight,
-          minHeight: config.minHeight,
-          ...webRootCursorStyle
-        }}
-      >
-        {leftIcon ? (
-          <InputSlot
-            style={{
-              height: config.minHeight,
-              minWidth: atomSpacing[10],
-              paddingLeft: atomSpacing[4]
-            }}
-          >
-            {(() => {
-              const Icon = leftIcon;
-
-              return <Icon color={iconColor} size={iconPixelSize} />;
-            })()}
-          </InputSlot>
-        ) : null}
-        {shouldRenderTruncatedText ? (
-          <Pressable
-            disabled={!editable}
-            onPressIn={(event) => {
-              setIsEditingTruncated(true);
-              onPressIn?.(event);
-            }}
-            style={{
-              flex: 1,
-              height: config.minHeight,
-              justifyContent: "center",
-              paddingHorizontal: inputPaddingHorizontal,
-              ...webRootCursorStyle
-            }}
-          >
-            <Text
-              ellipsizeMode="tail"
-              numberOfLines={1}
+      <View style={{ position: "relative" }}>
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            {
+              backgroundColor: `${atomPalette.accent}05`,
+              borderColor: `${atomPalette.accent}24`,
+              borderRadius: config.radius + 2,
+              borderWidth: 1,
+              bottom: -2,
+              left: -2,
+              position: "absolute",
+              right: -2,
+              top: -2
+            },
+            focusGlowStyle
+          ]}
+        />
+        <Input
+          isInvalid={Boolean(errorText)}
+          onPointerEnter={() => {
+            setIsHovered(true);
+          }}
+          onPointerLeave={() => {
+            setIsHovered(false);
+          }}
+          size={config.input}
+          style={{
+            backgroundColor: isDisabled
+              ? atomPalette.surfaceLow
+              : atomPalette.surface,
+            borderColor,
+            borderRadius: config.radius,
+            height: config.minHeight,
+            minHeight: config.minHeight,
+            ...webRootCursorStyle
+          }}
+        >
+          {leftIcon ? (
+            <InputSlot
               style={{
-                ...inputTextStyle,
-                color: displayValue
-                  ? atomPalette.text
-                  : atomPalette.textPlaceholder
+                height: config.minHeight,
+                minWidth: atomSpacing[10],
+                paddingLeft: atomSpacing[4]
               }}
             >
-              {displayValue || props.placeholder}
-            </Text>
-          </Pressable>
-        ) : (
-          <UIInputField
-            ref={inputRef}
-            className="placeholder:text-typography-400"
-            editable={editable}
-            multiline={truncate ? false : multiline}
-            numberOfLines={truncate ? 1 : numberOfLines}
-            onBlur={(event: NativeSyntheticEvent<TextInputFocusEventData>) => {
-              setIsFocused(false);
-              setIsEditingTruncated(false);
-              onBlur?.(event);
-            }}
-            onFocus={(event: NativeSyntheticEvent<TextInputFocusEventData>) => {
-              setIsFocused(true);
-              onFocus?.(event);
-            }}
-            placeholderTextColor={atomPalette.textPlaceholder}
-            style={{
-              ...inputTextStyle,
-              height: config.minHeight,
-              paddingHorizontal: inputPaddingHorizontal,
-              paddingVertical: 0,
-              textAlignVertical: "center",
-              ...truncateStyle,
-              ...webInputCursorStyle
-            }}
-            {...props}
-            onPressIn={onPressIn}
-          />
-        )}
-        {rightSlot ? (
-          <InputSlot style={{ paddingRight: atomSpacing[4] }}>
-            {rightSlot}
-          </InputSlot>
-        ) : null}
-      </Input>
+              {(() => {
+                const Icon = leftIcon;
+
+                return <Icon color={iconColor} size={iconPixelSize} />;
+              })()}
+            </InputSlot>
+          ) : null}
+          {shouldRenderTruncatedText ? (
+            <Pressable
+              disabled={!editable}
+              onPressIn={(event) => {
+                setIsEditingTruncated(true);
+                onPressIn?.(event);
+              }}
+              style={{
+                flex: 1,
+                height: config.minHeight,
+                justifyContent: "center",
+                paddingHorizontal: inputPaddingHorizontal,
+                ...webRootCursorStyle
+              }}
+            >
+              <Text
+                ellipsizeMode="tail"
+                numberOfLines={1}
+                style={{
+                  ...inputTextStyle,
+                  color: displayValue
+                    ? atomPalette.text
+                    : atomPalette.textPlaceholder
+                }}
+              >
+                {displayValue || props.placeholder}
+              </Text>
+            </Pressable>
+          ) : (
+            <UIInputField
+              ref={inputRef}
+              className="placeholder:text-typography-400"
+              editable={editable}
+              multiline={truncate ? false : multiline}
+              numberOfLines={truncate ? 1 : numberOfLines}
+              onBlur={(
+                event: NativeSyntheticEvent<TextInputFocusEventData>
+              ) => {
+                setIsFocused(false);
+                setIsEditingTruncated(false);
+                onBlur?.(event);
+              }}
+              onFocus={(
+                event: NativeSyntheticEvent<TextInputFocusEventData>
+              ) => {
+                setIsFocused(true);
+                onFocus?.(event);
+              }}
+              placeholderTextColor={atomPalette.textPlaceholder}
+              style={{
+                ...inputTextStyle,
+                height: config.minHeight,
+                paddingHorizontal: inputPaddingHorizontal,
+                paddingVertical: 0,
+                textAlignVertical: "center",
+                ...truncateStyle,
+                ...webInputCursorStyle
+              }}
+              {...props}
+              onPressIn={onPressIn}
+            />
+          )}
+          {rightSlot ? (
+            <InputSlot style={{ paddingRight: atomSpacing[4] }}>
+              {rightSlot}
+            </InputSlot>
+          ) : null}
+        </Input>
+      </View>
     </FormField>
   );
 }

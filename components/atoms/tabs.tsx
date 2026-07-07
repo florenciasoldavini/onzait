@@ -1,9 +1,9 @@
+import { atomMotion } from "@/components/atoms/motion";
 import { AppText } from "@/components/atoms/text";
 import { atomPalette, atomRadii, atomSpacing } from "@/components/atoms/theme";
 import { useEffect, useState } from "react";
 import { Platform, Pressable, View, type ViewStyle } from "react-native";
 import Animated, {
-  Easing,
   useAnimatedStyle,
   useSharedValue,
   withTiming
@@ -58,8 +58,8 @@ export function SegmentedTabs<TValue extends string>({
     thumbX.value = withTiming(
       containerPadding + selectedIndex * (thumbWidth + optionGap),
       {
-        duration: 220,
-        easing: Easing.out(Easing.cubic)
+        duration: atomMotion.duration.thumb,
+        easing: atomMotion.easing.measured
       }
     );
   }, [containerPadding, optionGap, selectedIndex, thumbWidth, thumbX]);

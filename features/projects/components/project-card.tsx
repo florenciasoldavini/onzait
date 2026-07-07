@@ -1,4 +1,5 @@
 import { AppCard, AppHeading, AppText } from "@/components/atoms";
+import { atomMotion } from "@/components/atoms/motion";
 import {
   atomCardRadius,
   atomPalette,
@@ -21,7 +22,6 @@ import {
   type ViewStyle
 } from "react-native";
 import Animated, {
-  Easing,
   cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
@@ -39,116 +39,137 @@ export function ProjectCard({
   onPress: () => void;
   project: Project;
 }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={isDeleting}
-      onPress={onPress}
-      style={({ pressed }) =>
-        [
-          {
-            opacity: isDeleting ? 0.55 : pressed ? 0.82 : 1
-          },
-          Platform.OS === "web" && !isDeleting
-            ? ({ cursor: "pointer" } as ViewStyle)
-            : null
-        ] as ViewStyle[]
-      }
-    >
-      <AppCard>
-        <View style={{ gap: atomSpacing[4], marginBottom: atomSpacing[5] }}>
-          <View
-            style={{
-              backgroundColor: atomPalette.surfaceLow,
-              height: 150,
-              marginHorizontal: -atomSpacing[5],
-              marginTop: -atomSpacing[5],
-              overflow: "hidden",
-              position: "relative"
-            }}
-          >
-            {project.cover_image_url ? (
-              <Image
-                contentFit="cover"
-                source={{ uri: project.cover_image_url }}
-                style={{ height: "100%", width: "100%" }}
-              />
-            ) : (
-              <View
-                style={{
-                  alignItems: "center",
-                  flex: 1,
-                  justifyContent: "center"
-                }}
-              >
-                <ImageOff color={atomPalette.textSubtle} size={28} />
-              </View>
-            )}
-            <ProjectStatusCornerLabel
-              label={PROJECT_STATUS_LABELS[project.status]}
-              status={project.status}
-            />
-          </View>
+  const pressScale = useSharedValue(1);
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pressScale.value }]
+  }));
 
-          <View style={{ gap: atomSpacing[3] }}>
+  return (
+    <Animated.View style={pressStyle}>
+      <Pressable
+        accessibilityRole="button"
+        disabled={isDeleting}
+        onPress={onPress}
+        onPressIn={() => {
+          if (!isDeleting) {
+            pressScale.value = withTiming(atomMotion.scale.cardPressed, {
+              duration: atomMotion.duration.pressIn,
+              easing: atomMotion.easing.measured
+            });
+          }
+        }}
+        onPressOut={() => {
+          pressScale.value = withTiming(1, {
+            duration: atomMotion.duration.pressOut,
+            easing: atomMotion.easing.measured
+          });
+        }}
+        style={({ pressed }) =>
+          [
+            {
+              opacity: isDeleting ? 0.55 : pressed ? 0.9 : 1
+            },
+            Platform.OS === "web" && !isDeleting
+              ? ({ cursor: "pointer" } as ViewStyle)
+              : null
+          ] as ViewStyle[]
+        }
+      >
+        <AppCard>
+          <View style={{ gap: atomSpacing[4], marginBottom: atomSpacing[5] }}>
             <View
               style={{
-                alignItems: "flex-start",
-                flexDirection: "row",
-                gap: atomSpacing[3],
-                justifyContent: "space-between"
+                backgroundColor: atomPalette.surfaceLow,
+                height: 150,
+                marginHorizontal: -atomSpacing[5],
+                marginTop: -atomSpacing[5],
+                overflow: "hidden",
+                position: "relative"
               }}
             >
-              <View style={{ flex: 1, gap: atomSpacing[2] }}>
-                <AppText variant="eyebrow">
-                  {PROJECT_TYPE_LABELS[project.project_type]}
-                </AppText>
-                <AppHeading variant="card">{project.name}</AppHeading>
-              </View>
+              {project.cover_image_url ? (
+                <Image
+                  contentFit="cover"
+                  source={{ uri: project.cover_image_url }}
+                  style={{ height: "100%", width: "100%" }}
+                />
+              ) : (
+                <View
+                  style={{
+                    alignItems: "center",
+                    flex: 1,
+                    justifyContent: "center"
+                  }}
+                >
+                  <ImageOff color={atomPalette.textSubtle} size={28} />
+                </View>
+              )}
+              <ProjectStatusCornerLabel
+                label={PROJECT_STATUS_LABELS[project.status]}
+                status={project.status}
+              />
             </View>
 
-            <View style={{ gap: atomSpacing[2] }}>
+            <View style={{ gap: atomSpacing[3] }}>
               <View
                 style={{
-                  alignItems: "center",
+                  alignItems: "flex-start",
                   flexDirection: "row",
-                  gap: atomSpacing[2]
+                  gap: atomSpacing[3],
+                  justifyContent: "space-between"
                 }}
               >
-                <MapPinned color={atomPalette.textMuted} size={16} />
-                <AppText
-                  numberOfLines={1}
-                  style={{ flex: 1 }}
-                  tone="muted"
-                  variant="bodySm"
-                >
-                  {project.address}
-                </AppText>
+                <View style={{ flex: 1, gap: atomSpacing[2] }}>
+                  <AppText variant="eyebrow">
+                    {PROJECT_TYPE_LABELS[project.project_type]}
+                  </AppText>
+                  <AppHeading variant="card">{project.name}</AppHeading>
+                </View>
               </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  flexWrap: "wrap",
-                  gap: atomSpacing[2]
-                }}
-              >
-                <ProjectMetaLabel
-                  value={`PHASE_${formatMonoLabel(
-                    PROJECT_PHASE_LABELS[project.phase]
-                  )}`}
-                />
-                <ProjectMetaLabel
-                  value={`ETA_${formatEstimatedCompletion(
-                    project.estimated_end_date
-                  )}`}
-                />
+
+              <View style={{ gap: atomSpacing[2] }}>
+                <View
+                  style={{
+                    alignItems: "center",
+                    flexDirection: "row",
+                    gap: atomSpacing[2]
+                  }}
+                >
+                  <MapPinned color={atomPalette.textMuted} size={16} />
+                  <AppText
+                    numberOfLines={1}
+                    style={{ flex: 1 }}
+                    tone="muted"
+                    variant="bodySm"
+                  >
+                    {project.address}
+                  </AppText>
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: atomSpacing[2]
+                  }}
+                >
+                  <ProjectMetaLabel
+                    value={`PHASE_${formatMonoLabel(
+                      PROJECT_PHASE_LABELS[project.phase]
+                    )}`}
+                  />
+                  <ProjectMetaLabel
+                    value={`ETA_${formatEstimatedCompletion(
+                      project.estimated_end_date
+                    )}`}
+                  />
+                </View>
               </View>
             </View>
           </View>
-        </View>
-        <ProjectProgressIndicator progress={project.progress_percentage} />
-      </AppCard>
-    </Pressable>
+          <ProjectProgressIndicator progress={project.progress_percentage} />
+        </AppCard>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -210,8 +231,8 @@ function ProjectProgressBar({ progress }: { progress: number }) {
 
   useEffect(() => {
     animatedProgress.value = withTiming(progress, {
-      duration: 650,
-      easing: Easing.out(Easing.cubic)
+      duration: atomMotion.duration.progress,
+      easing: atomMotion.easing.measured
     });
   }, [animatedProgress, progress]);
 
@@ -271,12 +292,12 @@ function ProjectStatusCornerLabel({
     pulse.value = withRepeat(
       withSequence(
         withTiming(1, {
-          duration: 900,
-          easing: Easing.out(Easing.ease)
+          duration: atomMotion.duration.scan,
+          easing: atomMotion.easing.status
         }),
         withTiming(0, {
-          duration: 900,
-          easing: Easing.in(Easing.ease)
+          duration: atomMotion.duration.scan,
+          easing: atomMotion.easing.status
         })
       ),
       -1
@@ -288,12 +309,10 @@ function ProjectStatusCornerLabel({
   }, [pulse, shouldPulse]);
 
   const pulseHaloStyle = useAnimatedStyle(() => ({
-    opacity: shouldPulse ? 0.38 * (1 - pulse.value) : 0,
-    transform: [{ scale: 1 + pulse.value * 1.4 }]
+    opacity: shouldPulse ? 0.1 + pulse.value * 0.16 : 0
   }));
   const pulseDotStyle = useAnimatedStyle(() => ({
-    opacity: shouldPulse ? 1 - pulse.value * 0.28 : 1,
-    transform: [{ scale: 1 + pulse.value * 0.28 }]
+    opacity: shouldPulse ? 0.72 + pulse.value * 0.28 : 1
   }));
 
   return (
@@ -332,9 +351,9 @@ function ProjectStatusCornerLabel({
             {
               backgroundColor: atomPalette.accent,
               borderRadius: atomRadii.full,
-              height: 8,
+              height: 12,
               position: "absolute",
-              width: 8
+              width: 12
             },
             pulseHaloStyle
           ]}

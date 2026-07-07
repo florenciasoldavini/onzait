@@ -5,6 +5,7 @@ import {
   atomRadii,
   atomTypeScale
 } from "@/components/atoms/theme";
+import { atomMotion } from "@/components/atoms/motion";
 import {
   appIconSizes,
   type AppIconComponent,
@@ -12,6 +13,7 @@ import {
 } from "@/components/icons";
 import { Button, ButtonSpinner, ButtonText } from "@/components/ui/button";
 import { getSansFontStyle } from "@/theme/fonts";
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 import {
   Image,
@@ -21,6 +23,11 @@ import {
   type StyleProp,
   type ViewStyle
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming
+} from "react-native-reanimated";
 
 export type ButtonColor =
   | "accent"
@@ -168,6 +175,8 @@ const disabledVisualStyle = {
   textColor: atomPalette.textMuted
 } as const;
 
+const AnimatedButton = Animated.createAnimatedComponent(Button);
+
 export function AppButton({
   children,
   color = "accent",
@@ -203,6 +212,7 @@ export function AppButton({
   style?: StyleProp<ViewStyle>;
   variant?: ButtonVariant;
 }) {
+  const pressScale = useSharedValue(1);
   const sizeConfig = sizeMap[size];
   const config = getButtonVisualConfig(color, variant);
   const isVisuallyDisabled = Boolean(isDisabled || loading);
@@ -233,9 +243,21 @@ export function AppButton({
           cursor: isVisuallyDisabled ? "not-allowed" : "pointer"
         } as ViewStyle)
       : null;
+  const animatedPressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pressScale.value }]
+  }));
+
+  useEffect(() => {
+    if (isInteractionDisabled) {
+      pressScale.value = withTiming(1, {
+        duration: atomMotion.duration.pressOut,
+        easing: atomMotion.easing.measured
+      });
+    }
+  }, [isInteractionDisabled, pressScale]);
 
   return (
-    <Button
+    <AnimatedButton
       action={config.action}
       className={config.className}
       isDisabled={isInteractionDisabled}
@@ -252,26 +274,49 @@ export function AppButton({
 
         onPress?.(event);
       }}
-      onPressIn={isInteractionDisabled ? undefined : onPressIn}
-      onPressOut={isInteractionDisabled ? undefined : onPressOut}
-      size={sizeConfig.button}
-      style={StyleSheet.flatten([
-        {
-          borderRadius: shape === "pill" ? atomRadii.full : sizeConfig.radius,
-          minHeight: sizeConfig.height,
-          paddingHorizontal: layout === "icon" ? 0 : undefined,
-          width: buttonWidth
-        },
-        isVisuallyDisabled
-          ? {
-              backgroundColor: disabledVisualStyle.backgroundColor,
-              borderColor: disabledVisualStyle.borderColor,
-              opacity: disabledVisualStyle.opacity
+      onPressIn={
+        isInteractionDisabled
+          ? undefined
+          : (event) => {
+              pressScale.value = withTiming(atomMotion.scale.buttonPressed, {
+                duration: atomMotion.duration.pressIn,
+                easing: atomMotion.easing.measured
+              });
+              onPressIn?.(event);
             }
-          : null,
-        webCursorStyle,
-        style
-      ])}
+      }
+      onPressOut={
+        isInteractionDisabled
+          ? undefined
+          : (event) => {
+              pressScale.value = withTiming(1, {
+                duration: atomMotion.duration.pressOut,
+                easing: atomMotion.easing.measured
+              });
+              onPressOut?.(event);
+            }
+      }
+      size={sizeConfig.button}
+      style={[
+        StyleSheet.flatten([
+          {
+            borderRadius: shape === "pill" ? atomRadii.full : sizeConfig.radius,
+            minHeight: sizeConfig.height,
+            paddingHorizontal: layout === "icon" ? 0 : undefined,
+            width: buttonWidth
+          },
+          isVisuallyDisabled
+            ? {
+                backgroundColor: disabledVisualStyle.backgroundColor,
+                borderColor: disabledVisualStyle.borderColor,
+                opacity: disabledVisualStyle.opacity
+              }
+            : null,
+          webCursorStyle,
+          style
+        ]),
+        animatedPressStyle
+      ]}
       variant={config.buttonVariant}
       {...props}
     >
@@ -295,7 +340,7 @@ export function AppButton({
       {Icon && iconAfter && !imageSource && !loading ? (
         <Icon color={resolvedIconColor} size={iconPixelSize} />
       ) : null}
-    </Button>
+    </AnimatedButton>
   );
 }
 
