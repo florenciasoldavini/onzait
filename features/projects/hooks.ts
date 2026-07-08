@@ -2,6 +2,7 @@ import { AuthContext } from "@/contexts/auth";
 import {
   autocompleteProjectAddress,
   getProjectAddressMapPreview,
+  getProjectsMapPreview,
   resolveProjectAddress
 } from "@/features/projects/services/address.service";
 import {
@@ -15,6 +16,8 @@ import {
 import type {
   CreateProjectInput,
   ProjectFilters,
+  StaticMapPoint,
+  StaticMapViewport,
   UpdateProjectInput
 } from "@/features/projects/types";
 import { normalizeProjectFilters } from "@/features/projects/validation";
@@ -184,6 +187,44 @@ export function useAddressMapPreview({
         longitude: longitude!
       }),
     queryKey: ["address-map-preview", latitude, longitude],
+    retry: 1,
+    staleTime: 30 * 60_000
+  });
+}
+
+export function useProjectsMapPreview({
+  points,
+  viewport
+}: {
+  points: StaticMapPoint[];
+  viewport?: StaticMapViewport | null;
+}) {
+  const queryPoints = useMemo(
+    () =>
+      points.map((point) => ({
+        label: point.label ?? "",
+        latitude: point.latitude,
+        longitude: point.longitude
+      })),
+    [points]
+  );
+  const queryViewport = useMemo(
+    () =>
+      viewport
+        ? {
+            centerLatitude: viewport.centerLatitude,
+            centerLongitude: viewport.centerLongitude,
+            zoom: viewport.zoom
+          }
+        : null,
+    [viewport]
+  );
+
+  return useQuery({
+    enabled: queryPoints.length > 0,
+    queryFn: () =>
+      getProjectsMapPreview({ points: queryPoints, viewport: queryViewport }),
+    queryKey: ["projects-map-preview", queryPoints, queryViewport],
     retry: 1,
     staleTime: 30 * 60_000
   });

@@ -134,6 +134,7 @@ Before shipping uploads, decide:
 - never commit real secrets to git
 - `.env.local` remains local-only
 - `.env.example` remains generated only
+- new keys and env vars must be added to `env-sync.config.json`, regenerated into `.env.example`, and mirrored as easy-to-replace placeholders in `.env.local`
 - service-role credentials must never be used in client code
 - preview, development, and production secrets should remain separated
 - rotate secrets if they are exposed in logs, screenshots, or commits
@@ -198,7 +199,7 @@ The backend is not the main auth path today, but if MVP features start using it:
 - Trusted API boundaries must validate inputs, authenticate users when data is user-scoped, rate-limit abusive call patterns, and cache only where provider terms allow.
 - Paid trusted API boundaries must enforce a durable usage cap before calling the provider when provider-side quotas cannot be lowered enough for development safety.
 - Google Maps address lookup must keep the API key server-side, enforce monthly hard caps before Google calls, store selected `place_id` and coordinates only as project data, and show required Google Maps attribution near suggestions or resolved address content.
-- Google Maps API keys should remain restricted to the specific APIs currently used. Project address lookup currently needs Places API (New), and selected-address map previews need Maps Static API. Before adding a feature that needs another Maps API or SDK, remind the project owner to update the Google Cloud key restrictions and confirm the new API is intentionally enabled.
+- Google Maps API keys should remain restricted to the specific APIs and platforms currently used. Project address lookup currently needs server-side Places API (New), selected-address map previews need server-side Maps Static API, the web projects map needs Maps JavaScript API with web-referrer restrictions, Android project maps need Maps SDK for Android with package/SHA-1 restrictions, and iOS project maps use the native default Apple Maps provider unless a future custom native build intentionally enables Google Maps on iOS. Before adding a feature that needs another Maps API or SDK, remind the project owner to update the Google Cloud key restrictions and confirm the new API is intentionally enabled.
 
 ## Logging and monitoring
 

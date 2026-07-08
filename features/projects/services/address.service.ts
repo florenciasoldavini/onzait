@@ -3,6 +3,10 @@ import {
   getStaticMapPreview,
   resolveAddressSuggestion
 } from "@/features/projects/repositories/maps.repository";
+import type {
+  StaticMapPoint,
+  StaticMapViewport
+} from "@/features/projects/types";
 
 export async function autocompleteProjectAddress({
   input,
@@ -32,4 +36,14 @@ export async function getProjectAddressMapPreview({
   longitude: number;
 }) {
   return getStaticMapPreview({ latitude, longitude });
+}
+
+export async function getProjectsMapPreview({
+  points,
+  viewport
+}: {
+  points: StaticMapPoint[];
+  viewport?: StaticMapViewport | null;
+}) {
+  return getStaticMapPreview({ points, viewport });
 }

@@ -11,7 +11,9 @@ import {
 import type {
   AddressSuggestion,
   ResolvedProjectAddress,
-  StaticMapPreview
+  StaticMapPoint,
+  StaticMapPreview,
+  StaticMapViewport
 } from "@/features/projects/types";
 
 export async function autocompleteAddressSuggestions({
@@ -54,14 +56,28 @@ export async function resolveAddressSuggestion({
 
 export async function getStaticMapPreview({
   latitude,
-  longitude
+  longitude,
+  points,
+  viewport
 }: {
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
+  points?: StaticMapPoint[];
+  viewport?: StaticMapViewport | null;
 }): Promise<StaticMapPreview> {
   const client = requireSupabase();
+  const mapCenter = points?.length ? getMapCenter(points) : null;
   const { data, error } = await client.functions.invoke("maps-static-preview", {
-    body: { latitude, longitude }
+    body: points?.length
+      ? {
+          centerLatitude: viewport?.centerLatitude,
+          centerLongitude: viewport?.centerLongitude,
+          latitude: viewport?.centerLatitude ?? mapCenter?.latitude,
+          longitude: viewport?.centerLongitude ?? mapCenter?.longitude,
+          zoom: viewport?.zoom,
+          points
+        }
+      : { latitude, longitude }
   });
 
   if (error) {
@@ -69,6 +85,21 @@ export async function getStaticMapPreview({
   }
 
   return mapStaticMapPreview(data);
+}
+
+function getMapCenter(points: StaticMapPoint[]) {
+  const total = points.reduce(
+    (sum, point) => ({
+      latitude: sum.latitude + point.latitude,
+      longitude: sum.longitude + point.longitude
+    }),
+    { latitude: 0, longitude: 0 }
+  );
+
+  return {
+    latitude: total.latitude / points.length,
+    longitude: total.longitude / points.length
+  };
 }
 
 export async function toMapsFunctionError(error: unknown) {

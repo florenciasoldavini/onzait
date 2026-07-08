@@ -16,6 +16,8 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 40;
 const STATIC_MAP_WIDTH = 720;
 const STATIC_MAP_HEIGHT = 520;
+const STATIC_MAP_MIN_ZOOM = 10;
+const STATIC_MAP_MAX_ZOOM = 18;
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
@@ -36,10 +38,10 @@ Deno.serve(async (request) => {
     }
 
     const body = await request.json().catch(() => null);
-    const latitude = Number(body?.latitude);
-    const longitude = Number(body?.longitude);
+    const points = parseMapPoints(body);
+    const viewport = parseMapViewport(body);
 
-    if (!isValidLatitude(latitude) || !isValidLongitude(longitude)) {
+    if (points.length === 0 && !viewport) {
       return json({ error: "Select a valid map location." }, 400);
     }
 
@@ -60,13 +62,32 @@ Deno.serve(async (request) => {
     }
 
     const url = new URL("https://maps.googleapis.com/maps/api/staticmap");
-    url.searchParams.set("center", `${latitude},${longitude}`);
-    url.searchParams.set("zoom", "17");
     url.searchParams.set("size", `${STATIC_MAP_WIDTH}x${STATIC_MAP_HEIGHT}`);
     url.searchParams.set("scale", "2");
     url.searchParams.set("maptype", "roadmap");
     url.searchParams.append("style", "feature:poi|visibility:off");
     url.searchParams.append("style", "feature:transit|visibility:off");
+
+    if (viewport) {
+      url.searchParams.set(
+        "center",
+        `${viewport.centerLatitude},${viewport.centerLongitude}`
+      );
+      url.searchParams.set("zoom", String(viewport.zoom));
+    } else if (points.length === 1) {
+      const [point] = points;
+
+      url.searchParams.set("center", `${point.latitude},${point.longitude}`);
+      url.searchParams.set("zoom", "15");
+    } else {
+      for (const point of points) {
+        url.searchParams.append(
+          "visible",
+          `${point.latitude},${point.longitude}`
+        );
+      }
+    }
+
     url.searchParams.set("key", apiKey);
 
     const googleResponse = await fetch(url);
@@ -168,12 +189,63 @@ function getIpAddress(request: Request) {
   );
 }
 
+function parseMapPoints(body: unknown) {
+  if (body && typeof body === "object" && Array.isArray(body.points)) {
+    return body.points
+      .slice(0, 50)
+      .map((point) => ({
+        latitude: Number(point?.latitude),
+        longitude: Number(point?.longitude)
+      }))
+      .filter(
+        (point) =>
+          isValidLatitude(point.latitude) && isValidLongitude(point.longitude)
+      );
+  }
+
+  const latitude = Number(body?.latitude);
+  const longitude = Number(body?.longitude);
+
+  if (!isValidLatitude(latitude) || !isValidLongitude(longitude)) {
+    return [];
+  }
+
+  return [{ latitude, longitude }];
+}
+
+function parseMapViewport(body: unknown) {
+  const centerLatitude = Number(body?.centerLatitude ?? body?.latitude);
+  const centerLongitude = Number(body?.centerLongitude ?? body?.longitude);
+  const zoom = Number(body?.zoom);
+
+  if (!isValidLatitude(centerLatitude) || !isValidLongitude(centerLongitude)) {
+    return null;
+  }
+
+  return {
+    centerLatitude,
+    centerLongitude,
+    zoom: isValidZoom(zoom) ? clampZoom(zoom) : 15
+  };
+}
+
 function isValidLatitude(value: number) {
   return Number.isFinite(value) && value >= -90 && value <= 90;
 }
 
 function isValidLongitude(value: number) {
   return Number.isFinite(value) && value >= -180 && value <= 180;
+}
+
+function isValidZoom(value: number) {
+  return Number.isFinite(value);
+}
+
+function clampZoom(value: number) {
+  return Math.max(
+    STATIC_MAP_MIN_ZOOM,
+    Math.min(STATIC_MAP_MAX_ZOOM, Math.round(value))
+  );
 }
 
 function toBase64(bytes: Uint8Array) {

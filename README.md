@@ -77,10 +77,19 @@ Current app-facing env vars:
 - `EXPO_PUBLIC_SENTRY_DSN`
 - `EXPO_PUBLIC_SITE_URL`
 - `EXPO_PUBLIC_APP_ENV`
+- `EXPO_PUBLIC_GOOGLE_MAPS_BROWSER_KEY`
+
+Mobile build-time env vars currently tracked in `.env.example`:
+
+- `GOOGLE_MAPS_ANDROID_SDK_KEY`
+- `GOOGLE_MAPS_IOS_SDK_KEY` is optional unless a future custom native build intentionally enables the Google Maps provider on iOS. The current iOS projects map uses the native default Apple Maps provider.
 
 Server-side env vars currently tracked in `.env.example`:
 
 - `GOOGLE_MAPS_API_KEY`
+- `GOOGLE_MAPS_AUTOCOMPLETE_MONTHLY_LIMIT`
+- `GOOGLE_MAPS_PLACE_DETAILS_MONTHLY_LIMIT`
+- `GOOGLE_MAPS_STATIC_MONTHLY_LIMIT`
 - `RESEND_API_KEY`
 - `EMAIL_FROM`
 - `EMAIL_REPLY_TO`

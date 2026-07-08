@@ -109,7 +109,8 @@ export function SegmentedTabs<TValue extends string>({
 
         return (
           <Pressable
-            accessibilityRole="tab"
+            accessibilityLabel={option.label}
+            accessibilityRole="button"
             accessibilityState={{
               disabled: isDisabled,
               selected: isSelected

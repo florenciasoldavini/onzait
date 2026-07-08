@@ -7,6 +7,7 @@ import {
   NavScreenHeader,
   Screen,
   SelectMenu,
+  SegmentedTabs,
   TextField
 } from "@/components/atoms";
 import { atomMotion } from "@/components/atoms/motion";
@@ -17,6 +18,7 @@ import {
 } from "@/components/atoms/theme";
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { ProjectCardSkeleton } from "@/features/projects/components/project-card-skeleton";
+import { ProjectsMapView } from "@/features/projects/components/projects-map-view";
 import {
   PROJECT_BUILDING_TYPES,
   PROJECT_BUILDING_TYPE_LABELS,
@@ -63,6 +65,7 @@ import Animated, {
 type ProjectFilterState = Required<
   Pick<ProjectFilters, "buildingTypes" | "phases" | "projectTypes" | "statuses">
 >;
+type ProjectsViewMode = "list" | "map";
 
 const initialProjectFilters: ProjectFilterState = {
   buildingTypes: [],
@@ -77,6 +80,10 @@ const projectSortOptions = [
   { label: "A-Z", value: "name_asc" },
   { label: "Z-A", value: "name_desc" }
 ] satisfies { label: string; value: ProjectSort }[];
+const projectViewOptions = [
+  { label: "List", value: "list" },
+  { label: "Map", value: "map" }
+] satisfies { label: string; value: ProjectsViewMode }[];
 
 const statusFilterOptions = createFilterOptions<ProjectStatus>(
   PROJECT_STATUSES,
@@ -100,6 +107,7 @@ export default function ProjectsScreen() {
   const { width } = useWindowDimensions();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<ProjectSort>("created_desc");
+  const [viewMode, setViewMode] = useState<ProjectsViewMode>("list");
   const [filters, setFilters] = useState<ProjectFilterState>(
     initialProjectFilters
   );
@@ -114,6 +122,13 @@ export default function ProjectsScreen() {
   const hasSearchOrFilters =
     query.trim().length > 0 || activeFilterCount > 0 || sort !== "created_desc";
   const projectGrid = getProjectGridMetrics(width);
+  const isMapMode = viewMode === "map";
+  const mapScreenBottomPadding =
+    width >= atomLayout.breakpointDesktop
+      ? atomLayout.marginDesktop
+      : width >= atomLayout.breakpointTablet
+        ? atomLayout.marginTablet
+        : atomLayout.marginMobile;
 
   const resetProjectView = () => {
     setQuery("");
@@ -133,8 +148,17 @@ export default function ProjectsScreen() {
 
   return (
     <Screen
+      contentContainerStyle={
+        isMapMode
+          ? [
+              styles.mapScreenContainer,
+              { paddingBottom: mapScreenBottomPadding }
+            ]
+          : undefined
+      }
+      contentStyle={isMapMode ? styles.mapScreenContent : undefined}
       floatingAction={
-        hasProjects ? (
+        hasProjects && !isMapMode ? (
           <AppButton
             accessibilityLabel="New project"
             icon={FolderPlus}
@@ -145,8 +169,9 @@ export default function ProjectsScreen() {
           />
         ) : null
       }
+      scrollable={!isMapMode}
     >
-      <View style={{ gap: atomSpacing[6] }}>
+      <View style={[styles.screenStack, isMapMode && styles.mapScreenStack]}>
         <NavScreenHeader title="Projects" />
 
         <TextField
@@ -181,6 +206,13 @@ export default function ProjectsScreen() {
           </View>
         </View>
 
+        <SegmentedTabs
+          onChange={setViewMode}
+          options={projectViewOptions}
+          selectedTone="accent"
+          value={viewMode}
+        />
+
         {projectsQuery.isLoading ? (
           <View style={projectGrid.containerStyle}>
             {[0, 1, 2, 3].map((item) => (
@@ -206,26 +238,36 @@ export default function ProjectsScreen() {
             title="Projects unavailable"
           />
         ) : projectsQuery.data && projectsQuery.data.length > 0 ? (
-          <View style={projectGrid.containerStyle}>
-            {projectsQuery.data.map((project, index) => (
-              <Animated.View
-                entering={FadeIn.duration(atomMotion.duration.enter).delay(
-                  Math.min(index, 6) * 36
-                )}
-                exiting={FadeOut.duration(atomMotion.duration.exit)}
-                key={project.id}
-                layout={LinearTransition.duration(atomMotion.duration.layout)}
-                style={projectGrid.itemStyle}
-              >
-                <ProjectCard
-                  onPress={() =>
-                    router.push(`/projects/${project.id}` as never)
-                  }
-                  project={project}
-                />
-              </Animated.View>
-            ))}
-          </View>
+          viewMode === "map" ? (
+            <ProjectsMapView
+              fillAvailableSpace
+              onOpenProject={(project) =>
+                router.push(`/projects/${project.id}` as never)
+              }
+              projects={projectsQuery.data}
+            />
+          ) : (
+            <View style={projectGrid.containerStyle}>
+              {projectsQuery.data.map((project, index) => (
+                <Animated.View
+                  entering={FadeIn.duration(atomMotion.duration.enter).delay(
+                    Math.min(index, 6) * 36
+                  )}
+                  exiting={FadeOut.duration(atomMotion.duration.exit)}
+                  key={project.id}
+                  layout={LinearTransition.duration(atomMotion.duration.layout)}
+                  style={projectGrid.itemStyle}
+                >
+                  <ProjectCard
+                    onPress={() =>
+                      router.push(`/projects/${project.id}` as never)
+                    }
+                    project={project}
+                  />
+                </Animated.View>
+              ))}
+            </View>
+          )
         ) : (
           <EmptyState
             action={
@@ -457,6 +499,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: atomSpacing[4]
+  },
+  mapScreenContainer: {
+    paddingBottom: atomSpacing[5]
+  },
+  mapScreenContent: {
+    flex: 1
+  },
+  mapScreenStack: {
+    flex: 1,
+    minHeight: 0
+  },
+  screenStack: {
+    gap: atomSpacing[6]
   },
   sortControl: {
     flex: 1,

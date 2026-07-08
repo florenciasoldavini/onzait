@@ -69,7 +69,7 @@ Those policies should use explicit participant or owner rules plus admin-wide su
 - Edge Functions must validate request payloads, authenticate user-scoped calls, rate-limit abusive patterns, and avoid persistent third-party content caching unless provider terms allow it.
 - Google Maps functions also enforce durable monthly hard caps before calling Google. Defaults are 500 autocomplete calls/month, 100 place-detail calls/month, and 100 static map preview calls/month unless Supabase secrets override them.
 - Google Maps address functions store only selected project data such as address, `place_id`, latitude, and longitude.
-- The Google Maps key should stay restricted to the APIs used by deployed Edge Functions. Project address lookup currently needs Places API (New), and selected-address map previews need Maps Static API. If a new Edge Function needs another Maps API or SDK, update the Google Cloud API key restrictions before releasing that feature.
+- The server-side Google Maps key should stay restricted to the APIs used by deployed Edge Functions. Project address lookup currently needs Places API (New), and selected-address map previews need Maps Static API. If a new Edge Function needs another Maps API, update the Google Cloud API key restrictions before releasing that feature. Client map rendering uses separate restricted keys for Maps JavaScript API on web and Maps SDK for iOS/Android in native builds.
 
 ## Auth URL configuration
 

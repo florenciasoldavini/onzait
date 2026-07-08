@@ -111,3 +111,15 @@ export interface StaticMapPreview {
   attribution: string;
   imageDataUrl: string;
 }
+
+export interface StaticMapPoint {
+  label?: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface StaticMapViewport {
+  centerLatitude: number;
+  centerLongitude: number;
+  zoom: number;
+}
