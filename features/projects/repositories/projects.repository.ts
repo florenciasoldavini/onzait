@@ -26,6 +26,8 @@ export async function listProjectRows({
   for (const filter of plan.filters) {
     if (filter.operator === "eq") {
       query = query.eq(filter.column, filter.value as string);
+    } else if (filter.operator === "in") {
+      query = query.in(filter.column, filter.value as string[]);
     } else if (filter.operator === "is") {
       query = query.is(filter.column, filter.value as null);
     } else if (filter.operator === "ilike") {

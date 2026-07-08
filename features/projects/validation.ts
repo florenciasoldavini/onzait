@@ -157,18 +157,46 @@ export function toUpdateProjectInput(
 
 export function normalizeProjectFilters(filters: ProjectFilters = {}) {
   return {
-    buildingType:
-      filters.buildingType && filters.buildingType !== "all"
-        ? filters.buildingType
-        : null,
-    phase: filters.phase && filters.phase !== "all" ? filters.phase : null,
-    projectType:
-      filters.projectType && filters.projectType !== "all"
-        ? filters.projectType
-        : null,
+    buildingTypes: normalizeFilterList(
+      filters.buildingTypes,
+      filters.buildingType
+    ),
+    phases: normalizeFilterList(filters.phases, filters.phase),
+    projectTypes: normalizeFilterList(
+      filters.projectTypes,
+      filters.projectType
+    ),
     query: normalizeNullableText(filters.query ?? ""),
-    status: filters.status && filters.status !== "all" ? filters.status : null
+    sort: normalizeProjectSort(filters.sort),
+    statuses: normalizeFilterList(filters.statuses, filters.status)
   };
+}
+
+function normalizeFilterList<T extends string>(
+  values: T[] | undefined,
+  fallbackValue: T | "all" | undefined
+) {
+  if (values && values.length > 0) {
+    return values;
+  }
+
+  if (fallbackValue && fallbackValue !== "all") {
+    return [fallbackValue];
+  }
+
+  return null;
+}
+
+function normalizeProjectSort(sort: ProjectFilters["sort"]) {
+  switch (sort) {
+    case "created_asc":
+    case "name_asc":
+    case "name_desc":
+      return sort;
+    case "created_desc":
+    default:
+      return "created_desc";
+  }
 }
 
 function normalizeNullableText(value: string) {

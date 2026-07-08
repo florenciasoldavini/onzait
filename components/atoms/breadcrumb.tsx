@@ -1,7 +1,14 @@
 import { AppText } from "@/components/atoms/text";
 import { atomSpacing } from "@/components/atoms/theme";
 import type { ReactNode } from "react";
-import { Pressable, View, type StyleProp, type ViewStyle } from "react-native";
+import { useState } from "react";
+import {
+  Platform,
+  Pressable,
+  View,
+  type StyleProp,
+  type ViewStyle
+} from "react-native";
 
 export interface BreadcrumbItem {
   accessibilityLabel?: string;
@@ -11,9 +18,11 @@ export interface BreadcrumbItem {
 
 export function Breadcrumb({
   items,
+  showTrailingSeparator = false,
   style
 }: {
   items: BreadcrumbItem[];
+  showTrailingSeparator?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   return (
@@ -42,29 +51,14 @@ export function Breadcrumb({
             }}
           >
             {item.onPress ? (
-              <Pressable
-                accessibilityLabel={item.accessibilityLabel}
-                accessibilityRole="link"
-                hitSlop={8}
-                onPress={item.onPress}
-              >
-                {({ pressed }) => (
-                  <AppText
-                    tone="muted"
-                    variant="eyebrow"
-                    style={{ opacity: pressed ? 0.72 : 1 }}
-                  >
-                    {item.label}
-                  </AppText>
-                )}
-              </Pressable>
+              <BreadcrumbLink item={item} />
             ) : (
-              <AppText tone={isLast ? "accent" : "muted"} variant="eyebrow">
+              <AppText tone={isLast ? "accent" : "subtle"} variant="eyebrow">
                 {item.label}
               </AppText>
             )}
-            {!isLast ? (
-              <AppText tone="muted" variant="eyebrow">
+            {!isLast || showTrailingSeparator ? (
+              <AppText tone={isLast ? "accent" : "subtle"} variant="eyebrow">
                 /
               </AppText>
             ) : null}
@@ -72,5 +66,31 @@ export function Breadcrumb({
         );
       })}
     </View>
+  );
+}
+
+function BreadcrumbLink({ item }: { item: BreadcrumbItem }) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <Pressable
+      accessibilityLabel={item.accessibilityLabel}
+      accessibilityRole="link"
+      hitSlop={8}
+      onHoverIn={() => setIsHovered(true)}
+      onHoverOut={() => setIsHovered(false)}
+      onPress={item.onPress}
+      style={Platform.OS === "web" ? { cursor: "pointer" } : null}
+    >
+      {({ pressed }) => (
+        <AppText
+          tone={isHovered ? "muted" : "subtle"}
+          variant="eyebrow"
+          style={{ opacity: pressed ? 0.72 : 1 }}
+        >
+          {item.label}
+        </AppText>
+      )}
+    </Pressable>
   );
 }

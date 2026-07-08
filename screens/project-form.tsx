@@ -245,6 +245,16 @@ export function ProjectFormScreen({
                 label: "Projects",
                 onPress: () => router.replace("/projects" as never)
               },
+              ...(mode === "edit" && projectId
+                ? [
+                    {
+                      accessibilityLabel: "Back to project detail",
+                      label: "Project Detail",
+                      onPress: () =>
+                        router.replace(`/projects/${projectId}` as never)
+                    }
+                  ]
+                : []),
               { label: mode === "create" ? "New" : "Edit" }
             ]}
           />

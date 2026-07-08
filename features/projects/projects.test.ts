@@ -86,11 +86,12 @@ describe("project filters and query planning", () => {
         status: "all"
       })
     ).toEqual({
-      buildingType: null,
-      phase: null,
-      projectType: null,
+      buildingTypes: null,
+      phases: null,
+      projectTypes: null,
       query: null,
-      status: null
+      sort: "created_desc",
+      statuses: null
     });
   });
 
@@ -124,6 +125,86 @@ describe("project filters and query planning", () => {
       column: "owner_id",
       operator: "eq",
       value: "admin-id"
+    });
+  });
+
+  it("plans multi-select category filters", () => {
+    const plan = buildProjectListQueryPlan({
+      filters: {
+        phases: ["design", "construction"],
+        projectTypes: ["new_build", "renovation"],
+        statuses: ["planned", "in_progress"]
+      },
+      userId: "user-id",
+      userRole: "user"
+    });
+
+    expect(plan.filters).toContainEqual({
+      column: "status",
+      operator: "in",
+      value: ["planned", "in_progress"]
+    });
+    expect(plan.filters).toContainEqual({
+      column: "phase",
+      operator: "in",
+      value: ["design", "construction"]
+    });
+    expect(plan.filters).toContainEqual({
+      column: "project_type",
+      operator: "in",
+      value: ["new_build", "renovation"]
+    });
+  });
+
+  it("sorts by newest creation by default", () => {
+    const plan = buildProjectListQueryPlan({
+      filters: {},
+      userId: "user-id",
+      userRole: "user"
+    });
+
+    expect(plan.order).toEqual({
+      ascending: false,
+      column: "created_at"
+    });
+  });
+
+  it("sorts alphabetically when requested", () => {
+    const plan = buildProjectListQueryPlan({
+      filters: { sort: "name_asc" },
+      userId: "user-id",
+      userRole: "user"
+    });
+
+    expect(plan.order).toEqual({
+      ascending: true,
+      column: "name"
+    });
+  });
+
+  it("sorts descending when requested", () => {
+    const plan = buildProjectListQueryPlan({
+      filters: { sort: "name_desc" },
+      userId: "user-id",
+      userRole: "user"
+    });
+
+    expect(plan.order).toEqual({
+      ascending: false,
+      column: "name"
+    });
+  });
+
+  it("sorts creation ascending when requested", () => {
+    const plan = buildProjectListQueryPlan({
+      filters: { sort: "created_asc" },
+      userId: "user-id",
+      userRole: "user"
+    });
+
+    expect(plan.order).toEqual({
+      ascending: true,
+      column: "created_at"
     });
   });
 });

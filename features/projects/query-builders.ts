@@ -4,7 +4,7 @@ import { normalizeProjectFilters } from "@/features/projects/validation";
 export interface ProjectListQueryPlan {
   filters: {
     column: string;
-    operator: "eq" | "ilike" | "is";
+    operator: "eq" | "ilike" | "in" | "is";
     value: unknown;
   }[];
   order: { ascending: boolean; column: string };
@@ -28,35 +28,35 @@ export function buildProjectListQueryPlan({
     queryFilters.push({ column: "owner_id", operator: "eq", value: userId });
   }
 
-  if (normalized.status) {
+  if (normalized.statuses) {
     queryFilters.push({
       column: "status",
-      operator: "eq",
-      value: normalized.status
+      operator: "in",
+      value: normalized.statuses
     });
   }
 
-  if (normalized.phase) {
+  if (normalized.phases) {
     queryFilters.push({
       column: "phase",
-      operator: "eq",
-      value: normalized.phase
+      operator: "in",
+      value: normalized.phases
     });
   }
 
-  if (normalized.projectType) {
+  if (normalized.projectTypes) {
     queryFilters.push({
       column: "project_type",
-      operator: "eq",
-      value: normalized.projectType
+      operator: "in",
+      value: normalized.projectTypes
     });
   }
 
-  if (normalized.buildingType) {
+  if (normalized.buildingTypes) {
     queryFilters.push({
       column: "building_type",
-      operator: "eq",
-      value: normalized.buildingType
+      operator: "in",
+      value: normalized.buildingTypes
     });
   }
 
@@ -70,6 +70,9 @@ export function buildProjectListQueryPlan({
 
   return {
     filters: queryFilters,
-    order: { ascending: false, column: "created_at" }
+    order: {
+      ascending: normalized.sort.endsWith("_asc"),
+      column: normalized.sort.startsWith("name") ? "name" : "created_at"
+    }
   };
 }

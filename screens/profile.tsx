@@ -1,9 +1,9 @@
 import {
   AppButton,
   AppCard,
-  AppHeading,
   AppText,
   FieldMessage,
+  NavScreenHeader,
   PasswordVisibilityToggle,
   Screen,
   SegmentedTabs,
@@ -264,11 +264,10 @@ export default function ProfileScreen() {
           width: "100%"
         }}
       >
-        <View style={{ gap: atomSpacing[3] }}>
-          <AppText variant="eyebrow">Account / Profile</AppText>
-          <AppHeading variant="hero">Profile</AppHeading>
-          <AppText tone="muted">{user?.email ?? session?.user.email}</AppText>
-        </View>
+        <NavScreenHeader
+          description={user?.email ?? session?.user.email}
+          title="Profile"
+        />
 
         <SegmentedTabs
           onChange={setActiveTab}

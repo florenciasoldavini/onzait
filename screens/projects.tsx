@@ -1,37 +1,135 @@
 import {
   AppButton,
-  Breadcrumb,
-  AppHeading,
+  AppCard,
+  AppText,
   EmptyState,
+  MultiSelectField,
+  NavScreenHeader,
   Screen,
+  SelectMenu,
   TextField
 } from "@/components/atoms";
 import { atomMotion } from "@/components/atoms/motion";
-import { atomLayout, atomSpacing } from "@/components/atoms/theme";
+import {
+  atomLayout,
+  atomPalette,
+  atomSpacing
+} from "@/components/atoms/theme";
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { ProjectCardSkeleton } from "@/features/projects/components/project-card-skeleton";
+import {
+  PROJECT_BUILDING_TYPES,
+  PROJECT_BUILDING_TYPE_LABELS,
+  PROJECT_PHASES,
+  PROJECT_PHASE_LABELS,
+  PROJECT_STATUSES,
+  PROJECT_STATUS_LABELS,
+  PROJECT_TYPES,
+  PROJECT_TYPE_LABELS
+} from "@/features/projects/constants";
 import { useProjects } from "@/features/projects/hooks";
+import type {
+  ProjectBuildingType,
+  ProjectFilters,
+  ProjectPhase,
+  ProjectSort,
+  ProjectStatus,
+  ProjectType
+} from "@/features/projects/types";
 import { useRouter } from "expo-router";
-import { FolderPlus, RefreshCw, Search } from "lucide-react-native";
+import {
+  ArrowUpDown,
+  FolderPlus,
+  RefreshCw,
+  Search,
+  SlidersHorizontal
+} from "lucide-react-native";
 import { useState } from "react";
-import { useWindowDimensions, View, type ViewStyle } from "react-native";
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  type ViewStyle
+} from "react-native";
 import Animated, {
   FadeIn,
   FadeOut,
   LinearTransition
 } from "react-native-reanimated";
 
+type ProjectFilterState = Required<
+  Pick<ProjectFilters, "buildingTypes" | "phases" | "projectTypes" | "statuses">
+>;
+
+const initialProjectFilters: ProjectFilterState = {
+  buildingTypes: [],
+  phases: [],
+  projectTypes: [],
+  statuses: []
+};
+
+const projectSortOptions = [
+  { label: "Newest", value: "created_desc" },
+  { label: "Oldest", value: "created_asc" },
+  { label: "A-Z", value: "name_asc" },
+  { label: "Z-A", value: "name_desc" }
+] satisfies { label: string; value: ProjectSort }[];
+
+const statusFilterOptions = createFilterOptions<ProjectStatus>(
+  PROJECT_STATUSES,
+  PROJECT_STATUS_LABELS
+);
+const phaseFilterOptions = createFilterOptions<ProjectPhase>(
+  PROJECT_PHASES,
+  PROJECT_PHASE_LABELS
+);
+const projectTypeFilterOptions = createFilterOptions<ProjectType>(
+  PROJECT_TYPES,
+  PROJECT_TYPE_LABELS
+);
+const buildingTypeFilterOptions = createFilterOptions<ProjectBuildingType>(
+  PROJECT_BUILDING_TYPES,
+  PROJECT_BUILDING_TYPE_LABELS
+);
+
 export default function ProjectsScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<ProjectSort>("created_desc");
+  const [filters, setFilters] = useState<ProjectFilterState>(
+    initialProjectFilters
+  );
+  const [filtersVisible, setFiltersVisible] = useState(false);
   const projectsQuery = useProjects({
-    phase: "all",
+    ...filters,
     query,
-    status: "all"
+    sort
   });
   const hasProjects = Boolean(projectsQuery.data?.length);
+  const activeFilterCount = getActiveFilterCount(filters);
+  const hasSearchOrFilters =
+    query.trim().length > 0 || activeFilterCount > 0 || sort !== "created_desc";
   const projectGrid = getProjectGridMetrics(width);
+
+  const resetProjectView = () => {
+    setQuery("");
+    setSort("created_desc");
+    setFilters(initialProjectFilters);
+  };
+
+  const updateFilter = <TKey extends keyof ProjectFilterState>(
+    key: TKey,
+    value: ProjectFilterState[TKey]
+  ) => {
+    setFilters((current) => ({
+      ...current,
+      [key]: value
+    }));
+  };
 
   return (
     <Screen
@@ -49,10 +147,7 @@ export default function ProjectsScreen() {
       }
     >
       <View style={{ gap: atomSpacing[6] }}>
-        <View style={{ gap: atomSpacing[3] }}>
-          <Breadcrumb items={[{ label: "Projects" }, { label: "Workspace" }]} />
-          <AppHeading variant="hero">Projects</AppHeading>
-        </View>
+        <NavScreenHeader title="Projects" />
 
         <TextField
           leftIcon={Search}
@@ -60,6 +155,31 @@ export default function ProjectsScreen() {
           placeholder="Search projects"
           value={query}
         />
+
+        <View style={styles.controlsRow}>
+          <SelectMenu
+            accessibilityLabel="Sort projects"
+            icon={ArrowUpDown}
+            labelPrefix="Sort"
+            onChange={setSort}
+            options={projectSortOptions}
+            value={sort}
+          />
+          <View style={styles.filterControl}>
+            <AppButton
+              color="neutral"
+              fullWidth={false}
+              icon={SlidersHorizontal}
+              size="sm"
+              variant="bordered"
+              onPress={() => setFiltersVisible(true)}
+            >
+              {activeFilterCount > 0
+                ? `Filters (${activeFilterCount})`
+                : "Filters"}
+            </AppButton>
+          </View>
+        </View>
 
         {projectsQuery.isLoading ? (
           <View style={projectGrid.containerStyle}>
@@ -108,18 +228,130 @@ export default function ProjectsScreen() {
           </View>
         ) : (
           <EmptyState
-            action={{
-              icon: FolderPlus,
-              label: "New Project",
-              onPress: () => router.push("/projects/new" as never)
-            }}
-            description="Create your first project to start organizing job-site work."
-            icon={FolderPlus}
-            title="No projects yet"
+            action={
+              hasSearchOrFilters
+                ? {
+                    icon: RefreshCw,
+                    label: "Reset view",
+                    onPress: resetProjectView
+                  }
+                : {
+                    icon: FolderPlus,
+                    label: "New Project",
+                    onPress: () => router.push("/projects/new" as never)
+                  }
+            }
+            description={
+              hasSearchOrFilters
+                ? "Adjust the search, sort, or filters to widen the project list."
+                : "Create your first project to start organizing job-site work."
+            }
+            icon={hasSearchOrFilters ? SlidersHorizontal : FolderPlus}
+            title={hasSearchOrFilters ? "No matching projects" : "No projects yet"}
           />
         )}
       </View>
+      <ProjectFiltersModal
+        filters={filters}
+        onChangeFilter={updateFilter}
+        onClose={() => setFiltersVisible(false)}
+        onReset={() => setFilters(initialProjectFilters)}
+        visible={filtersVisible}
+      />
     </Screen>
+  );
+}
+
+function ProjectFiltersModal({
+  filters,
+  onChangeFilter,
+  onClose,
+  onReset,
+  visible
+}: {
+  filters: ProjectFilterState;
+  onChangeFilter: <TKey extends keyof ProjectFilterState>(
+    key: TKey,
+    value: ProjectFilterState[TKey]
+  ) => void;
+  onClose: () => void;
+  onReset: () => void;
+  visible: boolean;
+}) {
+  return (
+    <Modal
+      animationType="fade"
+      onRequestClose={onClose}
+      transparent
+      visible={visible}
+    >
+      <View style={styles.modalRoot}>
+        <Pressable
+          accessibilityLabel="Close project filters"
+          onPress={onClose}
+          style={StyleSheet.absoluteFill}
+        />
+        <View pointerEvents="none" style={styles.modalBackdrop} />
+        <Animated.View
+          entering={FadeIn.duration(atomMotion.duration.enter)}
+          style={styles.modalContent}
+        >
+          <AppCard padding="md" style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <AppText variant="formLabel">Project filters</AppText>
+            </View>
+
+            <ScrollView
+              contentContainerStyle={styles.modalBody}
+              showsVerticalScrollIndicator={false}
+            >
+              <MultiSelectField
+                label="Status"
+                onChange={(value) => onChangeFilter("statuses", value)}
+                options={statusFilterOptions}
+                value={filters.statuses}
+              />
+              <MultiSelectField
+                label="Phase"
+                onChange={(value) => onChangeFilter("phases", value)}
+                options={phaseFilterOptions}
+                value={filters.phases}
+              />
+              <MultiSelectField
+                label="Project type"
+                onChange={(value) => onChangeFilter("projectTypes", value)}
+                options={projectTypeFilterOptions}
+                value={filters.projectTypes}
+              />
+              <MultiSelectField
+                label="Building type"
+                onChange={(value) => onChangeFilter("buildingTypes", value)}
+                options={buildingTypeFilterOptions}
+                value={filters.buildingTypes}
+              />
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <View style={styles.modalFooterAction}>
+                <AppButton
+                  color="neutral"
+                  onPress={onReset}
+                  size="md"
+                  variant="bordered"
+                >
+                  Clear
+                </AppButton>
+              </View>
+              <View style={styles.modalFooterAction}>
+                <AppButton onPress={onClose} size="md">
+                  Done
+                </AppButton>
+              </View>
+            </View>
+          </AppCard>
+        </Animated.View>
+      </View>
+    </Modal>
   );
 }
 
@@ -162,3 +394,72 @@ function getProjectGridMetrics(screenWidth: number) {
     } satisfies ViewStyle
   };
 }
+
+function createFilterOptions<TValue extends string>(
+  values: readonly TValue[],
+  labels: Record<TValue, string>
+) {
+  return values.map((value) => ({
+    label: labels[value],
+    value
+  }));
+}
+
+function getActiveFilterCount(filters: ProjectFilterState) {
+  return Object.values(filters).reduce(
+    (total, selectedValues) => total + selectedValues.length,
+    0
+  );
+}
+
+const styles = StyleSheet.create({
+  controlsRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: atomSpacing[2]
+  },
+  filterControl: {
+    flexShrink: 0
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(20, 22, 28, 0.18)"
+  },
+  modalBody: {
+    gap: atomSpacing[5],
+    paddingBottom: atomSpacing[1]
+  },
+  modalCard: {
+    borderColor: atomPalette.borderSubtle,
+    maxHeight: "86%",
+    width: "100%"
+  },
+  modalContent: {
+    maxWidth: 560,
+    width: "100%"
+  },
+  modalFooter: {
+    flexDirection: "row",
+    gap: atomSpacing[3],
+    paddingTop: atomSpacing[5]
+  },
+  modalFooterAction: {
+    flex: 1
+  },
+  modalHeader: {
+    borderBottomColor: atomPalette.borderSubtle,
+    borderBottomWidth: 1,
+    marginBottom: atomSpacing[5],
+    paddingBottom: atomSpacing[4]
+  },
+  modalRoot: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+    padding: atomSpacing[4]
+  },
+  sortControl: {
+    flex: 1,
+    minWidth: 0
+  }
+});

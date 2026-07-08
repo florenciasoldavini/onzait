@@ -9,6 +9,11 @@ export type ProjectBuildingType = (typeof PROJECT_BUILDING_TYPES)[number];
 export type ProjectType = (typeof PROJECT_TYPES)[number];
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 export type ProjectPhase = (typeof PROJECT_PHASES)[number];
+export type ProjectSort =
+  | "created_asc"
+  | "created_desc"
+  | "name_asc"
+  | "name_desc";
 
 export interface Project {
   address: string;
@@ -37,10 +42,15 @@ export interface Project {
 
 export interface ProjectFilters {
   buildingType?: ProjectBuildingType | "all";
+  buildingTypes?: ProjectBuildingType[];
   phase?: ProjectPhase | "all";
+  phases?: ProjectPhase[];
   projectType?: ProjectType | "all";
+  projectTypes?: ProjectType[];
   query?: string;
+  sort?: ProjectSort;
   status?: ProjectStatus | "all";
+  statuses?: ProjectStatus[];
 }
 
 export interface ResolvedProjectAddress {

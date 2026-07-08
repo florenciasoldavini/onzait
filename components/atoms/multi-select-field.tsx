@@ -4,12 +4,12 @@ import { FormField } from "@/components/molecules";
 import type { ReactNode } from "react";
 import { View } from "react-native";
 
-export interface SelectFieldOption<T extends string> {
+export interface MultiSelectFieldOption<T extends string> {
   label: string;
   value: T;
 }
 
-export function SelectField<T extends string>({
+export function MultiSelectField<T extends string>({
   errorText,
   helperText,
   label,
@@ -21,11 +21,20 @@ export function SelectField<T extends string>({
   errorText?: string | null;
   helperText?: string | null;
   label: ReactNode;
-  onChange: (value: T) => void;
-  options: SelectFieldOption<T>[];
+  onChange: (value: T[]) => void;
+  options: MultiSelectFieldOption<T>[];
   required?: boolean;
-  value: T;
+  value: T[];
 }) {
+  const toggleOption = (optionValue: T) => {
+    if (value.includes(optionValue)) {
+      onChange(value.filter((selectedValue) => selectedValue !== optionValue));
+      return;
+    }
+
+    onChange([...value, optionValue]);
+  };
+
   return (
     <FormField
       errorText={errorText}
@@ -41,14 +50,12 @@ export function SelectField<T extends string>({
         }}
       >
         {options.map((option) => {
-          const isSelected = option.value === value;
+          const isSelected = value.includes(option.value);
 
           return (
             <SelectableChip
               key={option.value}
-              onPress={() => {
-                onChange(option.value);
-              }}
+              onPress={() => toggleOption(option.value)}
               selected={isSelected}
               variant="bordered"
             >
