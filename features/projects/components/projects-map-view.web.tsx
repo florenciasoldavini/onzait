@@ -12,8 +12,23 @@ import {
 } from "@/features/projects/constants";
 import { getProjectsMapViewport } from "@/features/projects/map-points";
 import type { Project, ProjectStatus } from "@/features/projects/types";
-import { FolderOpen, MapPinned, X, ZoomIn, ZoomOut } from "lucide-react-native";
-import { createElement, useEffect, useMemo, useRef, useState } from "react";
+import { useLiveUserLocation } from "@/features/projects/use-live-user-location";
+import {
+  FolderOpen,
+  LocateFixed,
+  MapPinned,
+  X,
+  ZoomIn,
+  ZoomOut
+} from "lucide-react-native";
+import {
+  createElement,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 const statusColors: Record<ProjectStatus, string> = {
@@ -44,12 +59,14 @@ type GoogleMapMarker = {
   ) => void;
   setIcon: (icon: Record<string, unknown>) => void;
   setMap: (map: null) => void;
+  setPosition: (position: GoogleMapPosition) => void;
 };
 type GoogleMapBounds = {
   extend: (position: GoogleMapPosition) => void;
 };
 type GoogleMapInstance = {
   fitBounds: (bounds: GoogleMapBounds, padding?: number) => void;
+  setCenter: (position: GoogleMapPosition) => void;
   getZoom: () => number | undefined;
   setZoom: (zoom: number) => void;
 };
@@ -156,10 +173,7 @@ export function ProjectsMapView({
 
   return (
     <View
-      style={[
-        styles.root,
-        fillAvailableSpace && styles.rootFillAvailableSpace
-      ]}
+      style={[styles.root, fillAvailableSpace && styles.rootFillAvailableSpace]}
     >
       <View
         style={[
@@ -207,8 +221,12 @@ function InteractiveGoogleMap({
   selectedProjectId: string | null;
 }) {
   const mapElementRef = useRef<HTMLDivElement | null>(null);
+  const googleMapsRef = useRef<GoogleMapsNamespace | null>(null);
   const mapInstanceRef = useRef<GoogleMapInstance | null>(null);
   const markersByProjectIdRef = useRef<Map<string, GoogleMapMarker>>(new Map());
+  const userMarkerRef = useRef<GoogleMapMarker | null>(null);
+  const hasCenteredOnUserRef = useRef(false);
+  const userLocation = useLiveUserLocation();
   const [loadState, setLoadState] = useState<"error" | "loading" | "ready">(
     "loading"
   );
@@ -225,6 +243,17 @@ function InteractiveGoogleMap({
 
     map.setZoom(Math.min(Math.max(currentZoom + direction, 2), 21));
   };
+
+  const handleUserLocationPress = useCallback(() => {
+    if (userLocation.isWatching) {
+      hasCenteredOnUserRef.current = false;
+      userLocation.stop();
+      return;
+    }
+
+    hasCenteredOnUserRef.current = false;
+    void userLocation.start();
+  }, [userLocation]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !mapElementRef.current) {
@@ -244,6 +273,7 @@ function InteractiveGoogleMap({
         }
 
         mapElement.innerHTML = "";
+        googleMapsRef.current = google;
         markersByProjectIdRef.current.clear();
 
         const showZoomControl =
@@ -343,7 +373,10 @@ function InteractiveGoogleMap({
 
     return () => {
       isDisposed = true;
+      googleMapsRef.current = null;
       mapInstanceRef.current = null;
+      userMarkerRef.current?.setMap(null);
+      userMarkerRef.current = null;
       setShowZoomControls(false);
       markersByProjectIdRef.current.clear();
       markers.forEach((marker) => {
@@ -351,6 +384,42 @@ function InteractiveGoogleMap({
       });
     };
   }, [apiKey, initialZoom, onSelectProject, projects]);
+
+  useEffect(() => {
+    const google = googleMapsRef.current;
+    const map = mapInstanceRef.current;
+    const currentLocation = userLocation.location;
+
+    if (!google || !map || !currentLocation) {
+      userMarkerRef.current?.setMap(null);
+      userMarkerRef.current = null;
+      return;
+    }
+
+    const position = {
+      lat: currentLocation.latitude,
+      lng: currentLocation.longitude
+    };
+
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setPosition(position);
+    } else {
+      userMarkerRef.current = new google.maps.Marker({
+        clickable: false,
+        icon: getUserLocationMarkerIcon(google),
+        map,
+        position,
+        title: "Your current location",
+        zIndex: 999
+      });
+    }
+
+    if (!hasCenteredOnUserRef.current) {
+      map.setCenter(position);
+      map.setZoom(Math.max(map.getZoom() ?? initialZoom, 15));
+      hasCenteredOnUserRef.current = true;
+    }
+  }, [initialZoom, userLocation.location]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -381,30 +450,50 @@ function InteractiveGoogleMap({
           width: "100%"
         }
       })}
-      {loadState === "ready" && showZoomControls ? (
-        <View style={styles.zoomControls}>
+      {loadState === "ready" ? (
+        <View style={styles.mapControls}>
           <AppButton
-            accessibilityLabel="Zoom in"
-            color="neutral"
+            accessibilityLabel={
+              userLocation.isWatching
+                ? "Hide current location"
+                : "Show current location"
+            }
+            color={userLocation.isWatching ? "accent" : "neutral"}
             fullWidth={false}
-            icon={ZoomIn}
+            icon={LocateFixed}
             layout="icon"
-            onPress={() => zoomMap(1)}
+            loading={userLocation.isRequesting}
+            onPress={handleUserLocationPress}
             size="sm"
-            style={styles.zoomControlButton}
-            variant="bordered"
+            style={styles.mapControlButton}
+            variant={userLocation.isWatching ? "solid" : "bordered"}
           />
-          <AppButton
-            accessibilityLabel="Zoom out"
-            color="neutral"
-            fullWidth={false}
-            icon={ZoomOut}
-            layout="icon"
-            onPress={() => zoomMap(-1)}
-            size="sm"
-            style={styles.zoomControlButton}
-            variant="bordered"
-          />
+          {showZoomControls ? (
+            <>
+              <AppButton
+                accessibilityLabel="Zoom in"
+                color="neutral"
+                fullWidth={false}
+                icon={ZoomIn}
+                layout="icon"
+                onPress={() => zoomMap(1)}
+                size="sm"
+                style={styles.mapControlButton}
+                variant="bordered"
+              />
+              <AppButton
+                accessibilityLabel="Zoom out"
+                color="neutral"
+                fullWidth={false}
+                icon={ZoomOut}
+                layout="icon"
+                onPress={() => zoomMap(-1)}
+                size="sm"
+                style={styles.mapControlButton}
+                variant="bordered"
+              />
+            </>
+          ) : null}
         </View>
       ) : null}
       {loadState !== "ready" ? (
@@ -439,6 +528,19 @@ function getConstructionMarkerIcon(
       backgroundColor: isSelected ? atomPalette.accent : atomPalette.text,
       iconColor: isSelected ? atomPalette.accentText : atomPalette.surface
     })
+  };
+}
+
+function getUserLocationMarkerIcon(google: GoogleMapsNamespace) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+  <circle cx="18" cy="18" r="15" fill="${atomPalette.accent}" fill-opacity="0.18" stroke="${atomPalette.accent}" stroke-opacity="0.28" stroke-width="1"/>
+  <circle cx="18" cy="18" r="8" fill="${atomPalette.accent}" stroke="${atomPalette.surface}" stroke-width="3"/>
+</svg>`;
+
+  return {
+    anchor: new google.maps.Point(18, 18),
+    scaledSize: new google.maps.Size(36, 36),
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
   };
 }
 
@@ -660,12 +762,12 @@ const styles = StyleSheet.create({
     height: 8,
     width: 8
   },
-  zoomControlButton: {
+  mapControlButton: {
     height: 34,
     minHeight: 34,
     width: 34
   },
-  zoomControls: {
+  mapControls: {
     gap: atomSpacing[2],
     position: "absolute",
     right: atomSpacing[3],

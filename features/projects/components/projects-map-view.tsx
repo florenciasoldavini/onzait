@@ -12,7 +12,14 @@ import {
 } from "@/features/projects/constants";
 import { getProjectsMapViewport } from "@/features/projects/map-points";
 import type { Project, ProjectStatus } from "@/features/projects/types";
-import { Construction, FolderOpen, MapPinned, X } from "lucide-react-native";
+import { useLiveUserLocation } from "@/features/projects/use-live-user-location";
+import {
+  Construction,
+  FolderOpen,
+  LocateFixed,
+  MapPinned,
+  X
+} from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import MapView, {
@@ -43,6 +50,8 @@ export function ProjectsMapView({
   projects: Project[];
 }) {
   const mapRef = useRef<MapView | null>(null);
+  const hasCenteredOnUserRef = useRef(false);
+  const userLocation = useLiveUserLocation();
   const locatedProjects = useMemo(
     () =>
       projects.filter(
@@ -74,6 +83,17 @@ export function ProjectsMapView({
   );
   const selectedProject =
     locatedProjects.find((project) => project.id === selectedProjectId) ?? null;
+
+  const handleUserLocationPress = useCallback(() => {
+    if (userLocation.isWatching) {
+      hasCenteredOnUserRef.current = false;
+      userLocation.stop();
+      return;
+    }
+
+    hasCenteredOnUserRef.current = false;
+    void userLocation.start();
+  }, [userLocation]);
 
   const fitMapToProjects = useCallback(
     (animated: boolean) => {
@@ -114,6 +134,30 @@ export function ProjectsMapView({
     }
   }, [coordinateKey, fitMapToProjects, hasMapLayout, isMapReady]);
 
+  useEffect(() => {
+    const currentLocation = userLocation.location;
+
+    if (
+      !currentLocation ||
+      !isMapReady ||
+      !mapRef.current ||
+      hasCenteredOnUserRef.current
+    ) {
+      return;
+    }
+
+    mapRef.current.animateToRegion(
+      {
+        latitude: currentLocation.latitude,
+        latitudeDelta: 0.015,
+        longitude: currentLocation.longitude,
+        longitudeDelta: 0.015
+      },
+      280
+    );
+    hasCenteredOnUserRef.current = true;
+  }, [isMapReady, userLocation.location]);
+
   if (locatedProjects.length === 0 || !initialRegion) {
     return (
       <AppCard style={{ gap: atomSpacing[4] }}>
@@ -133,10 +177,7 @@ export function ProjectsMapView({
 
   return (
     <View
-      style={[
-        styles.root,
-        fillAvailableSpace && styles.rootFillAvailableSpace
-      ]}
+      style={[styles.root, fillAvailableSpace && styles.rootFillAvailableSpace]}
     >
       <View
         onLayout={() => {
@@ -180,7 +221,9 @@ export function ProjectsMapView({
                 }}
                 title={project.name}
               >
-                <View style={[styles.marker, isSelected && styles.markerSelected]}>
+                <View
+                  style={[styles.marker, isSelected && styles.markerSelected]}
+                >
                   <Construction
                     color={
                       isSelected ? atomPalette.accentText : atomPalette.surface
@@ -192,7 +235,40 @@ export function ProjectsMapView({
               </Marker>
             );
           })}
+          {userLocation.location ? (
+            <Marker
+              anchor={{ x: 0.5, y: 0.5 }}
+              coordinate={{
+                latitude: userLocation.location.latitude,
+                longitude: userLocation.location.longitude
+              }}
+              title="Your current location"
+            >
+              <View style={styles.userLocationHalo}>
+                <View style={styles.userLocationDot} />
+              </View>
+            </Marker>
+          ) : null}
         </MapView>
+
+        <View style={styles.mapControls}>
+          <AppButton
+            accessibilityLabel={
+              userLocation.isWatching
+                ? "Hide current location"
+                : "Show current location"
+            }
+            color={userLocation.isWatching ? "accent" : "neutral"}
+            fullWidth={false}
+            icon={LocateFixed}
+            layout="icon"
+            loading={userLocation.isRequesting}
+            onPress={handleUserLocationPress}
+            size="sm"
+            style={styles.mapControlButton}
+            variant={userLocation.isWatching ? "solid" : "bordered"}
+          />
+        </View>
 
         {selectedProject ? (
           <View style={styles.selectedCardOverlay}>
@@ -353,6 +429,17 @@ const styles = StyleSheet.create({
   markerSelected: {
     backgroundColor: atomPalette.accent
   },
+  mapControlButton: {
+    height: 34,
+    minHeight: 34,
+    width: 34
+  },
+  mapControls: {
+    position: "absolute",
+    right: atomSpacing[3],
+    top: atomSpacing[3],
+    zIndex: 2
+  },
   closeButton: {
     alignItems: "center",
     borderRadius: atomRadii.full,
@@ -391,5 +478,23 @@ const styles = StyleSheet.create({
     borderRadius: atomRadii.full,
     height: 8,
     width: 8
+  },
+  userLocationDot: {
+    backgroundColor: atomPalette.accent,
+    borderColor: atomPalette.surface,
+    borderRadius: atomRadii.full,
+    borderWidth: 2,
+    height: 16,
+    width: 16
+  },
+  userLocationHalo: {
+    alignItems: "center",
+    backgroundColor: `${atomPalette.accent}26`,
+    borderColor: `${atomPalette.accent}44`,
+    borderRadius: atomRadii.full,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: "center",
+    width: 32
   }
 });

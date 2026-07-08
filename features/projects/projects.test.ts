@@ -8,6 +8,7 @@ import {
   getProjectMapPoints,
   getProjectsMapViewport
 } from "@/features/projects/map-points";
+import { toLiveUserLocation } from "@/features/projects/live-user-location-values";
 import { getMapsFunctionErrorMessage } from "@/features/projects/maps-errors";
 import { buildProjectListQueryPlan } from "@/features/projects/query-builders";
 import type { Project, ProjectFormValues } from "@/features/projects/types";
@@ -346,6 +347,24 @@ describe("project map points", () => {
       viewport!.centerLongitude
     );
     expect(draggedViewport.zoom).toBe(viewport!.zoom);
+  });
+});
+
+describe("live user location", () => {
+  it("normalizes Expo location coordinates for map markers", () => {
+    expect(
+      toLiveUserLocation({
+        coords: {
+          accuracy: 8,
+          latitude: -34.5663,
+          longitude: -58.469
+        }
+      })
+    ).toEqual({
+      accuracy: 8,
+      latitude: -34.5663,
+      longitude: -58.469
+    });
   });
 });
 
