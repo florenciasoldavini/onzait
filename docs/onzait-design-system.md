@@ -161,6 +161,26 @@ Icon meaning should also stay consistent across the product.
 - Do not choose alternate icons for variety when the meaning is the same. Visual consistency is more important than decorative variation.
 - Add new icons to the registry only when there is a new concept or action that the existing icons do not clearly cover.
 
+## Destructive Action Confirmation Rules
+
+Critical delete actions must never mutate persistent data directly from a menu item, icon button, swipe action, or first tap.
+
+- Open an explicit confirmation modal before deleting projects, accounts, files, records, or other persistent user data.
+- Name the affected entity or clearly describe what will be removed and whether the action can be restored.
+- Provide distinct Cancel and danger-styled Delete actions; Delete must not be the modal's default focused action.
+- Disable dismissal and repeat submission while deletion is pending, show loading on the Delete action, and keep recoverable errors visible in the modal.
+- Confirmation is a UX safeguard only; authorization and ownership enforcement must still happen in trusted service, repository, and database layers.
+
+## Action Feedback Rules
+
+Use the shared app toast for short, non-blocking feedback after an action completes.
+
+- Show a success toast after a create, update, delete, upload, or similar mutation succeeds.
+- Show an error toast when an action fails, but keep validation errors beside their fields and recoverable modal errors inside the modal as well.
+- Do not show a toast for navigation-only actions such as opening an edit screen.
+- Use one concise toast per outcome with a direct title and an optional helpful description.
+- Toasts supplement visible loading, disabled, validation, and error states; they do not replace them.
+
 ## Responsive Density Rules
 
 Mobile-first controls should keep comfortable touch targets, but browser layouts should not automatically inherit the largest native control size.

@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(14);
+select plan(16);
 
 insert into public.users (
   id,
@@ -127,14 +127,35 @@ select results_eq(
 
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000001', true);
 
-update public.projects
-set deleted_at = current_timestamp
-where id = '10000000-0000-4000-8000-000000000001';
+select results_eq(
+  $$
+    with updated as (
+      update public.projects
+      set deleted_at = current_timestamp
+      where id = '10000000-0000-4000-8000-000000000001'
+      returning 1
+    )
+    select count(*)::integer from updated
+  $$,
+  $$ values (1) $$,
+  'owner can soft-delete own project through a returning update'
+);
 
 select is(
   (select count(*)::integer from public.projects where id = '10000000-0000-4000-8000-000000000001'),
+  1,
+  'owner authorization still applies to own soft-deleted project'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.projects
+    where id = '10000000-0000-4000-8000-000000000001'
+      and deleted_at is null
+  ),
   0,
-  'soft-deleted project is hidden from owner reads'
+  'active project reads hide the owner soft-deleted project'
 );
 
 reset role;

@@ -19,3 +19,4 @@ export * from "@/components/atoms/skeleton-block";
 export * from "@/components/atoms/tabs";
 export * from "@/components/atoms/text";
 export * from "@/components/atoms/textarea";
+export * from "@/components/atoms/toast";

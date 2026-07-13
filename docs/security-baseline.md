@@ -65,6 +65,7 @@ Unless a feature documents a more specific participant model:
 - admin users can read and manage all non-deleted feature rows
 - normal users can read and manage only rows they own
 - deleted rows must be hidden from normal get/list requests
+- soft deletion is a lifecycle state rather than an authorization boundary; owner/admin RLS may still authorize the row while repository reads exclude it
 - client code can add owner filters for performance, but database/server authorization remains mandatory
 
 ### Projects
