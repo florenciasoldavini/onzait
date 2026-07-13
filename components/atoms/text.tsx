@@ -8,7 +8,8 @@ import {
   type TextStyle
 } from "react-native";
 
-type TextVariant = "body" | "bodySm" | "caption" | "label" | "meta" | "eyebrow";
+type TextBodyVariant = "body" | "bodySm" | "caption" | "formLabel";
+type TextVariant = TextBodyVariant | "label" | "meta" | "eyebrow";
 
 function sansTypeStyle(tokenName: "bodyMd" | "bodySm" | "caption"): TextStyle {
   const token = atomTypeScale[tokenName];
@@ -22,7 +23,9 @@ function sansTypeStyle(tokenName: "bodyMd" | "bodySm" | "caption"): TextStyle {
   };
 }
 
-function monoTypeStyle(tokenName: "label" | "meta" | "eyebrow"): TextStyle {
+function monoTypeStyle(
+  tokenName: "label" | "labelMono" | "meta" | "eyebrow"
+): TextStyle {
   const token = atomTypeScale[tokenName];
 
   return {
@@ -38,6 +41,10 @@ const variantStyles: Record<TextVariant, TextStyle> = {
   body: sansTypeStyle("bodyMd"),
   bodySm: sansTypeStyle("bodySm"),
   caption: sansTypeStyle("caption"),
+  formLabel: {
+    ...monoTypeStyle("labelMono"),
+    textTransform: "uppercase"
+  },
   label: monoTypeStyle("label"),
   meta: monoTypeStyle("meta"),
   eyebrow: monoTypeStyle("eyebrow")

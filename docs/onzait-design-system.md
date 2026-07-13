@@ -3,7 +3,7 @@
 Purpose: active design-system source of truth for reusable UI decisions, component rules, and interaction behavior
 Source of truth for: design rules, token usage, component state expectations, and reusable UI patterns
 Update when: a reusable visual rule is decided, a token changes meaning, a component gains a new standard state, or a screen teaches us a pattern that should be reused
-Last reviewed: 2026-07-06
+Last reviewed: 2026-07-07
 
 ## Active Sources
 
@@ -11,6 +11,7 @@ Last reviewed: 2026-07-06
 - Visual foundation: `docs/onzait-step-2-foundations.md`
 - Token source: `theme/tokens.js`
 - App token facade: `components/atoms/theme.ts`
+- Motion token facade: `components/atoms/motion.ts`
 - Reusable app primitives: `components/atoms/`
 - Auth layout primitives: `components/auth/AuthShell.tsx`
 
@@ -45,6 +46,8 @@ The interface should prioritize clarity, structure, and operational confidence o
 
 All interactive design-system items should define every relevant state before they are considered complete.
 
+Every async UI surface must expose a loading state appropriate to its shape. Use skeletons for initial content loads, spinners for short actions, disabled states while a submitted action is in flight, optimistic states only when rollback behavior is clear, and clear retry/error states when loading fails.
+
 Buttons should have clear, differentiable:
 
 - normal
@@ -52,6 +55,14 @@ Buttons should have clear, differentiable:
 - pressed or active, when supported by the primitive
 - loading, when the action can be async
 - disabled
+
+Button APIs should separate visual treatment from semantic color:
+
+- `variant` describes treatment: `solid`, `bordered`, or `ghost`.
+- `color` describes intent: `accent`, `neutral`, `warning`, `danger`, or `success`.
+- Do not use `primary`, `secondary`, or destructive meaning as variant names. Express those as combinations such as `solid` + `accent`, `bordered` + `neutral`, or `solid` + `danger`.
+- Use `solid` in general for primary actions.
+- Use `bordered` in general for secondary actions.
 
 Inputs and text areas should have clear, differentiable:
 
@@ -72,6 +83,37 @@ Selectable items such as tabs, nav buttons, segmented controls, checklist items,
 
 State styling should be designed as a full set. Do not add only the happy-path state and leave the rest to default library behavior unless the default has been reviewed and intentionally accepted.
 
+Feature screens should not silently block while data loads. Lists, cards, forms, uploads, autocomplete results, and destructive actions all need explicit loading feedback.
+
+## Motion Rules
+
+Motion should reinforce the same technical architectural blueprint feeling as the visual system: precise, subtle, intentional, and operational. It should feel like interface instrumentation and live data resolving into place, not playful decoration.
+
+Use `components/atoms/motion.ts` as the source of truth for reusable animation durations, easing, and scale values. Future reusable motion should add or reuse `atomMotion` tokens instead of introducing one-off timing values in screens.
+
+Default motion behavior:
+
+- Prefer short measured timing animations over springs.
+- Use Reanimated for reusable app motion.
+- Keep transforms very small. Press compression should confirm input without visibly bouncing or squishing the control.
+- Use opacity, subtle scale, linear scans, measured thumb movement, and progress/data fills before decorative movement.
+- Keep motion under control surfaces and data surfaces: focus states, selected states, loading skeletons, progress bars, active status indicators, and list/layout changes.
+
+Avoid motion that feels cheerful, toy-like, or decorative:
+
+- Do not use bounce presets, springy rebounds, large overshoot, elastic scaling, confetti-like effects, or ornamental loops in product UI.
+- Do not make cards float upward as a default list entrance. Prefer fade-in or measured layout movement so content feels like it resolves into view.
+- Do not pulse every status. Reserve pulsing for semantically live or active states such as `IN_PROGRESS`.
+
+Current reusable patterns:
+
+- Button and card press feedback uses tiny timed compression with no spring rebound.
+- Input focus may use a very subtle accent glow in addition to the accent border.
+- Segmented controls and pill selects move the active thumb with measured timing.
+- Skeleton loading uses a low-opacity scanner pass rather than a shiny shimmer.
+- Progress bars should animate visibly enough to read as data filling in; keep the fill measured, not playful.
+- Active status dots pulse opacity at a fixed size, like an indicator light, rather than expanding as a halo.
+
 ## Hover, Focus, And Selected Rules
 
 Hover states should not change an element's semantic color.
@@ -79,8 +121,8 @@ Hover states should not change an element's semantic color.
 Hover may only darken or strengthen the element's existing color role. Examples:
 
 - A grey input border becomes a darker grey on hover.
-- A neutral secondary button background becomes a slightly darker neutral on hover.
-- A cobalt primary button becomes a darker cobalt on hover.
+- A bordered neutral button background becomes a slightly darker neutral on hover.
+- A solid accent button becomes a darker accent on hover.
 
 Focus and selected states may change an element's semantic color because they communicate stronger state. Examples:
 
@@ -119,6 +161,27 @@ Icon meaning should also stay consistent across the product.
 - Do not choose alternate icons for variety when the meaning is the same. Visual consistency is more important than decorative variation.
 - Add new icons to the registry only when there is a new concept or action that the existing icons do not clearly cover.
 
+## Destructive Action Confirmation Rules
+
+Critical delete actions must never mutate persistent data directly from a menu item, icon button, swipe action, or first tap.
+
+- Open an explicit confirmation modal before deleting projects, accounts, files, records, or other persistent user data.
+- Name the affected entity or clearly describe what will be removed and whether the action can be restored.
+- Provide distinct Cancel and danger-styled Delete actions; Delete must not be the modal's default focused action.
+- Disable dismissal and repeat submission while deletion is pending, show loading on the Delete action, and keep recoverable errors visible in the modal.
+- Confirmation is a UX safeguard only; authorization and ownership enforcement must still happen in trusted service, repository, and database layers.
+
+## Action Feedback Rules
+
+Use the shared app toast for short, non-blocking feedback after an action completes.
+
+- Show a success toast after a create, update, delete, upload, or similar mutation succeeds.
+- Show an error toast when an action fails, but keep validation errors beside their fields and recoverable modal errors inside the modal as well.
+- Do not show a toast for navigation-only actions such as opening an edit screen.
+- Use one concise toast per outcome with a direct title and an optional helpful description.
+- Toasts use the shared outlined tonal treatment with a light status background and matching border and text, appear at the top center, and remain visible for six seconds by default.
+- Toasts supplement visible loading, disabled, validation, and error states; they do not replace them.
+
 ## Responsive Density Rules
 
 Mobile-first controls should keep comfortable touch targets, but browser layouts should not automatically inherit the largest native control size.
@@ -136,6 +199,18 @@ Form fields and their primary CTA should have enough vertical separation to read
 - Consecutive inputs should not visually touch or feel stacked too tightly.
 - The primary CTA should have at least the same breathing room from the last field as fields have from each other.
 - Shared form stacks should use reusable spacing constants instead of per-screen margin tweaks.
+
+## Form Completion Rules
+
+Forms should make completion state obvious before the user submits.
+
+- Production submit forms should use `react-hook-form` with a Zod schema resolver. Form state, field errors, validity, submission, and edit dirty-state should come from that form controller rather than duplicated local `useState` validation.
+- Local component state is still appropriate for transient UI-only behavior such as password visibility, picker open state, autocomplete popovers, and non-submit search/filter fields.
+- Submit buttons stay disabled until every required input is complete.
+- Edit-form submit buttons also stay disabled until `react-hook-form` reports a dirty field or an attached asset picker has a pending change.
+- Use one labeling convention per form, not both required and optional markers.
+- The current shared convention is to label optional fields with a discreet `(optional)` hint and leave required fields unmarked.
+- Disabled submit buttons are guidance only; validation and authorization still belong in schemas, services, repositories, and database policies.
 
 ## Responsive Size Rules
 

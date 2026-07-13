@@ -1,7 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.50.3";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { renderWelcomeToOnzaitEmail } from "../_shared/email/welcome-to-onzait.tsx";
-import { getAuthClaims } from "../_shared/jwt.ts";
 
 type WelcomeRequestBody = {
   name?: string;
@@ -16,11 +15,22 @@ const appUrl =
   Deno.env.get("EXPO_PUBLIC_SITE_URL") ??
   "https://onzait.vercel.app";
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 type UserEmailState = {
   email: string;
   first_name: string;
   welcome_email_sent_at: string | null;
+};
+
+type AuthenticatedUser = {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    first_name?: string;
+    full_name?: string;
+    name?: string;
+  };
 };
 
 function getPublishableKey() {
@@ -42,16 +52,13 @@ function getFirstNameFromEmail(email: string) {
   return email.split("@")[0]?.split(/[._-]/)[0] || "there";
 }
 
-function getFirstName(
-  claims: ReturnType<typeof getAuthClaims>,
-  body: WelcomeRequestBody
-) {
+function getFirstName(user: AuthenticatedUser, body: WelcomeRequestBody) {
   return (
     body.name?.trim() ||
-    claims?.user_metadata?.first_name?.trim() ||
-    claims?.user_metadata?.full_name?.trim().split(/\s+/)[0] ||
-    claims?.user_metadata?.name?.trim().split(/\s+/)[0] ||
-    (claims?.email ? getFirstNameFromEmail(claims.email) : "there")
+    user.user_metadata?.first_name?.trim() ||
+    user.user_metadata?.full_name?.trim().split(/\s+/)[0] ||
+    user.user_metadata?.name?.trim().split(/\s+/)[0] ||
+    (user.email ? getFirstNameFromEmail(user.email) : "there")
   );
 }
 
@@ -71,10 +78,9 @@ async function handler(req: Request) {
     );
   }
 
-  const claims = getAuthClaims(req);
   const authorization = req.headers.get("Authorization");
 
-  if (!claims?.email || !claims.sub || !authorization) {
+  if (!authorization) {
     return jsonResponse(
       { error: "A signed-in user with an email address is required." },
       { status: 401 }
@@ -83,14 +89,14 @@ async function handler(req: Request) {
 
   const publishableKey = getPublishableKey();
 
-  if (!supabaseUrl || !publishableKey) {
+  if (!supabaseUrl || !publishableKey || !serviceRoleKey) {
     return jsonResponse(
       { error: "Supabase function environment is not configured." },
       { status: 500 }
     );
   }
 
-  const supabase = createClient(supabaseUrl, publishableKey, {
+  const authSupabase = createClient(supabaseUrl, publishableKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false
@@ -101,35 +107,80 @@ async function handler(req: Request) {
       }
     }
   });
+  const adminSupabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
 
-  const { data: user, error: userError } = await supabase
+  const {
+    data: { user },
+    error: authError
+  } = await authSupabase.auth.getUser();
+
+  const authUser = user as AuthenticatedUser | null;
+
+  if (authError || !authUser?.id || !authUser.email) {
+    return jsonResponse(
+      { error: "A signed-in user with an email address is required." },
+      { status: 401 }
+    );
+  }
+
+  const sentAt = new Date().toISOString();
+  const { data: claimedUser, error: claimError } = await adminSupabase
     .from("users")
+    .update({ welcome_email_sent_at: sentAt })
+    .eq("id", authUser.id)
+    .is("welcome_email_sent_at", null)
     .select("email, first_name, welcome_email_sent_at")
-    .eq("id", claims.sub)
     .maybeSingle();
 
-  const userEmailState = user as UserEmailState | null;
+  const claimedEmailState = claimedUser as UserEmailState | null;
 
-  if (userError) {
+  if (claimError) {
     return jsonResponse(
-      { error: "Could not check welcome email state." },
+      { error: "Could not reserve welcome email state." },
       { status: 500 }
     );
   }
 
-  if (!userEmailState) {
-    return jsonResponse(
-      { error: "User profile was not found." },
-      { status: 404 }
-    );
-  }
+  if (!claimedEmailState) {
+    const { data: existingUser, error: existingUserError } = await adminSupabase
+      .from("users")
+      .select("email, first_name, welcome_email_sent_at")
+      .eq("id", authUser.id)
+      .maybeSingle();
 
-  if (userEmailState.welcome_email_sent_at) {
-    return jsonResponse({
-      ok: true,
-      skipped: true,
-      welcome_email_sent_at: userEmailState.welcome_email_sent_at
-    });
+    const existingEmailState = existingUser as UserEmailState | null;
+
+    if (existingUserError) {
+      return jsonResponse(
+        { error: "Could not check welcome email state." },
+        { status: 500 }
+      );
+    }
+
+    if (!existingEmailState) {
+      return jsonResponse(
+        { error: "User profile was not found." },
+        { status: 404 }
+      );
+    }
+
+    if (existingEmailState.welcome_email_sent_at) {
+      return jsonResponse({
+        ok: true,
+        skipped: true,
+        welcome_email_sent_at: existingEmailState.welcome_email_sent_at
+      });
+    }
+
+    return jsonResponse(
+      { error: "Could not reserve welcome email state." },
+      { status: 409 }
+    );
   }
 
   let body: WelcomeRequestBody = {};
@@ -142,19 +193,19 @@ async function handler(req: Request) {
 
   const name =
     body.name?.trim() ||
-    userEmailState.first_name ||
-    getFirstName(claims, body);
+    claimedEmailState.first_name ||
+    getFirstName(authUser, body);
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${resendApiKey}`,
       "Content-Type": "application/json",
-      "Idempotency-Key": `welcome-to-onzait-${claims.sub}`
+      "Idempotency-Key": `welcome-to-onzait-${authUser.id}`
     },
     body: JSON.stringify({
       from: emailFrom,
-      to: userEmailState.email,
+      to: claimedEmailState.email,
       subject: "Welcome to onzait",
       html: await renderWelcomeToOnzaitEmail({ appUrl, name }),
       ...(emailReplyTo ? { reply_to: emailReplyTo } : {})
@@ -164,27 +215,15 @@ async function handler(req: Request) {
   const result = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    await adminSupabase
+      .from("users")
+      .update({ welcome_email_sent_at: null })
+      .eq("id", authUser.id)
+      .eq("welcome_email_sent_at", sentAt);
+
     return jsonResponse(
       { error: "Resend could not send the welcome email.", details: result },
       { status: response.status }
-    );
-  }
-
-  const sentAt = new Date().toISOString();
-  const { error: updateError } = await supabase
-    .from("users")
-    .update({ welcome_email_sent_at: sentAt })
-    .eq("id", claims.sub)
-    .is("welcome_email_sent_at", null);
-
-  if (updateError) {
-    return jsonResponse(
-      {
-        error:
-          "Welcome email was sent, but the sent marker could not be saved.",
-        id: result.id
-      },
-      { status: 500 }
     );
   }
 

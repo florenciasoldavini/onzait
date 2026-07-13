@@ -24,7 +24,10 @@ export const atomPalette = {
   errorSurface: designTokens.colors.semantic.bg.error,
   success: designTokens.colors.primitive.success[500],
   successText: designTokens.colors.primitive.success[700],
-  successSurface: designTokens.colors.semantic.bg.success
+  successSurface: designTokens.colors.semantic.bg.success,
+  warning: designTokens.colors.semantic.status.warning.accent,
+  warningText: designTokens.colors.semantic.status.warning.text,
+  warningSurface: designTokens.colors.semantic.bg.warning
 } as const;
 
 export const atomSpacing = designTokens.spacing;

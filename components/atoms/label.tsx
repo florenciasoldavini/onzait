@@ -1,4 +1,4 @@
-import { atomPalette, atomSpacing } from "@/components/atoms/theme";
+import { atomSpacing } from "@/components/atoms/theme";
 import { AppText } from "@/components/atoms/text";
 import type { ReactNode } from "react";
 import { View } from "react-native";
@@ -28,12 +28,12 @@ export function FieldLabel({
           gap: atomSpacing[1]
         }}
       >
-        <AppText tone="subtle" variant="label">
+        <AppText tone="subtle" variant="formLabel">
           {children}
         </AppText>
-        {required ? (
-          <AppText style={{ color: atomPalette.error }} variant="label">
-            *
+        {!required ? (
+          <AppText tone="subtle" variant="formLabel" style={{ opacity: 0.72 }}>
+            (optional)
           </AppText>
         ) : null}
       </View>

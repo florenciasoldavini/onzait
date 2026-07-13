@@ -22,24 +22,28 @@ import { View } from "react-native";
 
 const buttonVariants = [
   {
+    color: "accent",
     icon: ArrowRightIcon,
-    label: "Primary",
-    variant: "primary"
+    label: "Solid Accent",
+    variant: "solid"
   },
   {
+    color: "neutral",
     icon: PlusIcon,
-    label: "Secondary",
-    variant: "secondary"
+    label: "Bordered Neutral",
+    variant: "bordered"
   },
   {
+    color: "accent",
     icon: BellIcon,
-    label: "Ghost",
+    label: "Ghost Accent",
     variant: "ghost"
   },
   {
+    color: "danger",
     icon: TrashIcon,
-    label: "Destructive",
-    variant: "destructive"
+    label: "Solid Danger",
+    variant: "solid"
   }
 ] as const;
 
@@ -94,11 +98,12 @@ export default function HomeScreen() {
         <Section
           description="Buttons are normalized around the shared control heights, radius, and semantic action colors."
           eyebrow="Actions"
-          title="Button variants"
+          title="Button treatments"
         >
           <View style={{ gap: atomSpacing[4] }}>
             {buttonVariants.map((button) => (
               <AppButton
+                color={button.color}
                 icon={button.icon}
                 key={button.label}
                 variant={button.variant}
@@ -123,6 +128,7 @@ export default function HomeScreen() {
               leftIcon={AtSignIcon}
               onChangeText={setEmail}
               placeholder="architect@onzait.com"
+              required
               type="text"
               value={email}
             />
@@ -134,6 +140,7 @@ export default function HomeScreen() {
               leftIcon={LockIcon}
               onChangeText={setPassword}
               placeholder="••••••••••••"
+              required
               type="password"
               value={password}
             />

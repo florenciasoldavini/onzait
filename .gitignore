@@ -10,6 +10,8 @@ web-build/
 expo-env.d.ts
 
 # Native
+/android
+/ios
 .kotlin/
 *.orig.*
 *.jks
@@ -31,7 +33,9 @@ yarn-error.*
 *.pem
 
 # local env files
-.env*.local
+.env
+.env.*
+!.env.example
 supabase/functions/.env
 
 # typescript
@@ -39,3 +43,6 @@ supabase/functions/.env
 
 app-example
 .vercel
+
+# Added by ggshield
+.cache_ggshield

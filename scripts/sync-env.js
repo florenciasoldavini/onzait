@@ -104,8 +104,17 @@ function runCommand(command, args, options = {}) {
     process.stderr.write(result.stderr);
   }
 
+  if (result.error) {
+    throw new Error(`${command} failed: ${result.error.message}`);
+  }
+
   if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(" ")} failed with exit code ${result.status}`);
+    const displayArgs = options.displayArgs ?? args;
+    const error = new Error(
+      `${command} ${displayArgs.join(" ")} failed with exit code ${result.status}`
+    );
+    error.commandOutput = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+    throw error;
   }
 }
 
@@ -131,7 +140,7 @@ function syncVercelVariable(name, value, config, dryRun, cwd) {
 
 function syncEasVariable(name, value, config, dryRun, cwd) {
   for (const environment of config.environments) {
-    const args = [
+    const createArgs = [
       "env:create",
       environment,
       "--name",
@@ -144,8 +153,7 @@ function syncEasVariable(name, value, config, dryRun, cwd) {
       "string",
       "--scope",
       "project",
-      "--non-interactive",
-      "--force"
+      "--non-interactive"
     ];
 
     if (dryRun) {
@@ -153,7 +161,44 @@ function syncEasVariable(name, value, config, dryRun, cwd) {
       continue;
     }
 
-    runCommand("eas", args, { cwd });
+    const displayCreateArgs = createArgs.map((arg, index) =>
+      createArgs[index - 1] === "--value" ? maskValue(name, value) : arg
+    );
+
+    try {
+      runCommand("eas", createArgs, {
+        cwd,
+        displayArgs: displayCreateArgs
+      });
+    } catch (error) {
+      if (!error.commandOutput?.includes("already has an environment variable named")) {
+        throw error;
+      }
+
+      const updateArgs = [
+        "env:update",
+        environment,
+        "--variable-name",
+        name,
+        "--value",
+        value,
+        "--visibility",
+        config.visibility,
+        "--type",
+        "string",
+        "--scope",
+        "project",
+        "--non-interactive"
+      ];
+      const displayUpdateArgs = updateArgs.map((arg, index) =>
+        updateArgs[index - 1] === "--value" ? maskValue(name, value) : arg
+      );
+
+      runCommand("eas", updateArgs, {
+        cwd,
+        displayArgs: displayUpdateArgs
+      });
+    }
   }
 }
 
