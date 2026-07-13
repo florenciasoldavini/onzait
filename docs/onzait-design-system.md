@@ -179,6 +179,7 @@ Use the shared app toast for short, non-blocking feedback after an action comple
 - Show an error toast when an action fails, but keep validation errors beside their fields and recoverable modal errors inside the modal as well.
 - Do not show a toast for navigation-only actions such as opening an edit screen.
 - Use one concise toast per outcome with a direct title and an optional helpful description.
+- Toasts use the shared outlined tonal treatment with a light status background and matching border and text, appear at the top center, and remain visible for six seconds by default.
 - Toasts supplement visible loading, disabled, validation, and error states; they do not replace them.
 
 ## Responsive Density Rules

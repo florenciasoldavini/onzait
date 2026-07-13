@@ -11,7 +11,8 @@ import {
   SelectField,
   SkeletonBlock,
   TextAreaField,
-  TextField
+  TextField,
+  useAppToast
 } from "@/components/atoms";
 import { AuthContext } from "@/contexts/auth";
 import { FormField } from "@/components/molecules";
@@ -116,6 +117,7 @@ export function ProjectFormScreen({
   projectId?: string;
 }) {
   const router = useRouter();
+  const appToast = useAppToast();
   const { session } = useContext(AuthContext);
   const [formError, setFormError] = useState<string | null>(null);
   const projectQuery = useProject(mode === "edit" ? projectId : undefined);
@@ -164,7 +166,10 @@ export function ProjectFormScreen({
     setFormError(null);
 
     try {
-      const projectValues = formValues as Omit<ProjectFormValues, "coverAsset"> & {
+      const projectValues = formValues as Omit<
+        ProjectFormValues,
+        "coverAsset"
+      > & {
         address: ResolvedProjectAddress;
       };
 
@@ -196,6 +201,11 @@ export function ProjectFormScreen({
         await uploadMutation.mutateAsync({ asset: formValues.coverAsset });
       }
 
+      appToast.show({
+        description: `${projectValues.name} was updated successfully.`,
+        title: "Project updated",
+        tone: "success"
+      });
       router.replace(`/projects/${projectId}` as never);
     } catch (error) {
       setFormError(
@@ -710,18 +720,12 @@ function AddressField({
         </AppCard>
       ) : null}
 
-      {value ? (
-        <AddressLocationPreview value={value} />
-      ) : null}
+      {value ? <AddressLocationPreview value={value} /> : null}
     </View>
   );
 }
 
-function AddressLocationPreview({
-  value
-}: {
-  value: ResolvedProjectAddress;
-}) {
+function AddressLocationPreview({ value }: { value: ResolvedProjectAddress }) {
   const mapPreviewQuery = useAddressMapPreview({
     latitude: value.latitude,
     longitude: value.longitude
@@ -880,9 +884,7 @@ function CalendarDateField({
                         ? null
                         : projectFormStyles.calendarDayOutside,
                       isSelected ? projectFormStyles.calendarDaySelected : null,
-                      Platform.OS === "web"
-                        ? projectFormStyles.webCursor
-                        : null
+                      Platform.OS === "web" ? projectFormStyles.webCursor : null
                     ])}
                   >
                     <Text
