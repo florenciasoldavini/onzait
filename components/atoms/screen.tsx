@@ -15,12 +15,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export function Screen({
   centered = false,
   children,
+  contentContainerStyle,
+  contentStyle,
+  floatingAction,
   keyboardSafe = false,
   scrollable = true,
   style
 }: {
   centered?: boolean;
   children: ReactNode;
+  contentContainerStyle?: StyleProp<ViewStyle>;
+  contentStyle?: StyleProp<ViewStyle>;
+  floatingAction?: ReactNode;
   keyboardSafe?: boolean;
   scrollable?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -35,17 +41,24 @@ export function Screen({
       : width >= atomLayout.breakpointTablet
         ? atomLayout.marginTablet
         : atomLayout.marginMobile;
+  const contentWidth = Math.min(width, atomLayout.maxWidthContent);
+  const contentSideOffset = (width - contentWidth) / 2 + horizontalPadding;
+  const floatingBottomOffset =
+    Platform.OS === "web" ? atomSpacing[4] : insets.bottom + atomSpacing[3];
 
   const container = (
     <View
-      style={{
-        alignSelf: "center",
-        flex: centered ? 1 : undefined,
-        justifyContent: centered ? "center" : undefined,
-        maxWidth: atomLayout.maxWidthContent,
-        paddingHorizontal: horizontalPadding,
-        width: "100%"
-      }}
+      style={[
+        {
+          alignSelf: "center",
+          flex: centered ? 1 : undefined,
+          justifyContent: centered ? "center" : undefined,
+          maxWidth: atomLayout.maxWidthContent,
+          paddingHorizontal: horizontalPadding,
+          width: "100%"
+        },
+        contentStyle
+      ]}
     >
       {children}
     </View>
@@ -78,6 +91,20 @@ export function Screen({
   }, [shouldAvoidKeyboard]);
 
   function renderRoot(content: ReactNode) {
+    const floatingActionOverlay = floatingAction ? (
+      <View
+        pointerEvents="box-none"
+        style={{
+          bottom: floatingBottomOffset,
+          position: "absolute",
+          right: contentSideOffset,
+          zIndex: 10
+        }}
+      >
+        {floatingAction}
+      </View>
+    ) : null;
+
     if (!shouldAvoidKeyboard) {
       return (
         <View
@@ -90,6 +117,7 @@ export function Screen({
           ]}
         >
           {content}
+          {floatingActionOverlay}
         </View>
       );
     }
@@ -107,6 +135,7 @@ export function Screen({
         ]}
       >
         {content}
+        {floatingActionOverlay}
       </KeyboardAvoidingView>
     );
   }
@@ -114,11 +143,14 @@ export function Screen({
   if (!scrollable) {
     return renderRoot(
       <View
-        style={{
-          flex: 1,
-          paddingBottom: insets.bottom + atomSpacing[6],
-          paddingTop: insets.top + atomSpacing[6]
-        }}
+        style={[
+          {
+            flex: 1,
+            paddingBottom: insets.bottom + atomSpacing[6],
+            paddingTop: insets.top + atomSpacing[6]
+          },
+          contentContainerStyle
+        ]}
       >
         {container}
       </View>
@@ -130,12 +162,15 @@ export function Screen({
       ref={scrollRef}
       automaticallyAdjustKeyboardInsets={shouldAvoidKeyboard}
       bounces={!shouldAvoidKeyboard || keyboardVisible}
-      contentContainerStyle={{
-        flexGrow: 1,
-        justifyContent: centered ? "center" : undefined,
-        paddingBottom: insets.bottom + keyboardBottomPadding,
-        paddingTop: insets.top + atomSpacing[6]
-      }}
+      contentContainerStyle={[
+        {
+          flexGrow: 1,
+          justifyContent: centered ? "center" : undefined,
+          paddingBottom: insets.bottom + keyboardBottomPadding,
+          paddingTop: insets.top + atomSpacing[6]
+        },
+        contentContainerStyle
+      ]}
       keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       keyboardShouldPersistTaps="handled"
       scrollEnabled={!shouldAvoidKeyboard || keyboardVisible}

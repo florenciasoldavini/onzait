@@ -3,7 +3,7 @@
 Purpose: architecture snapshot, product decisions, and implementation guardrails for contributors and agents
 Source of truth for: current auth architecture, platform decisions, naming rules, and high-level project constraints
 Update when: auth flow, platform ownership, schema strategy, CI expectations, or product naming decisions change
-Last reviewed: 2026-07-06
+Last reviewed: 2026-07-08
 
 ## Project Snapshot
 
@@ -22,6 +22,14 @@ Last reviewed: 2026-07-06
   - Expo owner/project: `@florenciasoldavini/onzait`
 - Database/auth is on Supabase
 - Error monitoring is wired with Sentry
+
+## Platform Product Rule
+
+- Every product feature must work smoothly on all three supported runtime targets: web, iOS, and Android.
+- Onzait is mobile-first because it is an on-site construction app and will often be used from phones or tablets, but desktop web must remain a first-class experience for client feedback, admin work, and early launch testing.
+- Web is the first launch target because it can be deployed on Vercel without app-store distribution, but implementation choices must not block later iOS and Android releases.
+- Use the correct implementation for each environment when a feature needs platform-specific behavior. Prefer shared product logic with platform-specific UI or infrastructure adapters over a lowest-common-denominator workaround.
+- UI responsiveness and functional behavior must both be considered across phone, tablet, and desktop layouts before a feature is treated as complete.
 
 ## Auth Architecture
 
@@ -83,11 +91,14 @@ Last reviewed: 2026-07-06
 
 ### RLS Baseline
 
-- Only `public.users` is currently created in the tracked Supabase bootstrap
-- Only `public.users` currently has direct authenticated Data API access
-- Policies are anchored to `auth.uid() = users.id`
-- Insert policy forces `role = 'user'`
-- Update policy prevents users from changing their own role
+- `public.users` is the auth profile table and `public.projects` is the first product feature table
+- Feature tables must default to owner-scoped access for normal users and admin-wide access for `users.role = 'admin'`
+- Admin users should see all non-deleted rows for feature tables unless a feature documents a narrower rule
+- Normal users should see only their own rows unless a feature explicitly introduces participant access
+- All get/list reads must filter out rows where `deleted_at` is not null
+- Policies are anchored to `auth.uid()` plus trusted database role checks, not client-only role checks
+- Insert policies must prevent clients from assigning privileged ownership, membership, or role values
+- Update policies must preserve ownership/role invariants and use both `USING` and `WITH CHECK` where ownership could change
 
 ### Migration Gotcha
 
@@ -108,6 +119,7 @@ Last reviewed: 2026-07-06
 - `.env.local` is the local source of truth for real secrets
 - `.env.example` is generated, not hand-maintained
 - env metadata and sync targets live in [env-sync.config.json](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/env-sync.config.json:1)
+- When a feature introduces a new key or env var, add it to `env-sync.config.json`, regenerate `.env.example`, and add an easy-to-replace placeholder in `.env.local` for local setup.
 - the current performance baseline lives in [docs/performance-baseline.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/performance-baseline.md:1)
 - the current SEO and accessibility baseline lives in [docs/seo-accessibility-baseline.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/seo-accessibility-baseline.md:1)
 - the current security baseline for MVP feature work lives in [docs/security-baseline.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/security-baseline.md:1)
@@ -119,6 +131,10 @@ Last reviewed: 2026-07-06
 - `npm run env:check`
 - `npm run sync:env`
 - `npm run sync:env -- --dry-run`
+- `ggshield secret scan pre-commit`
+- `npm test`
+- `npm run test:watch`
+- `npx supabase test db`
 
 ## CI / Verification
 
@@ -127,12 +143,35 @@ Last reviewed: 2026-07-06
   - `npx tsc --noEmit`
   - `npm run lint`
   - `npm run build`
+  - `npm test`
 
 ### Useful Local Checks
 
 - `npx tsc --noEmit`
 - `npm run build`
 - `npm run lint`
+- `npm test`
+- `npx supabase test db`
+
+## Feature Implementation Rules
+
+- Every feature must include appropriate tests for the work: unit tests for reusable logic, database/RLS tests for Supabase access rules, and flow/UI tests for user-critical behavior.
+- Every feature must explicitly account for web, iOS, and Android behavior. If the correct implementation differs by platform, use platform-specific files or adapters while keeping the business logic shared.
+- When adding a new project rule or product constraint, scan existing features, docs, env config, and tests for places where the rule already applies. Refactor, document follow-up work, or clearly call out any existing gap instead of applying the rule only to future code.
+- Every async surface must handle loading explicitly with an appropriate spinner, skeleton, disabled state, optimistic state, or other clear indicator.
+- Every destructive action that deletes persistent project or account data must require an explicit confirmation modal before the mutation runs. The modal must identify what will be deleted, provide distinct Cancel and danger-styled Delete actions, prevent repeat submission while pending, and keep mutation errors visible without closing.
+- Production submit forms must use `react-hook-form` with a Zod schema resolver. Keep form values, validation errors, validity, submission state, and edit dirty-state in the form controller rather than duplicating them with local `useState`.
+- Local component state is only for transient UI-only behavior such as password visibility, picker/popover open state, autocomplete session state, and non-submit search/filter fields.
+- Form submit buttons must stay disabled until every required input is complete. When a form mixes required and optional fields, use one label convention only: optional fields show the shared discreet `(optional)` hint, and required fields are left unmarked.
+- Use the dependency direction `screens/components -> hooks -> services -> repositories -> Supabase/Storage/Edge Functions`.
+- UI components should not call Supabase, Storage, Google, or other external services directly; use feature hooks.
+- Hooks should own React Query/cache behavior only and call feature services for workflows.
+- Services should own product/business workflows and orchestration.
+- Repositories should own raw persistence or external transport calls only.
+- External APIs that require secret keys, expensive quotas, or abuse protection must go through a trusted server boundary with validation, caching where allowed, and rate limiting.
+- Paid external API boundaries must include durable hard caps before provider calls when provider-side quotas cannot be safely lowered.
+- Google Maps keys are expected to be restricted to only the APIs and platforms currently used. Project address lookup uses server-side Places API (New), selected-address preview functions use server-side Maps Static API, the web projects map uses the Maps JavaScript API, Android project maps use Maps SDK for Android through `react-native-maps`, and iOS project maps use the native default Apple Maps provider unless a future custom native build intentionally enables Google Maps on iOS. If a future feature needs a different Google Maps API or SDK, remind the project owner to update Google Cloud key restrictions before rollout.
+- Do not persistently cache third-party API content unless that provider's terms allow it; store only product data the user selected or created.
 
 ## Web / Hosting Notes
 
@@ -146,6 +185,9 @@ Last reviewed: 2026-07-06
 ## Mobile / Native Notes
 
 - EAS is configured
+- Android and iOS projects use Expo Continuous Native Generation: `android/` and `ios/` are generated from Expo app config and must remain ignored by Git.
+- Native configuration changes must be represented in `app.json`, `app.config.js`, or an Expo config plugin so EAS Build can reproduce them.
+- GitGuardian secret scanning runs as a local pre-commit hook; contributors must authenticate `ggshield` before committing.
 - Bundle/package identifiers:
   - iOS: `com.florenciasoldavini.onzait`
   - Android: `com.florenciasoldavini.onzait`

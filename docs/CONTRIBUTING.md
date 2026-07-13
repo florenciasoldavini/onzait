@@ -3,11 +3,13 @@
 Purpose: lightweight rules for keeping project documentation current
 Source of truth for: documentation ownership, update triggers, and doc review workflow
 Update when: doc ownership changes, PR process changes, or new documentation categories are introduced
-Last reviewed: 2026-05-12
+Last reviewed: 2026-07-08
 
 ## Core rule
 
 Documentation should be updated in the same change where behavior, setup, or architecture changes.
+
+When a new project rule is added, scan existing code, docs, env config, and tests for places where the rule already applies. Either update those surfaces in the same change or record a clear follow-up gap.
 
 ## Source of truth map
 
@@ -52,6 +54,14 @@ Update `AGENTS.md` when:
 - platform ownership changes
 - naming or product constraints change
 - project-level implementation rules change
+- supported platform expectations change for web, iOS, or Android
+
+Update env documentation when:
+
+- a feature introduces a new key or env var
+- `env-sync.config.json` changes
+- `.env.example` needs regeneration
+- `.env.local` needs a local placeholder for a newly required value
 
 Update `supabase/README.md` when:
 

@@ -14,11 +14,12 @@ Flow:
 1. App code calls `sendWelcomeToOnzaitEmail` from `services/email.service.ts`.
 2. The service calls `invokeWelcomeToOnzaitEmail` from `repositories/email.repository.ts`.
 3. The repository invokes the Supabase Edge Function `welcome-to-onzait`.
-4. The Edge Function reads the signed-in user's email from the verified Supabase JWT.
-5. The Edge Function checks `public.users.welcome_email_sent_at`.
-6. If the marker is empty, the function renders the Onzait-styled React Email template to HTML, sends it through Resend, and saves the sent marker.
+4. The Edge Function validates the signed-in user with Supabase Auth.
+5. The Edge Function uses its service-role Supabase client to reserve `public.users.welcome_email_sent_at` only when the marker is still empty.
+6. Only the request that successfully reserves the marker renders the Onzait-styled React Email template to HTML and sends it through Resend.
 
 The client does not send a recipient email address. The function chooses the recipient from the authenticated user's `public.users` row.
+The client also does not write the sent marker; that belongs to the Edge Function so repeated app launches cannot repeatedly send the same product email.
 
 ## Trigger Rule
 
@@ -31,7 +32,6 @@ The email is intentionally not sent at raw signup time because email/password us
 - `supabase/functions/welcome-to-onzait/index.ts`
 - `supabase/functions/_shared/email/welcome-to-onzait.tsx`
 - `supabase/functions/_shared/cors.ts`
-- `supabase/functions/_shared/jwt.ts`
 
 ## Template Development
 
@@ -64,7 +64,7 @@ EMAIL_REPLY_TO
 SITE_URL
 ```
 
-`RESEND_API_KEY` is required. The other values have development fallbacks, but should be set before production.
+`RESEND_API_KEY` is required. Supabase provides `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to deployed Edge Functions. The other values have development fallbacks, but should be set before production.
 
 ## Deployment Checklist
 

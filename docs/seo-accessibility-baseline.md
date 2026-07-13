@@ -114,9 +114,11 @@ Every form should have:
 
 - a real label for each input
 - placeholder text that is supplementary, not the only label
+- one clear required-versus-optional convention when both appear in the same form; the current convention labels optional fields and leaves required fields unmarked
 - clear validation messaging
 - error indication that does not rely on color alone
 - accessible submit/loading states
+- disabled submit actions until all required inputs are complete
 - correct keyboard type and autofill hints where applicable
 
 ### Web accessibility requirements

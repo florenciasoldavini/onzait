@@ -9,6 +9,9 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.florenciasoldavini.onzait",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Allow onzait to show your current location on the projects map while you are using the app."
+      },
       "supportsTablet": true
     },
     "android": {
@@ -16,6 +19,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
       "package": "com.florenciasoldavini.onzait",
       "edgeToEdgeEnabled": true
     },
@@ -40,6 +44,12 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow onzait to access your photo library so you can choose profile photos and project cover images."
         }
       ],
       "expo-secure-store",

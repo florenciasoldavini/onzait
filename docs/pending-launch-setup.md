@@ -3,7 +3,7 @@
 Purpose: durable checklist for setup work that is important before launch but not part of the core app code path yet
 Source of truth for: pending domain, auth branding, DNS, and production email-sending decisions
 Update when: a domain is purchased, DNS ownership changes, Supabase Auth branding changes, or Resend/Supabase email delivery is finalized
-Last reviewed: 2026-07-06
+Last reviewed: 2026-07-08
 
 ## Summary
 
@@ -39,6 +39,10 @@ Recommended domain path:
    - `SITE_URL`
    - Supabase Auth `Site URL`
    - Supabase Auth redirect URLs
+8. Update Google Maps key restrictions for the new domain:
+   - add the production domain and `www` variant to the `EXPO_PUBLIC_GOOGLE_MAPS_BROWSER_KEY` web referrers
+   - keep `https://onzait.vercel.app/*` during testing and cutover if the Vercel URL still needs to work
+   - confirm the key remains restricted to Maps JavaScript API only
 
 ## Email Sending Domain
 
