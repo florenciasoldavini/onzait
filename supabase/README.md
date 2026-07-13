@@ -58,6 +58,13 @@ Those policies should use explicit participant or owner rules plus admin-wide su
 - Storage policies should allow only project owners or admins to read, upload, replace, and remove cover images.
 - Signed URLs are used for preview display; do not make operational project media globally public by default.
 
+## Profile avatar storage
+
+- `user-avatars` is public so profile images can be rendered through public object URLs.
+- Public delivery does not require broad `select` access to `storage.objects`.
+- Authenticated users can select, upload, replace, and delete object metadata only inside `users/{auth.uid()}/avatar/`.
+- Keep avatar metadata listing owner-scoped even though the image asset itself is intentionally public.
+
 ## Supabase tests
 
 - Database and RLS changes should include pgTAP tests under `supabase/tests/`.

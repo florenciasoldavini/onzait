@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(16);
+select plan(17);
 
 insert into public.users (
   id,
@@ -263,6 +263,17 @@ select results_eq(
 );
 
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000002', true);
+
+select is(
+  (
+    select count(*)::integer
+    from storage.objects
+    where bucket_id = 'user-avatars'
+      and name = 'users/00000000-0000-4000-8000-000000000001/avatar/profile.jpg'
+  ),
+  0,
+  'user cannot list another user avatar object'
+);
 
 select throws_ok(
   $$
