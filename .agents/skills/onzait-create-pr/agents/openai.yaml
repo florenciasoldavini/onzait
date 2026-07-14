@@ -1,0 +1,4 @@
+interface:
+  display_name: "Onzait Create PR"
+  short_description: "Publish focused Onzait pull requests safely"
+  default_prompt: "Use $onzait-create-pr to publish this branch and open a draft pull request."

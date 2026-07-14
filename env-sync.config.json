@@ -1,0 +1,164 @@
+{
+  "sourceFile": ".env.local",
+  "variables": {
+    "EXPO_PUBLIC_SUPABASE_URL": {
+      "section": "Frontend / Public",
+      "example": "https://your-project-ref.supabase.co",
+      "vercel": {
+        "environments": ["development", "preview", "production"]
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "plaintext"
+      }
+    },
+    "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": {
+      "example": "sb_publishable_your_publishable_key",
+      "vercel": {
+        "environments": ["development", "preview", "production"]
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "plaintext"
+      }
+    },
+    "EXPO_PUBLIC_SENTRY_DSN": {
+      "example": "https://public-key@o0000000000000000.ingest.us.sentry.io/0000000000000000",
+      "vercel": {
+        "environments": ["development", "preview", "production"]
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "plaintext"
+      }
+    },
+    "EXPO_PUBLIC_SITE_URL": {
+      "section": "Frontend / Public",
+      "comment": "Public app base URL for auth redirects and hosted web links.",
+      "example": "https://onzait.vercel.app",
+      "vercel": {
+        "environments": ["development", "preview", "production"]
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "plaintext"
+      }
+    },
+    "SENTRY_ORG": {
+      "section": "Sentry / Optional Build-Time Source Maps",
+      "comment": "Optional build-time Sentry settings for native/web sourcemap uploads.",
+      "example": "your-sentry-org-slug",
+      "vercel": {
+        "environments": ["development", "preview", "production"]
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "plaintext"
+      }
+    },
+    "SENTRY_PROJECT": {
+      "example": "your-sentry-project-slug",
+      "vercel": {
+        "environments": ["development", "preview", "production"]
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "plaintext"
+      }
+    },
+    "SENTRY_AUTH_TOKEN": {
+      "example": "sntrys_your_auth_token",
+      "vercel": {
+        "environments": ["preview", "production"],
+        "sensitive": true
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "sensitive"
+      }
+    },
+    "EXPO_PUBLIC_APP_ENV": {
+      "section": "Runtime / Optional",
+      "comment": "Optional helper to distinguish development/preview/production in runtime telemetry.",
+      "example": "development"
+    },
+    "EXPO_PUBLIC_GOOGLE_MAPS_BROWSER_KEY": {
+      "section": "Frontend / Public",
+      "comment": "Public, tightly restricted Google Maps browser key for the web projects map. Restrict by web referrer in Google Cloud.",
+      "example": "AIza-your-browser-restricted-google-maps-key",
+      "vercel": {
+        "environments": ["development", "preview", "production"]
+      },
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "plaintext"
+      }
+    },
+    "GOOGLE_MAPS_ANDROID_SDK_KEY": {
+      "section": "Mobile Build-Time / Public SDK Keys",
+      "comment": "Build-time Google Maps SDK key for Android native maps. Restrict by Android package name and SHA-1 certificate fingerprint in Google Cloud.",
+      "example": "AIza-your-android-restricted-google-maps-sdk-key",
+      "eas": {
+        "environments": ["development", "preview", "production"],
+        "visibility": "plaintext"
+      }
+    },
+    "GOOGLE_MAPS_API_KEY": {
+      "section": "Supabase Edge Functions / Secrets",
+      "comment": "Server-side Google Maps Platform key used only by Maps Edge Functions. Set with Supabase secrets, not Expo public env vars.",
+      "example": "AIza-your-server-side-google-maps-key"
+    },
+    "GOOGLE_MAPS_AUTOCOMPLETE_MONTHLY_LIMIT": {
+      "section": "Supabase Edge Functions / Secrets",
+      "comment": "Optional hard monthly cap before Places autocomplete calls reach Google. Defaults to 500 when unset. Set with Supabase secrets.",
+      "example": "500"
+    },
+    "GOOGLE_MAPS_PLACE_DETAILS_MONTHLY_LIMIT": {
+      "section": "Supabase Edge Functions / Secrets",
+      "comment": "Optional hard monthly cap before Place Details calls reach Google. Defaults to 100 when unset. Set with Supabase secrets.",
+      "example": "100"
+    },
+    "GOOGLE_MAPS_STATIC_MONTHLY_LIMIT": {
+      "section": "Supabase Edge Functions / Secrets",
+      "comment": "Optional hard monthly cap before Maps Static preview calls reach Google. Defaults to 100 when unset. Set with Supabase secrets.",
+      "example": "100"
+    },
+    "RESEND_API_KEY": {
+      "section": "Email / Server",
+      "comment": "Server-side Resend API key for transactional emails.",
+      "example": "re_your_resend_api_key",
+      "vercel": {
+        "environments": ["preview", "production"],
+        "sensitive": true
+      }
+    },
+    "EMAIL_FROM": {
+      "comment": "Default sender for server-side product emails.",
+      "example": "Onzait <onboarding@resend.dev>",
+      "vercel": {
+        "environments": ["preview", "production"]
+      }
+    },
+    "EMAIL_REPLY_TO": {
+      "comment": "Optional reply-to mailbox for product emails.",
+      "example": "hello@example.com",
+      "vercel": {
+        "environments": ["preview", "production"]
+      }
+    },
+    "SITE_URL": {
+      "comment": "Canonical app URL used in server-rendered product emails.",
+      "example": "https://onzait.vercel.app",
+      "vercel": {
+        "environments": ["preview", "production"]
+      }
+    },
+    "DATABASE_URL": {
+      "section": "Backend / Prisma",
+      "example": "postgresql://postgres.your-project-ref:[YOUR-PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+    },
+    "DIRECT_URL": {
+      "example": "postgresql://postgres.your-project-ref:[YOUR-PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres"
+    }
+  }
+}
