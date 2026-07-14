@@ -18,14 +18,15 @@ import { useProject, useSoftDeleteProject } from "@/features/projects/hooks";
 import type { Project } from "@/features/projects/types";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  Camera,
-  CircleAlert,
-  CirclePlus,
-  EllipsisVertical,
-  ListChecks,
-  Pencil,
-  Trash2
-} from "lucide-react-native";
+  AddCircleIcon,
+  AlertCircleIcon,
+  CameraIcon,
+  ChecklistIcon,
+  EditIcon,
+  MoreVerticalIcon,
+  TrashIcon,
+  type AppIconComponent
+} from "@/components/icons";
 import { useRef, useState } from "react";
 import {
   Modal,
@@ -40,25 +41,25 @@ import {
 const projectActions = [
   {
     accent: false,
-    icon: Camera,
+    icon: CameraIcon,
     index: "01",
     label: "DOCUMENTATION"
   },
   {
     accent: false,
-    icon: CircleAlert,
+    icon: AlertCircleIcon,
     index: "02",
     label: "INCIDENT_LOG"
   },
   {
     accent: false,
-    icon: ListChecks,
+    icon: ChecklistIcon,
     index: "03",
     label: "TO_DO_LIST"
   },
   {
     accent: true,
-    icon: CirclePlus,
+    icon: AddCircleIcon,
     index: "04",
     label: "DAILY_REPORT"
   }
@@ -99,7 +100,15 @@ export default function ProjectDetailScreen() {
 
         <View style={styles.actionGrid}>
           {projectActions.map((action) => (
-            <ProjectActionCard key={action.index} {...action} />
+            <ProjectActionCard
+              key={action.index}
+              {...action}
+              onPress={
+                action.index === "03" && projectId
+                  ? () => router.push(`/tasks?projectId=${projectId}` as never)
+                  : undefined
+              }
+            />
           ))}
         </View>
       </View>
@@ -219,7 +228,7 @@ function ProjectActionsMenu({
           accessibilityLabel="Project actions"
           color="neutral"
           fullWidth={false}
-          icon={EllipsisVertical}
+          icon={MoreVerticalIcon}
           layout="icon"
           onPress={openMenu}
           shape="pill"
@@ -247,7 +256,7 @@ function ProjectActionsMenu({
             ]}
           >
             <ActionMenuItem
-              icon={Pencil}
+              icon={EditIcon}
               label="Edit"
               onPress={() => {
                 setIsMenuOpen(false);
@@ -256,7 +265,7 @@ function ProjectActionsMenu({
             />
             <ActionMenuItem
               danger
-              icon={Trash2}
+              icon={TrashIcon}
               label="Delete"
               onPress={() => {
                 setIsMenuOpen(false);
@@ -342,7 +351,7 @@ function ActionMenuItem({
   onPress
 }: {
   danger?: boolean;
-  icon: typeof Pencil;
+  icon: AppIconComponent;
   label: string;
   onPress: () => void;
 }) {
@@ -497,20 +506,25 @@ function ProjectActionCard({
   accent,
   icon: Icon,
   index,
-  label
-}: (typeof projectActions)[number]) {
+  label,
+  onPress
+}: (typeof projectActions)[number] & { onPress?: () => void }) {
   const [isHovered, setIsHovered] = useState(false);
   const iconColor = accent ? atomPalette.accentText : atomPalette.textMuted;
   const textTone = accent ? "inverse" : "default";
 
   return (
     <Pressable
-      accessibilityHint="This action will be available in a future update."
+      accessibilityHint={
+        onPress
+          ? "Opens this project's tasks."
+          : "This action will be available in a future update."
+      }
       accessibilityLabel={label.replaceAll("_", " ").toLowerCase()}
       accessibilityRole="button"
       onHoverIn={() => setIsHovered(true)}
       onHoverOut={() => setIsHovered(false)}
-      onPress={() => undefined}
+      onPress={onPress ?? (() => undefined)}
       style={({ pressed }) => [
         styles.actionCard,
         accent ? styles.actionCardAccent : styles.actionCardDefault,

@@ -2,8 +2,8 @@ import { AppButton } from "@/components/atoms/button";
 import { AppCard } from "@/components/atoms/card";
 import { AppHeading } from "@/components/atoms/heading";
 import { AppText } from "@/components/atoms/text";
-import { atomSpacing } from "@/components/atoms/theme";
-import type { LucideIcon } from "lucide-react-native";
+import { atomPalette, atomSpacing } from "@/components/atoms/theme";
+import type { AppIconComponent } from "@/components/icons";
 import type { ReactNode } from "react";
 import { View } from "react-native";
 
@@ -14,12 +14,12 @@ export function EmptyState({
   title
 }: {
   action?: {
-    icon?: LucideIcon;
+    icon?: AppIconComponent;
     label: string;
     onPress: () => void;
   };
   description: ReactNode;
-  icon?: LucideIcon;
+  icon?: AppIconComponent;
   title: ReactNode;
 }) {
   const Icon = icon;
@@ -27,7 +27,9 @@ export function EmptyState({
   return (
     <AppCard padding="lg" tone="muted">
       <View style={{ alignItems: "center", gap: atomSpacing[4] }}>
-        {Icon ? <Icon size={24} strokeWidth={1.8} /> : null}
+        {Icon ? (
+          <Icon color={atomPalette.textMuted} size={24} strokeWidth={1.8} />
+        ) : null}
         <View style={{ alignItems: "center", gap: atomSpacing[2] }}>
           <AppHeading style={{ textAlign: "center" }} variant="card">
             {title}

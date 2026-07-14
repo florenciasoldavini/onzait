@@ -12,15 +12,10 @@ import {
   PROJECT_TYPE_LABELS
 } from "@/features/projects/constants";
 import type { Project, ProjectStatus } from "@/features/projects/types";
+import { ImageOffIcon, MapPinIcon } from "@/components/icons";
 import { Image } from "expo-image";
-import { ImageOff, MapPinned } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import {
-  Platform,
-  Pressable,
-  View,
-  type ViewStyle
-} from "react-native";
+import { Platform, Pressable, View, type ViewStyle } from "react-native";
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -116,7 +111,7 @@ export function ProjectCard({
                     justifyContent: "center"
                   }}
                 >
-                  <ImageOff color={atomPalette.textSubtle} size={28} />
+                  <ImageOffIcon color={atomPalette.textSubtle} size={28} />
                 </View>
               )}
               <ProjectStatusCornerLabel
@@ -151,7 +146,7 @@ export function ProjectCard({
                     gap: atomSpacing[2]
                   }}
                 >
-                  <MapPinned color={atomPalette.textMuted} size={16} />
+                  <MapPinIcon color={atomPalette.textMuted} size={16} />
                   <AppText
                     numberOfLines={1}
                     style={{ flex: 1 }}

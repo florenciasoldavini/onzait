@@ -14,12 +14,12 @@ import { getProjectsMapViewport } from "@/features/projects/map-points";
 import type { Project, ProjectStatus } from "@/features/projects/types";
 import { useLiveUserLocation } from "@/features/projects/use-live-user-location";
 import {
-  Construction,
-  FolderOpen,
-  LocateFixed,
-  MapPinned,
-  X
-} from "lucide-react-native";
+  CloseIcon,
+  ConstructionIcon,
+  FolderOpenIcon,
+  LocateIcon,
+  MapPinIcon
+} from "@/components/icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import MapView, {
@@ -162,7 +162,7 @@ export function ProjectsMapView({
     return (
       <AppCard style={{ gap: atomSpacing[4] }}>
         <View style={styles.emptyMapPreview}>
-          <MapPinned color={atomPalette.textSubtle} size={32} />
+          <MapPinIcon color={atomPalette.textSubtle} size={32} />
         </View>
         <View style={{ gap: atomSpacing[2] }}>
           <AppHeading variant="section">No mapped projects</AppHeading>
@@ -224,7 +224,7 @@ export function ProjectsMapView({
                 <View
                   style={[styles.marker, isSelected && styles.markerSelected]}
                 >
-                  <Construction
+                  <ConstructionIcon
                     color={
                       isSelected ? atomPalette.accentText : atomPalette.surface
                     }
@@ -260,7 +260,7 @@ export function ProjectsMapView({
             }
             color={userLocation.isWatching ? "accent" : "neutral"}
             fullWidth={false}
-            icon={LocateFixed}
+            icon={LocateIcon}
             layout="icon"
             loading={userLocation.isRequesting}
             onPress={handleUserLocationPress}
@@ -325,11 +325,15 @@ function SelectedProjectCard({
           onPress={onClose}
           style={styles.closeButton}
         >
-          <X color={atomPalette.textMuted} size={18} strokeWidth={2.2} />
+          <CloseIcon
+            color={atomPalette.textMuted}
+            size={18}
+            strokeWidth={2.2}
+          />
         </Pressable>
         <AppButton
           fullWidth={false}
-          icon={FolderOpen}
+          icon={FolderOpenIcon}
           onPress={onOpenProject}
           size="sm"
         >

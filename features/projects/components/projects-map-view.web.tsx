@@ -14,13 +14,13 @@ import { getProjectsMapViewport } from "@/features/projects/map-points";
 import type { Project, ProjectStatus } from "@/features/projects/types";
 import { useLiveUserLocation } from "@/features/projects/use-live-user-location";
 import {
-  FolderOpen,
-  LocateFixed,
-  MapPinned,
-  X,
-  ZoomIn,
-  ZoomOut
-} from "lucide-react-native";
+  CloseIcon,
+  FolderOpenIcon,
+  LocateIcon,
+  MapPinIcon,
+  ZoomInIcon,
+  ZoomOutIcon
+} from "@/components/icons";
 import {
   createElement,
   useCallback,
@@ -158,7 +158,7 @@ export function ProjectsMapView({
     return (
       <AppCard style={{ gap: atomSpacing[4] }}>
         <View style={styles.emptyMapPreview}>
-          <MapPinned color={atomPalette.textSubtle} size={32} />
+          <MapPinIcon color={atomPalette.textSubtle} size={32} />
         </View>
         <View style={{ gap: atomSpacing[2] }}>
           <AppHeading variant="section">No mapped projects</AppHeading>
@@ -460,7 +460,7 @@ function InteractiveGoogleMap({
             }
             color={userLocation.isWatching ? "accent" : "neutral"}
             fullWidth={false}
-            icon={LocateFixed}
+            icon={LocateIcon}
             layout="icon"
             loading={userLocation.isRequesting}
             onPress={handleUserLocationPress}
@@ -474,7 +474,7 @@ function InteractiveGoogleMap({
                 accessibilityLabel="Zoom in"
                 color="neutral"
                 fullWidth={false}
-                icon={ZoomIn}
+                icon={ZoomInIcon}
                 layout="icon"
                 onPress={() => zoomMap(1)}
                 size="sm"
@@ -485,7 +485,7 @@ function InteractiveGoogleMap({
                 accessibilityLabel="Zoom out"
                 color="neutral"
                 fullWidth={false}
-                icon={ZoomOut}
+                icon={ZoomOutIcon}
                 layout="icon"
                 onPress={() => zoomMap(-1)}
                 size="sm"
@@ -500,7 +500,7 @@ function InteractiveGoogleMap({
         <View pointerEvents="none" style={styles.mapStateOverlay}>
           {loadState === "error" ? (
             <>
-              <MapPinned color={atomPalette.textSubtle} size={28} />
+              <MapPinIcon color={atomPalette.textSubtle} size={28} />
               <AppText tone="muted" variant="caption">
                 Google Maps could not load. Check that Maps JavaScript API is
                 enabled and this web origin is allowed.
@@ -547,7 +547,7 @@ function getUserLocationMarkerIcon(google: GoogleMapsNamespace) {
 function MapUnavailableState() {
   return (
     <View style={styles.mapUnavailableState}>
-      <MapPinned color={atomPalette.textSubtle} size={28} />
+      <MapPinIcon color={atomPalette.textSubtle} size={28} />
       <View style={{ gap: atomSpacing[1] }}>
         <AppText variant="bodySm">Interactive map key missing</AppText>
         <AppText tone="muted" variant="caption">
@@ -599,11 +599,15 @@ function SelectedProjectCard({
           onPress={onClose}
           style={styles.closeButton}
         >
-          <X color={atomPalette.textMuted} size={18} strokeWidth={2.2} />
+          <CloseIcon
+            color={atomPalette.textMuted}
+            size={18}
+            strokeWidth={2.2}
+          />
         </Pressable>
         <AppButton
           fullWidth={false}
-          icon={FolderOpen}
+          icon={FolderOpenIcon}
           onPress={onOpenProject}
           size="sm"
         >

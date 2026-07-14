@@ -155,6 +155,7 @@ Last reviewed: 2026-07-08
 
 ## Feature Implementation Rules
 
+- Product UI must never import icons directly from `lucide-react-native`. Add or reuse a semantically named wrapper in `components/icons/index.tsx`, then import icons from `@/components/icons`. The central icon module is the only allowed Lucide import boundary.
 - Every feature must include appropriate tests for the work: unit tests for reusable logic, database/RLS tests for Supabase access rules, and flow/UI tests for user-critical behavior.
 - Every feature must explicitly account for web, iOS, and Android behavior. If the correct implementation differs by platform, use platform-specific files or adapters while keeping the business logic shared.
 - When adding a new project rule or product constraint, scan existing features, docs, env config, and tests for places where the rule already applies. Refactor, document follow-up work, or clearly call out any existing gap instead of applying the rule only to future code.

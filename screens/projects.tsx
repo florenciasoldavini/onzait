@@ -11,11 +11,7 @@ import {
   TextField
 } from "@/components/atoms";
 import { atomMotion } from "@/components/atoms/motion";
-import {
-  atomLayout,
-  atomPalette,
-  atomSpacing
-} from "@/components/atoms/theme";
+import { atomLayout, atomPalette, atomSpacing } from "@/components/atoms/theme";
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { ProjectCardSkeleton } from "@/features/projects/components/project-card-skeleton";
 import { ProjectsMapView } from "@/features/projects/components/projects-map-view";
@@ -40,12 +36,12 @@ import type {
 } from "@/features/projects/types";
 import { useRouter } from "expo-router";
 import {
-  ArrowUpDown,
-  FolderPlus,
-  RefreshCw,
-  Search,
-  SlidersHorizontal
-} from "lucide-react-native";
+  FilterSettingsIcon,
+  FolderPlusIcon,
+  RefreshIcon,
+  SearchIcon,
+  SortIcon
+} from "@/components/icons";
 import { useState } from "react";
 import {
   Modal,
@@ -161,7 +157,7 @@ export default function ProjectsScreen() {
         hasProjects && !isMapMode ? (
           <AppButton
             accessibilityLabel="New project"
-            icon={FolderPlus}
+            icon={FolderPlusIcon}
             layout="icon"
             onPress={() => router.push("/projects/new" as never)}
             shape="pill"
@@ -175,7 +171,7 @@ export default function ProjectsScreen() {
         <NavScreenHeader title="Projects" />
 
         <TextField
-          leftIcon={Search}
+          leftIcon={SearchIcon}
           onChangeText={setQuery}
           placeholder="Search projects"
           value={query}
@@ -184,7 +180,7 @@ export default function ProjectsScreen() {
         <View style={styles.controlsRow}>
           <SelectMenu
             accessibilityLabel="Sort projects"
-            icon={ArrowUpDown}
+            icon={SortIcon}
             labelPrefix="Sort"
             onChange={setSort}
             options={projectSortOptions}
@@ -194,7 +190,7 @@ export default function ProjectsScreen() {
             <AppButton
               color="neutral"
               fullWidth={false}
-              icon={SlidersHorizontal}
+              icon={FilterSettingsIcon}
               size="sm"
               variant="bordered"
               onPress={() => setFiltersVisible(true)}
@@ -224,7 +220,7 @@ export default function ProjectsScreen() {
         ) : projectsQuery.isError ? (
           <EmptyState
             action={{
-              icon: RefreshCw,
+              icon: RefreshIcon,
               label: "Retry",
               onPress: () => {
                 void projectsQuery.refetch();
@@ -273,12 +269,12 @@ export default function ProjectsScreen() {
             action={
               hasSearchOrFilters
                 ? {
-                    icon: RefreshCw,
+                    icon: RefreshIcon,
                     label: "Reset view",
                     onPress: resetProjectView
                   }
                 : {
-                    icon: FolderPlus,
+                    icon: FolderPlusIcon,
                     label: "New Project",
                     onPress: () => router.push("/projects/new" as never)
                   }
@@ -288,8 +284,10 @@ export default function ProjectsScreen() {
                 ? "Adjust the search, sort, or filters to widen the project list."
                 : "Create your first project to start organizing job-site work."
             }
-            icon={hasSearchOrFilters ? SlidersHorizontal : FolderPlus}
-            title={hasSearchOrFilters ? "No matching projects" : "No projects yet"}
+            icon={hasSearchOrFilters ? FilterSettingsIcon : FolderPlusIcon}
+            title={
+              hasSearchOrFilters ? "No matching projects" : "No projects yet"
+            }
           />
         )}
       </View>
@@ -413,10 +411,10 @@ function getProjectGridMetrics(screenWidth: number) {
     availableWidth >= 1080
       ? 4
       : availableWidth >= 900
-      ? 3
-      : availableWidth >= atomLayout.breakpointTablet
-        ? 2
-        : 1;
+        ? 3
+        : availableWidth >= atomLayout.breakpointTablet
+          ? 2
+          : 1;
   const itemWidth =
     columns === 1
       ? ("100%" as const)

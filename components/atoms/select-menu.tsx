@@ -2,11 +2,16 @@ import { AppText } from "@/components/atoms/text";
 import { atomMotion } from "@/components/atoms/motion";
 import {
   atomControlHeights,
+  atomControlRadius,
   atomPalette,
   atomRadii,
   atomSpacing
 } from "@/components/atoms/theme";
-import { Check, ChevronDown, type LucideIcon } from "lucide-react-native";
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  type AppIconComponent
+} from "@/components/icons";
 import { useRef, useState } from "react";
 import {
   Modal,
@@ -27,7 +32,9 @@ export interface SelectMenuOption<TValue extends string> {
 
 export function SelectMenu<TValue extends string>({
   accessibilityLabel,
+  field = false,
   icon: Icon,
+  isInvalid = false,
   labelPrefix,
   minWidth = 192,
   onChange,
@@ -35,7 +42,9 @@ export function SelectMenu<TValue extends string>({
   value
 }: {
   accessibilityLabel?: string;
-  icon?: LucideIcon;
+  field?: boolean;
+  icon?: AppIconComponent;
+  isInvalid?: boolean;
   labelPrefix?: string;
   minWidth?: number;
   onChange: (value: TValue) => void;
@@ -91,7 +100,11 @@ export function SelectMenu<TValue extends string>({
 
   return (
     <>
-      <View collapsable={false} ref={triggerRef}>
+      <View
+        collapsable={false}
+        ref={triggerRef}
+        style={field ? styles.triggerRootField : undefined}
+      >
         <Pressable
           accessibilityLabel={accessibilityLabel}
           accessibilityRole="button"
@@ -100,6 +113,7 @@ export function SelectMenu<TValue extends string>({
           onPress={openMenu}
           style={[
             styles.triggerRoot,
+            field ? styles.triggerRootField : null,
             Platform.OS === "web" ? styles.webCursor : null
           ]}
         >
@@ -107,8 +121,10 @@ export function SelectMenu<TValue extends string>({
             <View
               style={[
                 styles.triggerSurface,
+                field ? styles.triggerSurfaceField : null,
                 isTriggerHovered ? styles.triggerHovered : null,
-                pressed || isOpen ? styles.triggerPressed : null
+                pressed || isOpen ? styles.triggerPressed : null,
+                isInvalid ? styles.triggerInvalid : null
               ]}
             >
               {Icon ? (
@@ -116,14 +132,17 @@ export function SelectMenu<TValue extends string>({
               ) : null}
               <AppText
                 numberOfLines={1}
-                style={styles.triggerLabel}
-                variant="bodySm"
+                style={[
+                  styles.triggerLabel,
+                  field ? styles.triggerLabelField : null
+                ]}
+                variant={field ? "body" : "bodySm"}
               >
                 {labelPrefix
                   ? `${labelPrefix}: ${selectedOption?.label ?? ""}`
                   : selectedOption?.label}
               </AppText>
-              <ChevronDown
+              <ChevronDownIcon
                 color={atomPalette.text}
                 size={16}
                 strokeWidth={1.9}
@@ -192,7 +211,7 @@ export function SelectMenu<TValue extends string>({
                     {option.label}
                   </AppText>
                   {isSelected ? (
-                    <Check color={atomPalette.accent} size={16} />
+                    <CheckIcon color={atomPalette.accent} size={16} />
                   ) : null}
                 </Pressable>
               );
@@ -225,6 +244,12 @@ const styles = StyleSheet.create({
   triggerLabel: {
     flexShrink: 1
   },
+  triggerLabelField: {
+    flex: 1
+  },
+  triggerInvalid: {
+    borderColor: atomPalette.error
+  },
   triggerPressed: {
     backgroundColor: atomPalette.surfaceStrong,
     borderColor: atomPalette.borderStrong
@@ -232,6 +257,10 @@ const styles = StyleSheet.create({
   triggerRoot: {
     alignSelf: "flex-start",
     flexShrink: 0
+  },
+  triggerRootField: {
+    alignSelf: "stretch",
+    flexShrink: 1
   },
   triggerSurface: {
     alignItems: "center",
@@ -246,6 +275,13 @@ const styles = StyleSheet.create({
     minWidth: 0,
     paddingHorizontal: atomSpacing[3],
     paddingVertical: atomSpacing[1]
+  },
+  triggerSurfaceField: {
+    borderRadius: atomControlRadius,
+    justifyContent: "flex-start",
+    minHeight: atomControlHeights.lg,
+    paddingHorizontal: atomSpacing[4],
+    paddingVertical: 0
   },
   option: {
     alignItems: "center",

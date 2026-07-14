@@ -2,6 +2,8 @@ export * from "@/components/atoms/button";
 export * from "@/components/atoms/badge";
 export * from "@/components/atoms/breadcrumb";
 export * from "@/components/atoms/card";
+export * from "@/components/atoms/calendar-field";
+export * from "@/components/atoms/dropdown-select-field";
 export * from "@/components/atoms/empty-state";
 export * from "@/components/atoms/field-message";
 export * from "@/components/atoms/heading";
