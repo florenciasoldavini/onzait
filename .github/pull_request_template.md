@@ -1,26 +1,71 @@
-## Summary
+## Problem
 
-- What changed?
-- Why did it change?
+<!-- What product or engineering problem does this solve? Why is the change necessary, and who is affected? -->
 
-## Documentation
+## Solution
 
-- [ ] I updated the docs affected by this change
-- [ ] No doc update was needed for this PR
-- [ ] If env metadata changed, I updated `env-sync.config.json` and regenerated `.env.example`
-- [ ] If auth or architecture changed, I updated `AGENTS.md`
-- [ ] If schema, migrations, or RLS changed, I updated `supabase/README.md`
-- [ ] If setup, commands, CI checks, or deploy flow changed, I updated `README.md`
-- [ ] If backend-only behavior or setup changed, I updated `backend/README.md`
+<!-- Summarize what changed, how it solves the problem, and what is intentionally outside this PR's scope. -->
+
+## User impact
+
+<!-- Describe new or changed behavior, including important loading, empty, error, or disabled states. Note accessibility and responsive implications. For infrastructure-only work, write "No direct user-facing impact." -->
+
+## Architecture and decisions
+
+<!-- Record important technical decisions, affected boundaries or data flow, tradeoffs, and any new dependencies or architectural consequences. If appropriate, write "No significant architecture changes." -->
+
+## Screenshots
+
+<!-- Add before/after screenshots for visual changes, mobile and web evidence when both are affected, and a short video or GIF for interaction-heavy work. Use real product evidence; do not fabricate screenshots. For non-visual changes, write "Not applicable." -->
 
 ## Verification
+
+<!-- Check the commands and manual checks relevant to this PR. Conditional checks are not required when their scope is unaffected. -->
 
 - [ ] `npm run env:check`
 - [ ] `npx tsc --noEmit`
 - [ ] `npm run lint`
+- [ ] `npm test`
 - [ ] `npm run build`
-- [ ] `npm run build --prefix backend`
+- [ ] `npm run build --prefix backend` (when backend code is affected)
+- [ ] Supabase tests (when migrations, RLS policies, or database functions change)
+- [ ] Manual web verification (when applicable)
+- [ ] Manual native verification (when applicable)
 
-## Notes
+**Skipped or unavailable checks:**
 
-- Follow-ups, risks, or intentional gaps:
+<!-- Explain any skipped, unavailable, or failing checks and why they do not block this PR. -->
+
+## Data, security and environment impact
+
+<!-- Select all that apply. Select the first item only when none of the remaining items apply. -->
+
+- [ ] No data, security or environment impact
+- [ ] Database migration added or changed
+- [ ] RLS policies or permissions reviewed
+- [ ] Environment metadata updated
+- [ ] `.env.example` regenerated
+- [ ] Edge Functions changed
+- [ ] External API or secret boundaries reviewed
+- [ ] Required deployment or provider-console steps documented
+
+## Documentation
+
+<!-- Select the outcome and every repository document relevant to this change. -->
+
+- [ ] Documentation affected by this change was updated
+- [ ] No documentation update was needed
+- [ ] `README.md` updated for setup, commands, CI, or deployment changes
+- [ ] `AGENTS.md` updated for architecture or implementation rules
+- [ ] `supabase/README.md` updated for migrations, RLS, or Supabase behavior
+- [ ] `backend/README.md` updated for backend-specific changes
+- [ ] `env-sync.config.json` and `.env.example` remain synchronized
+- [ ] Design-system documentation updated when shared UI rules changed
+
+## Known limitations
+
+<!-- State known limitations, incomplete behavior, risks, or compatibility concerns. Write "None known." when appropriate. -->
+
+## Follow-up
+
+<!-- List work intentionally deferred to separate PRs. Write "None." when no follow-up is planned. -->
