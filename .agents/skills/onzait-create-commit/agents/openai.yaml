@@ -1,0 +1,4 @@
+interface:
+  display_name: "Onzait Create Commit"
+  short_description: "Create safe Conventional Commits for Onzait"
+  default_prompt: "Use $onzait-create-commit to create a focused commit for the intended changes."
