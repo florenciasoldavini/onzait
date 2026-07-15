@@ -12,6 +12,8 @@ The current MVP foundation focuses on secure account access and project manageme
 
 [Hosted web build](https://onzait.vercel.app) · [Product roadmap](https://github.com/users/florenciasoldavini/projects/1) · Account creation or sign-in is required. This is the current deployed app, not a seeded or anonymous portfolio demo.
 
+> **Source license:** The source code is publicly viewable for portfolio evaluation only. No permission is granted for commercial use, copying, modification, or redistribution. See the [proprietary license](LICENSE).
+
 ## Product capabilities
 
 ### Implemented on this branch
