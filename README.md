@@ -223,7 +223,9 @@ See `.env.example` and `env-sync.config.json` for the full current list and depl
 ## Further documentation
 
 - `AGENTS.md` — architecture decisions and implementation guardrails
-- `docs/CONTRIBUTING.md` — contribution workflow
+- `docs/CONTRIBUTING.md` — reporting and invited-contribution workflow
+- `docs/documentation-maintenance.md` — documentation ownership and update triggers
+- `.github/SECURITY.md` — private vulnerability reporting policy
 - `docs/onzait-design-system.md` — tokens, primitives, and form conventions
 - `docs/security-baseline.md` — MVP security model and review checklist
 - `docs/performance-baseline.md` — runtime and data-loading expectations

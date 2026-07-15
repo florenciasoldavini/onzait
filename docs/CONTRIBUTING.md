@@ -1,102 +1,112 @@
-# Documentation Maintenance
+# Contributing to Onzait
 
-Purpose: lightweight rules for keeping project documentation current
-Source of truth for: documentation ownership, update triggers, and doc review workflow
-Update when: doc ownership changes, PR process changes, or new documentation categories are introduced
-Last reviewed: 2026-07-08
+Purpose: explain how to report problems, propose product work, and prepare explicitly invited changes
+Source of truth for: contribution scope, branch and pull request workflow, verification, and contributor ownership expectations
+Update when: contribution policy, branch strategy, required checks, licensing, or review expectations change
+Last reviewed: 2026-07-15
 
-## Core rule
+## Project status and contribution scope
 
-Documentation should be updated in the same change where behavior, setup, or architecture changes.
+Onzait is a proprietary personal product in active MVP development. Its source is publicly viewable for portfolio review and evaluation, but it is not an open-source project. The repository license does not grant permission to use, copy, modify, redistribute, or commercialize the source.
 
-When a new project rule is added, scan existing code, docs, env config, and tests for places where the rule already applies. Either update those surfaces in the same change or record a clear follow-up gap.
+Product feedback and reproducible bug reports are welcome. Unsolicited code contributions are not currently accepted. Do not begin implementation or open a pull request unless the maintainer has explicitly invited the change.
 
-## Source of truth map
+Before any external code contribution can be merged, the contributor and maintainer must agree in writing on the ownership or licensing terms for that contribution. Opening a pull request by itself does not replace that agreement.
 
-- `README.md`
-  - Project setup
-  - Daily development commands
-  - Verification steps
-  - Deployment basics
-- `AGENTS.md`
-  - Current architecture snapshot
-  - Auth decisions
-  - Product and platform guardrails
-- `supabase/README.md`
-  - Supabase bootstrap scope
-  - Migrations
-  - RLS decisions
-  - Auth redirect configuration
-- `backend/README.md`
-  - Backend-only setup and status
-  - Backend routes and scripts
-- `docs/`
-  - Longer-lived design and reference material
-- `docs/onzait-design-system.md`
-  - Active design-system rules
-  - Token and primitive source map
-  - Reusable interaction-state decisions
+## Report a bug or propose work
 
-## Update triggers
+- Search [existing issues](https://github.com/florenciasoldavini/onzait/issues) before creating a new one.
+- Use the repository's structured bug or feature form through [New issue](https://github.com/florenciasoldavini/onzait/issues/new/choose).
+- Describe the user or workflow problem before proposing an implementation.
+- Include the affected platform: web, iOS, Android, or multiple platforms.
+- Remove credentials, tokens, private project information, personal data, and sensitive logs.
+- Review planned work on the public [Onzait Roadmap](https://github.com/users/florenciasoldavini/projects/1).
 
-Update `README.md` when:
+Security vulnerabilities must not be reported in a public issue. Follow the private process in [`.github/SECURITY.md`](../.github/SECURITY.md).
 
-- package scripts change
-- local setup changes
-- verification commands change
-- deploy flow changes
-- required env vars change
+## Invited implementation workflow
 
-Update `AGENTS.md` when:
+When the maintainer explicitly invites a code change:
 
-- auth architecture changes
-- route guarding changes
-- platform ownership changes
-- naming or product constraints change
-- project-level implementation rules change
-- supported platform expectations change for web, iOS, or Android
+1. Confirm the issue, acceptance criteria, platform scope, and ownership terms before implementation.
+2. Branch from the latest `development` branch.
+3. Use a focused branch name such as `feature/...`, `fix/...`, `docs/...`, or `chore/...`.
+4. Keep the change limited to one product or engineering outcome.
+5. Use Conventional Commits with a clear imperative description.
+6. Open the feature pull request against `development`, not `main`.
+7. Complete every relevant section of `.github/pull_request_template.md`.
+8. Keep the pull request in draft while required verification, documentation, migrations, provider setup, or visual evidence is incomplete.
 
-Update env documentation when:
+`main` is the protected production branch. Changes reach it through the repository's release/integration workflow after they have been reviewed and verified in `development`.
 
-- a feature introduces a new key or env var
-- `env-sync.config.json` changes
-- `.env.example` needs regeneration
-- `.env.local` needs a local placeholder for a newly required value
+## Local setup
 
-Update `supabase/README.md` when:
+Use the npm version and Node.js range declared in `package.json`.
 
-- a new migration is added
-- RLS changes
-- client data-access scope changes
-- auth redirect configuration changes
+```bash
+npm ci
+npm ci --prefix backend
+npm run env:check
+npm run start
+```
 
-Update `backend/README.md` when:
+Real values belong in `.env.local`. Never commit `.env.local`, credentials, service-role keys, database URLs, provider tokens, or production data. `.env.example` is generated from `env-sync.config.json` and must not be edited by hand.
 
-- backend scripts change
-- backend env vars change
-- backend route surface changes
-- backend ownership or status changes
+## Architecture and product expectations
 
-Update `docs/onzait-design-system.md` when:
+- Follow the dependency direction documented in `AGENTS.md`: screens/components -> hooks -> services -> repositories -> Supabase, Storage, or trusted server boundaries.
+- Do not move secrets, privileged authorization, paid API calls, or abuse-sensitive operations into client code.
+- Every product feature must account for web, iOS, and Android. Use platform-specific adapters or UI when shared behavior would be incorrect.
+- Include explicit loading, empty, error, disabled, and destructive-action confirmation states where applicable.
+- Production submit forms use React Hook Form with Zod validation.
+- Add unit, flow/UI, and database/RLS tests appropriate to the affected behavior.
+- Do not present planned behavior as implemented in code, screenshots, documentation, or pull request descriptions.
 
-- a reusable visual rule is decided
-- a design-system primitive changes
-- a component state pattern changes
-- a screen-level design decision should become reusable
+## Verification
 
-## PR workflow
+Run the checks relevant to the change:
 
-- Every PR should either update affected docs or explicitly state that no doc update was needed.
-- Use `.github/pull_request_template.md` to review doc impact before merging.
+```bash
+npm run env:check
+npx tsc --noEmit
+npm run lint
+npm test
+npm run build
+```
 
-## CI workflow
+Also run:
 
-- `.env.example` is generated from `env-sync.config.json`.
-- CI enforces that generated env documentation is up to date through `npm run env:check`.
+- `npm run build --prefix backend` when backend or shared backend contracts change.
+- `npx supabase test db` when migrations, RLS, grants, triggers, functions, or database behavior change and the local Supabase environment is available.
+- Manual web verification for web-facing behavior.
+- Manual iOS and Android verification when native behavior changes.
 
-## Writing rules
+GitHub Actions runs focused quality, unit-test, web-build, and backend-build jobs. The final required aggregation check is `ci-checks`. Do not merge while a required check is failing, skipped unexpectedly, or still pending.
 
-- Keep operational docs short and specific.
-- Prefer one source of truth per topic.
-- Mark non-authoritative docs clearly as `Deprecated`, `Historical`, or `Draft`.
-- Do not document planned architecture as if it already exists.
+Existing lint warnings or unrelated failures must be reported honestly; they must not be hidden by disabling checks or using `--no-verify`.
+
+## Documentation and visual evidence
+
+- Update behavior, setup, architecture, environment, security, and design-system documentation in the same change that makes it stale.
+- Follow `docs/documentation-maintenance.md` for source-of-truth ownership and update triggers.
+- Use real screenshots or recordings for visual changes. Never fabricate product evidence or expose personal data, private projects, credentials, or production secrets.
+- Include representative mobile and web evidence when layout or behavior differs.
+
+## Pull request review
+
+A pull request should be small enough to review as one coherent outcome and must state:
+
+- the problem and solution;
+- user and platform impact;
+- important architecture or security decisions;
+- verification that actually ran;
+- migrations, environment changes, deployment steps, and provider-console requirements;
+- known limitations and intentionally deferred work.
+
+Review feedback should be resolved with focused follow-up commits. Do not force-push, rewrite published history, merge, or enable auto-merge without explicit maintainer direction.
+
+## License and conduct
+
+All repository content remains subject to the proprietary [`LICENSE`](../LICENSE). Third-party components retain their own license terms.
+
+Be respectful, specific, and constructive. Do not submit harassment, discriminatory content, spam, deceptive evidence, secrets, personal data, or content you do not have the right to share.
