@@ -10,7 +10,7 @@ The current MVP foundation focuses on secure account access and project manageme
 
 > **Current status:** active MVP development. Projects V1 and the auth/profile foundation are implemented; task management and the project workspace modules shown as quick actions are not yet complete.
 
-[Hosted web build](https://onzait.vercel.app) · Account creation or sign-in is required. This is the current deployed app, not a seeded or anonymous portfolio demo.
+[Hosted web build](https://onzait.vercel.app) · [Product roadmap](https://github.com/users/florenciasoldavini/projects/1) · Account creation or sign-in is required. This is the current deployed app, not a seeded or anonymous portfolio demo.
 
 ## Product capabilities
 
