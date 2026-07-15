@@ -1,7 +1,36 @@
 {
   "name": "onzait",
-  "main": "expo-router/entry",
   "version": "1.0.0",
+  "private": true,
+  "description": "Mobile-first construction project workspace for web, iOS, and Android.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/florenciasoldavini/onzait.git"
+  },
+  "bugs": {
+    "url": "https://github.com/florenciasoldavini/onzait/issues"
+  },
+  "homepage": "https://onzait.vercel.app",
+  "author": {
+    "name": "Florencia Soldavini",
+    "url": "https://github.com/florenciasoldavini"
+  },
+  "keywords": [
+    "construction-management",
+    "project-management",
+    "job-site",
+    "expo",
+    "react-native",
+    "web",
+    "ios",
+    "android"
+  ],
+  "engines": {
+    "node": ">=22 <25",
+    "npm": ">=10"
+  },
+  "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "build": "expo export --platform web",
@@ -109,6 +138,5 @@
     "typescript": "~5.9.2",
     "vitest": "^4.1.9"
   },
-  "private": true,
   "packageManager": "npm@10.9.2"
 }
