@@ -1,5 +1,7 @@
 # Onzait
 
+[![CI Checks](https://github.com/florenciasoldavini/onzait/actions/workflows/env-check.yml/badge.svg)](https://github.com/florenciasoldavini/onzait/actions/workflows/env-check.yml)
+
 **A mobile-first workspace for organizing construction projects across the job site and the office.**
 
 Onzait is a personal product I am designing and developing to make construction project information easier to capture, find, and act on. The product is aimed at the people coordinating day-to-day work—project leads, site managers, contractors, and small construction teams—who need the same project context on a phone in the field and on a larger screen for planning or client feedback.
