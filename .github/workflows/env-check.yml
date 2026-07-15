@@ -6,10 +6,17 @@ on:
     branches:
       - main
       - development
-      - feature/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  ci-checks:
+  quality:
+    name: Quality
     runs-on: ubuntu-latest
 
     steps:
@@ -21,15 +28,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            backend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install app dependencies
         run: npm ci
-
-      - name: Install backend dependencies
-        run: npm ci --prefix backend
 
       - name: Documentation drift check (.env.example)
         run: npm run env:check
@@ -40,11 +42,93 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Unit tests
+  tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install app dependencies
+        run: npm ci
+
+      - name: Run unit tests
         run: npm test
 
-      - name: Production build
+  web_build:
+    name: Web build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install app dependencies
+        run: npm ci
+
+      - name: Build production web app
         run: npm run build
 
-      - name: Backend compile check
+  backend_build:
+    name: Backend build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
+
+      - name: Compile backend
         run: npm run build --prefix backend
+
+  ci-checks:
+    name: ci-checks
+    if: ${{ always() }}
+    needs:
+      - quality
+      - tests
+      - web_build
+      - backend_build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Confirm all required jobs passed
+        env:
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          TESTS_RESULT: ${{ needs.tests.result }}
+          WEB_BUILD_RESULT: ${{ needs.web_build.result }}
+          BACKEND_BUILD_RESULT: ${{ needs.backend_build.result }}
+        run: |
+          if [[ "$QUALITY_RESULT" != "success" || \
+                "$TESTS_RESULT" != "success" || \
+                "$WEB_BUILD_RESULT" != "success" || \
+                "$BACKEND_BUILD_RESULT" != "success" ]]; then
+            echo "One or more required CI jobs did not pass."
+            exit 1
+          fi
+
+          echo "All required CI jobs passed."
