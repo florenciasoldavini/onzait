@@ -95,7 +95,8 @@ The repository currently configures:
 - strict TypeScript checking and Expo ESLint;
 - Vitest unit tests for project validation/query planning, Maps response and error handling, rate limiting, and profile avatar paths;
 - pgTAP tests for Projects RLS/storage policies and Google Maps usage caps;
-- GitHub Actions checks for environment-documentation drift, TypeScript, lint, unit tests, frontend production export, and backend compilation;
+- GitHub Actions checks for environment-documentation drift, TypeScript, lint, unit tests, frontend production export, backend compilation, and high/critical dependency vulnerabilities introduced by pull requests;
+- monthly grouped Dependabot version updates for the app and experimental backend, with routine update PRs targeting `development`;
 - accessibility-aware shared primitives and screen controls, including labels for icon actions, loading announcements, readable status text, and keyboard/tap-target guidance;
 - responsive layouts and platform-specific map components for phone, tablet, desktop web, iOS, and Android;
 - explicit skeleton, spinner, disabled, empty, error, toast, and confirmation states across implemented async and destructive flows.

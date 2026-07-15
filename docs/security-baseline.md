@@ -2,8 +2,8 @@
 
 Purpose: practical security rules for upcoming MVP feature work
 Source of truth for: security expectations around auth, authorization, RLS, uploads, validation, secrets, and release review
-Update when: auth architecture, storage strategy, client data-access scope, backend ownership, or MVP entity model changes
-Last reviewed: 2026-07-03
+Update when: auth architecture, storage strategy, client data-access scope, backend ownership, dependency automation, or MVP entity model changes
+Last reviewed: 2026-07-15
 
 ## Scope
 
@@ -213,6 +213,11 @@ The backend is not the main auth path today, but if MVP features start using it:
 
 - keep dependencies reasonably current
 - remove unused packages when practical
+- Dependabot checks the root app and `backend/` monthly, groups compatible minor/patch updates, limits open update pull requests, and targets routine version updates to `development`
+- Dependabot security alerts and security updates remain enabled; GitHub creates security-update pull requests against the default branch (`main`)
+- pull requests targeting `development` or `main` must pass dependency review when they introduce dependency changes; newly introduced high- or critical-severity vulnerabilities fail the check
+- GitHub secret scanning and push protection supplement the local GitGuardian pre-commit hook
+- CodeQL uses GitHub's default setup unless the repository later needs a custom analysis workflow
 - run verification before merges:
   - `npm run env:check`
   - `npx tsc --noEmit`
