@@ -3,7 +3,7 @@
 Purpose: architecture snapshot, product decisions, and implementation guardrails for contributors and agents
 Source of truth for: current auth architecture, platform decisions, naming rules, and high-level project constraints
 Update when: auth flow, platform ownership, schema strategy, CI expectations, or product naming decisions change
-Last reviewed: 2026-07-08
+Last reviewed: 2026-07-15
 
 ## Project Snapshot
 
@@ -144,6 +144,9 @@ Last reviewed: 2026-07-08
   - `npm run lint`
   - `npm run build`
   - `npm test`
+  - pull requests targeting `development` or `main` are reviewed for newly introduced high- or critical-severity dependency vulnerabilities
+- Dependabot checks the root app and `backend/` npm dependencies monthly, groups compatible minor/patch updates, limits open update PRs, and targets routine version updates to `development`
+- Dependabot security alerts and security-update PRs follow GitHub's default-branch behavior and therefore target `main`
 
 ### Useful Local Checks
 

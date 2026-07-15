@@ -1,5 +1,7 @@
 # Onzait
 
+[![CI Checks](https://github.com/florenciasoldavini/onzait/actions/workflows/env-check.yml/badge.svg)](https://github.com/florenciasoldavini/onzait/actions/workflows/env-check.yml)
+
 **A mobile-first workspace for organizing construction projects across the job site and the office.**
 
 Onzait is a personal product I am designing and developing to make construction project information easier to capture, find, and act on. The product is aimed at the people coordinating day-to-day work—project leads, site managers, contractors, and small construction teams—who need the same project context on a phone in the field and on a larger screen for planning or client feedback.
@@ -8,7 +10,9 @@ The current MVP foundation focuses on secure account access and project manageme
 
 > **Current status:** active MVP development. Projects V1 and the auth/profile foundation are implemented; task management and the project workspace modules shown as quick actions are not yet complete.
 
-[Hosted web build](https://onzait.vercel.app) · Account creation or sign-in is required. This is the current deployed app, not a seeded or anonymous portfolio demo.
+[Hosted web build](https://onzait.vercel.app) · [Product roadmap](https://github.com/users/florenciasoldavini/projects/1) · Account creation or sign-in is required. This is the current deployed app, not a seeded or anonymous portfolio demo.
+
+> **Source license:** The source code is publicly viewable for portfolio evaluation only. No permission is granted for commercial use, copying, modification, or redistribution. See the [proprietary license](LICENSE).
 
 ## Product capabilities
 
@@ -91,7 +95,8 @@ The repository currently configures:
 - strict TypeScript checking and Expo ESLint;
 - Vitest unit tests for project validation/query planning, Maps response and error handling, rate limiting, and profile avatar paths;
 - pgTAP tests for Projects RLS/storage policies and Google Maps usage caps;
-- GitHub Actions checks for environment-documentation drift, TypeScript, lint, unit tests, frontend production export, and backend compilation;
+- GitHub Actions checks for environment-documentation drift, TypeScript, lint, unit tests, frontend production export, backend compilation, and high/critical dependency vulnerabilities introduced by pull requests;
+- monthly grouped Dependabot version updates for the app and experimental backend, with routine update PRs targeting `development`;
 - accessibility-aware shared primitives and screen controls, including labels for icon actions, loading announcements, readable status text, and keyboard/tap-target guidance;
 - responsive layouts and platform-specific map components for phone, tablet, desktop web, iOS, and Android;
 - explicit skeleton, spinner, disabled, empty, error, toast, and confirmation states across implemented async and destructive flows.
@@ -219,7 +224,9 @@ See `.env.example` and `env-sync.config.json` for the full current list and depl
 ## Further documentation
 
 - `AGENTS.md` — architecture decisions and implementation guardrails
-- `docs/CONTRIBUTING.md` — contribution workflow
+- `docs/CONTRIBUTING.md` — reporting and invited-contribution workflow
+- `docs/documentation-maintenance.md` — documentation ownership and update triggers
+- `.github/SECURITY.md` — private vulnerability reporting policy
 - `docs/onzait-design-system.md` — tokens, primitives, and form conventions
 - `docs/security-baseline.md` — MVP security model and review checklist
 - `docs/performance-baseline.md` — runtime and data-loading expectations
