@@ -152,13 +152,6 @@
       "vercel": {
         "environments": ["preview", "production"]
       }
-    },
-    "DATABASE_URL": {
-      "section": "Backend / Prisma",
-      "example": "postgresql://postgres.your-project-ref:[YOUR-PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
-    },
-    "DIRECT_URL": {
-      "example": "postgresql://postgres.your-project-ref:[YOUR-PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres"
     }
   }
 }

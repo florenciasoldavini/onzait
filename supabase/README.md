@@ -102,5 +102,5 @@ Pending auth branding, custom domain, DNS, and branded email setup live in [docs
 
 ## Notes
 
-- The backend uses a service-role path for privileged operations, so server-side flows are not blocked by these client RLS restrictions.
+- Edge Functions may use a service-role path for explicitly privileged operations, so those server-side flows are not blocked by client RLS restrictions. Keep that access narrowly scoped and never expose the key to the client.
 - The repo now expects migrations to be applied via the Supabase CLI after linking the project.

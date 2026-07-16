@@ -3,7 +3,7 @@
 Purpose: lightweight rules for keeping project documentation current
 Source of truth for: documentation ownership, update triggers, and doc review workflow
 Update when: doc ownership changes, PR process changes, or new documentation categories are introduced
-Last reviewed: 2026-07-15
+Last reviewed: 2026-07-16
 
 ## Core rule
 
@@ -36,9 +36,6 @@ When a new project rule is added, scan existing code, docs, env config, and test
   - Migrations
   - RLS decisions
   - Auth redirect configuration
-- `backend/README.md`
-  - Backend-only setup and status
-  - Backend routes and scripts
 - `docs/`
   - Longer-lived design and reference material
 - `docs/onzait-design-system.md`
@@ -79,13 +76,6 @@ Update `supabase/README.md` when:
 - RLS changes
 - client data-access scope changes
 - auth redirect configuration changes
-
-Update `backend/README.md` when:
-
-- backend scripts change
-- backend env vars change
-- backend route surface changes
-- backend ownership or status changes
 
 Update `docs/onzait-design-system.md` when:
 
