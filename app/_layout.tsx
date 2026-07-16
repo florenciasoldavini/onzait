@@ -1,5 +1,6 @@
 // app/_layout.tsx
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { AuthContext, AuthProvider } from "@/contexts/auth";
 import { queryClient } from "@/lib/query-client";
 import { navigationIntegration, Sentry } from "@/lib/sentry";
@@ -7,11 +8,16 @@ import "@/global.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack, useNavigationContainerRef } from "expo-router";
-import { useContext, useEffect } from "react";
+import * as SplashScreen from "expo-splash-screen";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+if (process.env.EXPO_OS !== "web") {
+  void SplashScreen.preventAutoHideAsync();
+}
+
 function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Geist: require("@/assets/fonts/Geist-Regular.ttf"),
     "Geist-Regular": require("@/assets/fonts/Geist-Regular.ttf"),
     "Geist-Medium": require("@/assets/fonts/Geist-Medium.ttf"),
@@ -25,7 +31,13 @@ function RootLayout() {
     "JetBrainsMono-Bold": require("@/assets/fonts/JetBrainsMono-Bold.ttf")
   });
 
-  if (!fontsLoaded) {
+  useEffect(() => {
+    if (fontError) {
+      Sentry.captureException(fontError);
+    }
+  }, [fontError]);
+
+  if (!fontsLoaded && !fontError) {
     return null;
   }
 
@@ -45,24 +57,32 @@ function RootLayout() {
 function RootNavigator() {
   const { isLoading, session } = useContext(AuthContext);
   const navigationRef = useNavigationContainerRef();
+  const [splashDone, setSplashDone] = useState(false);
+
+  const handleSplashFinish = useCallback(() => {
+    setSplashDone(true);
+  }, []);
 
   useEffect(() => {
     navigationIntegration.registerNavigationContainer(navigationRef);
   }, [navigationRef]);
 
-  if (isLoading) {
-    return null;
-  }
-
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={Boolean(session)}>
-        <Stack.Screen name="(app)" options={{ headerShown: false }} />
-      </Stack.Protected>
-      <Stack.Protected guard={!session}>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      </Stack.Protected>
-    </Stack>
+    <>
+      {!isLoading ? (
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Protected guard={Boolean(session)}>
+            <Stack.Screen name="(app)" options={{ headerShown: false }} />
+          </Stack.Protected>
+          <Stack.Protected guard={!session}>
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          </Stack.Protected>
+        </Stack>
+      ) : null}
+      {!splashDone ? (
+        <AnimatedSplash appReady={!isLoading} onFinish={handleSplashFinish} />
+      ) : null}
+    </>
   );
 }
 
