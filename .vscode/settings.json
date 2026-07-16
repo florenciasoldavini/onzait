@@ -59,6 +59,8 @@
   "deno.config": "./supabase/functions/deno.json",
   "deno.enable": true,
   "deno.enablePaths": ["./supabase/functions"],
+  // Prevent the Node/Expo TypeScript server from reporting false Deno-global errors.
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
   "eslint.workingDirectories": [
     {
       "mode": "auto"
