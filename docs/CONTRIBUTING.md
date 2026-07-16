@@ -42,6 +42,7 @@ When the maintainer explicitly invites a code change:
 ## Local setup
 
 Use the npm version and Node.js range declared in `package.json`.
+Install Deno 2.1 when changing Supabase Edge Functions.
 
 ```bash
 npm ci
@@ -71,6 +72,7 @@ npx tsc --noEmit
 npm run lint
 npm test
 npm run build
+npm run functions:verify
 ```
 
 Also run:
@@ -79,7 +81,7 @@ Also run:
 - Manual web verification for web-facing behavior.
 - Manual iOS and Android verification when native behavior changes.
 
-GitHub Actions runs focused quality, unit-test, and web-build jobs. The final required aggregation check is `ci-checks`. Pull requests targeting `development` or `main` also run `dependency-review`, which fails when a dependency change introduces a high- or critical-severity vulnerability. Do not merge while a required check is failing, skipped unexpectedly, or still pending.
+GitHub Actions runs focused quality, Edge Function, unit-test, and web-build jobs. The final required aggregation check is `ci-checks`. Pull requests targeting `development` or `main` also run `dependency-review`, which fails when a dependency change introduces a high- or critical-severity vulnerability. Do not merge while a required check is failing, skipped unexpectedly, or still pending.
 
 Existing lint warnings or unrelated failures must be reported honestly; they must not be hidden by disabling checks or using `--no-verify`.
 

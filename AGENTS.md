@@ -145,6 +145,7 @@ Last reviewed: 2026-07-16
   - `npm run lint`
   - `npm run build`
   - `npm test`
+  - `npm run functions:verify`
   - pull requests targeting `development` or `main` are reviewed for newly introduced high- or critical-severity dependency vulnerabilities
 - Dependabot checks the root app dependencies monthly, groups compatible minor/patch updates, limits open update PRs, and targets routine version updates to `development`
 - Dependabot security alerts and security-update PRs follow GitHub's default-branch behavior and therefore target `main`
@@ -155,6 +156,7 @@ Last reviewed: 2026-07-16
 - `npm run build`
 - `npm run lint`
 - `npm test`
+- `npm run functions:verify`
 - `npx supabase test db`
 
 ## Feature Implementation Rules
@@ -173,6 +175,7 @@ Last reviewed: 2026-07-16
 - Services should own product/business workflows and orchestration.
 - Repositories should own raw persistence or external transport calls only.
 - External APIs that require secret keys, expensive quotas, or abuse protection must go through a trusted server boundary with validation, caching where allowed, and rate limiting.
+- Supabase Edge Functions must pass the Deno-owned `npm run functions:verify` typecheck, lint, and tests. Keep them excluded from the Expo TypeScript and ESLint projects because those tools target the Node/React Native runtime rather than Deno.
 - Paid external API boundaries must include durable hard caps before provider calls when provider-side quotas cannot be safely lowered.
 - Google Maps keys are expected to be restricted to only the APIs and platforms currently used. Project address lookup uses server-side Places API (New), selected-address preview functions use server-side Maps Static API, the web projects map uses the Maps JavaScript API, Android project maps use Maps SDK for Android through `react-native-maps`, and iOS project maps use the native default Apple Maps provider unless a future custom native build intentionally enables Google Maps on iOS. If a future feature needs a different Google Maps API or SDK, remind the project owner to update Google Cloud key restrictions before rollout.
 - Do not persistently cache third-party API content unless that provider's terms allow it; store only product data the user selected or created.
