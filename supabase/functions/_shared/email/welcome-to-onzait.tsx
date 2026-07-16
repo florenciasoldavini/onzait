@@ -1,4 +1,4 @@
-import * as React from "npm:react@19.1.0";
+import * as React from "react";
 import {
   Body,
   Container,
@@ -8,10 +8,10 @@ import {
   Html,
   Link,
   Preview,
+  render,
   Section,
   Text,
-  render
-} from "npm:react-email@6.6.6";
+} from "react-email";
 
 type WelcomeToOnzaitEmailProps = {
   appUrl: string;
@@ -24,13 +24,13 @@ const body = {
   fontFamily:
     "Geist, Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   margin: "0",
-  padding: "0"
+  padding: "0",
 };
 
 const page = {
   margin: "0 auto",
   maxWidth: "560px",
-  padding: "40px 20px"
+  padding: "40px 20px",
 };
 
 const wordmark = {
@@ -39,14 +39,14 @@ const wordmark = {
   fontSize: "12px",
   letterSpacing: "0.08em",
   margin: "0 0 20px",
-  textTransform: "uppercase" as const
+  textTransform: "uppercase" as const,
 };
 
 const card = {
   backgroundColor: "#ffffff",
   border: "1px solid #e4e2e2",
   borderRadius: "18px",
-  padding: "32px"
+  padding: "32px",
 };
 
 const eyebrow = {
@@ -55,7 +55,7 @@ const eyebrow = {
   fontSize: "12px",
   letterSpacing: "0.08em",
   margin: "0 0 12px",
-  textTransform: "uppercase" as const
+  textTransform: "uppercase" as const,
 };
 
 const heading = {
@@ -63,19 +63,19 @@ const heading = {
   fontSize: "28px",
   fontWeight: "800",
   lineHeight: "1.18",
-  margin: "0 0 16px"
+  margin: "0 0 16px",
 };
 
 const paragraph = {
   color: "#434656",
   fontSize: "16px",
   lineHeight: "1.6",
-  margin: "0 0 18px"
+  margin: "0 0 18px",
 };
 
 const ctaWrap = {
   margin: "28px 0 0",
-  textAlign: "center" as const
+  textAlign: "center" as const,
 };
 
 const cta = {
@@ -86,19 +86,19 @@ const cta = {
   fontSize: "15px",
   fontWeight: "700",
   padding: "14px 18px",
-  textDecoration: "none"
+  textDecoration: "none",
 };
 
 const divider = {
   borderColor: "#efeded",
-  margin: "28px 0 20px"
+  margin: "28px 0 20px",
 };
 
 const fallbackLabel = {
   color: "#737688",
   fontSize: "13px",
   lineHeight: "1.5",
-  margin: "0 0 8px"
+  margin: "0 0 8px",
 };
 
 const fallbackUrl = {
@@ -106,7 +106,7 @@ const fallbackUrl = {
   fontSize: "12px",
   lineHeight: "1.5",
   margin: "0",
-  wordBreak: "break-all" as const
+  wordBreak: "break-all" as const,
 };
 
 const footer = {
@@ -114,12 +114,12 @@ const footer = {
   fontSize: "12px",
   lineHeight: "1.5",
   margin: "20px 0 0",
-  textAlign: "center" as const
+  textAlign: "center" as const,
 };
 
 export function WelcomeToOnzaitEmail({
   appUrl,
-  name
+  name,
 }: WelcomeToOnzaitEmailProps) {
   return (
     <Html lang="en">

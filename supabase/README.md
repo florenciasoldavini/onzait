@@ -1,9 +1,9 @@
 # Supabase Setup
 
-Purpose: tracked Supabase schema, migration, RLS, and auth URL guidance
-Source of truth for: current Supabase bootstrap scope, migration expectations, and direct client-access policy
-Update when: migrations, RLS policy, auth redirect configuration, or client data-access rules change
-Last reviewed: 2026-07-06
+Purpose: tracked Supabase schema, migration, RLS, Edge Function, and auth URL guidance
+Source of truth for: current Supabase bootstrap scope, migration expectations, Edge Function verification, and direct client-access policy
+Update when: migrations, RLS policy, Edge Function runtime or security boundaries, auth redirect configuration, or client data-access rules change
+Last reviewed: 2026-07-16
 
 This folder is the starting point for tracked Supabase database changes.
 
@@ -75,9 +75,25 @@ Those policies should use explicit participant or owner rules plus admin-wide su
 
 - Google Maps and other paid/secret external APIs must be called through Supabase Edge Functions or another trusted server boundary.
 - Edge Functions must validate request payloads, authenticate user-scoped calls, rate-limit abusive patterns, and avoid persistent third-party content caching unless provider terms allow it.
+- Edge Functions use Deno 2.1 with pinned imports and a committed `deno.lock`. Run `npm run functions:verify` to typecheck, lint, and test the complete function surface before deployment.
+- User-scoped handlers share typed `auth.getUser()` validation through `_shared/auth.ts`. The helper accepts current publishable-key environment variables and the legacy `SUPABASE_ANON_KEY` fallback; service-role access remains isolated to explicitly privileged workflows.
+- Platform JWT verification remains enabled by default, and user-scoped handlers revalidate the bearer token to obtain the authenticated user before processing input or consuming paid API quota.
 - Google Maps functions also enforce durable monthly hard caps before calling Google. Defaults are 500 autocomplete calls/month, 100 place-detail calls/month, and 100 static map preview calls/month unless Supabase secrets override them.
 - Google Maps address functions store only selected project data such as address, `place_id`, latitude, and longitude.
 - The server-side Google Maps key should stay restricted to the APIs used by deployed Edge Functions. Project address lookup currently needs Places API (New), and selected-address map previews need Maps Static API. If a new Edge Function needs another Maps API, update the Google Cloud API key restrictions before releasing that feature. Client map rendering uses a restricted Maps JavaScript API key on web and a restricted Maps SDK for Android key on Android; iOS uses Apple Maps.
+
+### Function verification
+
+Install Deno 2.1, then run:
+
+```bash
+npm run functions:check
+npm run functions:lint
+npm run functions:test
+npm run functions:verify
+```
+
+The root Expo TypeScript and ESLint configurations intentionally exclude `supabase/functions/`; Deno owns verification for that runtime, and CI enforces the combined verification task.
 
 ## Auth URL configuration
 

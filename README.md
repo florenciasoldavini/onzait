@@ -90,10 +90,10 @@ There is intentionally no separate application server today. A dedicated API or 
 
 The repository currently configures:
 
-- strict TypeScript checking and Expo ESLint;
+- strict TypeScript checking and Expo ESLint for the app, plus native Deno typecheck and lint for Edge Functions;
 - Vitest unit tests for project validation/query planning, Maps response and error handling, rate limiting, and profile avatar paths;
 - pgTAP tests for Projects RLS/storage policies and Google Maps usage caps;
-- GitHub Actions checks for environment-documentation drift, TypeScript, lint, unit tests, frontend production export, and high/critical dependency vulnerabilities introduced by pull requests;
+- GitHub Actions checks for environment-documentation drift, app TypeScript/lint, Edge Function typecheck/lint/tests, unit tests, frontend production export, and high/critical dependency vulnerabilities introduced by pull requests;
 - monthly grouped Dependabot version updates for the app, with routine update PRs targeting `development`;
 - accessibility-aware shared primitives and screen controls, including labels for icon actions, loading announcements, readable status text, and keyboard/tap-target guidance;
 - responsive layouts and platform-specific map components for phone, tablet, desktop web, iOS, and Android;
@@ -109,6 +109,7 @@ npx tsc --noEmit
 npm run lint
 npm test
 npm run build
+npm run functions:verify
 ```
 
 ### Database and local security checks
@@ -145,6 +146,7 @@ The [hosted web build](https://onzait.vercel.app) was reachable when this README
 
 - Node.js 22 or newer
 - npm 10 (the repository package manager declared in `package.json`)
+- Deno 2.1 for local Edge Function verification
 - an Expo-compatible iOS Simulator or Android Emulator for native local development
 - a configured Supabase project for authenticated/product flows
 - Docker and the Supabase CLI only when running the local database test stack

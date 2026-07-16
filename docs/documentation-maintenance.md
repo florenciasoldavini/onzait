@@ -76,6 +76,7 @@ Update `supabase/README.md` when:
 - RLS changes
 - client data-access scope changes
 - auth redirect configuration changes
+- Edge Function runtime, verification, or trusted-boundary behavior changes
 
 Update `docs/onzait-design-system.md` when:
 

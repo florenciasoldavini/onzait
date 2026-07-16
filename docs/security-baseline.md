@@ -226,6 +226,7 @@ If a dedicated API or worker is introduced later, it must meet the same requirem
   - `npm run lint`
   - `npm run build`
   - `npm test`
+  - `npm run functions:verify` when Edge Functions or their shared trusted-boundary helpers change
   - `npx supabase test db` when migrations or RLS policies change
 
 ## MVP release checklist
