@@ -3,15 +3,16 @@
 Purpose: architecture snapshot, product decisions, and implementation guardrails for contributors and agents
 Source of truth for: current auth architecture, platform decisions, naming rules, and high-level project constraints
 Update when: auth flow, platform ownership, schema strategy, CI expectations, or product naming decisions change
-Last reviewed: 2026-07-15
+Last reviewed: 2026-07-16
 
 ## Project Snapshot
 
 - Project name: `onzait`
 - Stack: `Expo Router` + `React Native` + `Expo web static export`
 - Backend/data direction:
-  - frontend talks directly to `Supabase Auth` and `public.users`
-  - separate Express/Prisma backend exists under `backend/`, but it is not the main auth path today
+  - the frontend uses Supabase Auth and RLS-protected product tables through repositories
+  - Supabase Edge Functions are the trusted server boundary for privileged, secret, paid, or abuse-sensitive workflows
+  - introduce another backend only when a concrete product requirement cannot be served safely by this architecture
 - Main product goal: mobile-first construction / job-site management app that is also usable in a browser for client feedback
 
 ## Current Platform Setup
@@ -145,7 +146,7 @@ Last reviewed: 2026-07-15
   - `npm run build`
   - `npm test`
   - pull requests targeting `development` or `main` are reviewed for newly introduced high- or critical-severity dependency vulnerabilities
-- Dependabot checks the root app and `backend/` npm dependencies monthly, groups compatible minor/patch updates, limits open update PRs, and targets routine version updates to `development`
+- Dependabot checks the root app dependencies monthly, groups compatible minor/patch updates, limits open update PRs, and targets routine version updates to `development`
 - Dependabot security alerts and security-update PRs follow GitHub's default-branch behavior and therefore target `main`
 
 ### Useful Local Checks

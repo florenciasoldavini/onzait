@@ -84,27 +84,6 @@ jobs:
       - name: Build production web app
         run: npm run build
 
-  backend_build:
-    name: Backend build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
-
-      - name: Install backend dependencies
-        run: npm ci --prefix backend
-
-      - name: Compile backend
-        run: npm run build --prefix backend
-
   ci-checks:
     name: ci-checks
     if: ${{ always() }}
@@ -112,7 +91,6 @@ jobs:
       - quality
       - tests
       - web_build
-      - backend_build
     runs-on: ubuntu-latest
 
     steps:
@@ -121,12 +99,10 @@ jobs:
           QUALITY_RESULT: ${{ needs.quality.result }}
           TESTS_RESULT: ${{ needs.tests.result }}
           WEB_BUILD_RESULT: ${{ needs.web_build.result }}
-          BACKEND_BUILD_RESULT: ${{ needs.backend_build.result }}
         run: |
           if [[ "$QUALITY_RESULT" != "success" || \
                 "$TESTS_RESULT" != "success" || \
-                "$WEB_BUILD_RESULT" != "success" || \
-                "$BACKEND_BUILD_RESULT" != "success" ]]; then
+                "$WEB_BUILD_RESULT" != "success" ]]; then
             echo "One or more required CI jobs did not pass."
             exit 1
           fi
