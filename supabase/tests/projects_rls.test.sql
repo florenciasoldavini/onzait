@@ -2,7 +2,26 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(21);
+select plan(23);
+
+select is(
+  (select public from storage.buckets where id = 'user-avatars'),
+  false,
+  'user avatars bucket is private'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and policyname = 'user_avatars_read_authenticated'
+      and qual like '%storage.object.sign%'
+  ),
+  1,
+  'authenticated avatar reads support signed URLs without public bucket access'
+);
 
 insert into public.users (
   id,

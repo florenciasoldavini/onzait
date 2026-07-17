@@ -1,20 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { saveProfile } from "@/features/profile/services/profile.service";
+import {
+  resolveProfileAvatarUrl,
+  saveProfile
+} from "@/features/profile/services/profile.service";
 
 const mocks = vi.hoisted(() => ({
   captureException: vi.fn(),
-  getProfileAvatarPublicUrl: vi.fn(
-    (path: string) =>
-      `https://project.supabase.co/storage/v1/object/public/user-avatars/${path}`
-  ),
+  createProfileAvatarSignedUrl: vi.fn(),
   removeProfileAvatarObject: vi.fn(),
   updateProfileRow: vi.fn(),
   uploadProfileAvatarObject: vi.fn()
 }));
 
 vi.mock("@/features/profile/repositories/profile-avatar.repository", () => ({
-  getProfileAvatarPublicUrl: mocks.getProfileAvatarPublicUrl,
+  createProfileAvatarSignedUrl: mocks.createProfileAvatarSignedUrl,
   removeProfileAvatarObject: mocks.removeProfileAvatarObject,
   uploadProfileAvatarObject: mocks.uploadProfileAvatarObject
 }));
@@ -48,6 +48,9 @@ describe("profile avatar replacement", () => {
       "users/user-id/avatar/new.jpg"
     );
     mocks.updateProfileRow.mockResolvedValue({ id: "user-id" });
+    mocks.createProfileAvatarSignedUrl.mockResolvedValue(
+      "https://project.supabase.co/storage/v1/object/sign/user-avatars/users/user-id/avatar/new.jpg?token=signed"
+    );
   });
 
   it("removes the new avatar when the profile update fails", async () => {
@@ -65,19 +68,16 @@ describe("profile avatar replacement", () => {
   it("removes the previous avatar after the new reference is saved", async () => {
     await saveProfile({
       avatarAsset,
-      currentAvatarUrl:
-        "https://project.supabase.co/storage/v1/object/public/user-avatars/users/user-id/avatar/old.jpg",
+      currentAvatarReference: "users/user-id/avatar/old.jpg",
       profile,
       userId: "user-id"
     });
 
     expect(mocks.updateProfileRow).toHaveBeenCalledWith({
-      expectedAvatar:
-        "https://project.supabase.co/storage/v1/object/public/user-avatars/users/user-id/avatar/old.jpg",
+      expectedAvatar: "users/user-id/avatar/old.jpg",
       profile: {
         ...profile,
-        avatar:
-          "https://project.supabase.co/storage/v1/object/public/user-avatars/users/user-id/avatar/new.jpg"
+        avatar: "users/user-id/avatar/new.jpg"
       },
       userId: "user-id"
     });
@@ -95,12 +95,27 @@ describe("profile avatar replacement", () => {
     await expect(
       saveProfile({
         avatarAsset,
-        currentAvatarUrl:
-          "https://project.supabase.co/storage/v1/object/public/user-avatars/users/user-id/avatar/old.jpg",
+        currentAvatarReference: "users/user-id/avatar/old.jpg",
         profile,
         userId: "user-id"
       })
     ).resolves.toEqual({ id: "user-id" });
     expect(mocks.captureException).toHaveBeenCalledOnce();
+  });
+
+  it("resolves stored avatar paths to short-lived signed URLs", async () => {
+    await expect(
+      resolveProfileAvatarUrl("users/user-id/avatar/new.jpg")
+    ).resolves.toContain("token=signed");
+    expect(mocks.createProfileAvatarSignedUrl).toHaveBeenCalledWith(
+      "users/user-id/avatar/new.jpg"
+    );
+  });
+
+  it("keeps external OAuth avatar URLs without signing them", async () => {
+    await expect(
+      resolveProfileAvatarUrl("https://accounts.example.com/avatar.jpg")
+    ).resolves.toBe("https://accounts.example.com/avatar.jpg");
+    expect(mocks.createProfileAvatarSignedUrl).not.toHaveBeenCalled();
   });
 });

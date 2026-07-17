@@ -15,35 +15,54 @@ export function buildProfileAvatarPath({
   return `users/${userId}/avatar/${uuid}.${getAvatarExtension(asset)}`;
 }
 
-export function getProfileAvatarPathFromPublicUrl({
+export function getProfileAvatarStoragePath({
   bucket,
-  publicUrl,
+  reference,
   userId
 }: {
   bucket: string;
-  publicUrl: string | null | undefined;
-  userId: string;
+  reference: string | null | undefined;
+  userId?: string;
 }) {
-  if (!publicUrl) {
+  const normalizedReference = reference?.trim();
+
+  if (!normalizedReference) {
     return null;
   }
 
-  try {
-    const marker = `/storage/v1/object/public/${bucket}/`;
-    const pathname = new URL(publicUrl).pathname;
-    const markerIndex = pathname.indexOf(marker);
+  if (isProfileAvatarPath(normalizedReference, userId)) {
+    return normalizedReference;
+  }
 
-    if (markerIndex < 0) {
+  try {
+    const pathname = new URL(normalizedReference).pathname;
+    const markers = [
+      `/storage/v1/object/public/${bucket}/`,
+      `/storage/v1/object/sign/${bucket}/`,
+      `/storage/v1/object/authenticated/${bucket}/`
+    ];
+    const marker = markers.find((candidate) => pathname.includes(candidate));
+
+    if (!marker) {
       return null;
     }
 
     const path = decodeURIComponent(
-      pathname.slice(markerIndex + marker.length)
+      pathname.slice(pathname.indexOf(marker) + marker.length)
     );
 
-    return path.startsWith(`users/${userId}/avatar/`) ? path : null;
+    return isProfileAvatarPath(path, userId) ? path : null;
   } catch {
     return null;
+  }
+}
+
+export function isExternalProfileAvatarUrl(reference: string) {
+  try {
+    const url = new URL(reference);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
   }
 }
 
@@ -71,6 +90,22 @@ function createRandomId() {
   return (
     globalThis.crypto?.randomUUID?.() ??
     `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
+}
+
+function isProfileAvatarPath(path: string, userId?: string) {
+  const [usersSegment, ownerId, avatarSegment, fileName, ...rest] =
+    path.split("/");
+
+  return (
+    usersSegment === "users" &&
+    Boolean(ownerId) &&
+    (!userId || ownerId === userId) &&
+    avatarSegment === "avatar" &&
+    Boolean(fileName) &&
+    fileName !== "." &&
+    fileName !== ".." &&
+    rest.length === 0
   );
 }
 

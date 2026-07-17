@@ -1,5 +1,5 @@
 import {
-  getProfileAvatarPublicUrl,
+  createProfileAvatarSignedUrl,
   removeProfileAvatarObject,
   uploadProfileAvatarObject,
   type ProfileAvatarAsset
@@ -13,7 +13,10 @@ import {
   linkProfileOAuthIdentity,
   updateProfilePassword
 } from "@/features/profile/repositories/profile-auth.repository";
-import { getProfileAvatarPathFromPublicUrl } from "@/features/profile/avatar-storage";
+import {
+  getProfileAvatarStoragePath,
+  isExternalProfileAvatarUrl
+} from "@/features/profile/avatar-storage";
 import { USER_AVATAR_BUCKET } from "@/features/profile/constants";
 import type { SupportedOAuthProvider } from "@/lib/auth-callback";
 import { Sentry } from "@/lib/sentry";
@@ -40,12 +43,12 @@ async function removeAvatarObjectSafely({
 
 export async function saveProfile({
   avatarAsset,
-  currentAvatarUrl,
+  currentAvatarReference,
   profile,
   userId
 }: {
   avatarAsset?: ProfileAvatarAsset | null;
-  currentAvatarUrl?: string | null;
+  currentAvatarReference?: string | null;
   profile: ProfileUpdateInput;
   userId: string;
 }) {
@@ -57,18 +60,18 @@ export async function saveProfile({
     asset: avatarAsset,
     userId
   });
-  const previousAvatarPath = getProfileAvatarPathFromPublicUrl({
+  const previousAvatarPath = getProfileAvatarStoragePath({
     bucket: USER_AVATAR_BUCKET,
-    publicUrl: currentAvatarUrl,
+    reference: currentAvatarReference,
     userId
   });
 
   try {
     const updatedUser = await updateProfileRow({
-      expectedAvatar: currentAvatarUrl ?? null,
+      expectedAvatar: currentAvatarReference ?? null,
       profile: {
         ...profile,
-        avatar: getProfileAvatarPublicUrl(avatarPath)
+        avatar: avatarPath
       },
       userId
     });
@@ -90,6 +93,23 @@ export async function saveProfile({
     });
     throw error;
   }
+}
+
+export async function resolveProfileAvatarUrl(reference: string | null) {
+  if (!reference) {
+    return null;
+  }
+
+  const avatarPath = getProfileAvatarStoragePath({
+    bucket: USER_AVATAR_BUCKET,
+    reference
+  });
+
+  if (avatarPath) {
+    return createProfileAvatarSignedUrl(avatarPath);
+  }
+
+  return isExternalProfileAvatarUrl(reference) ? reference : null;
 }
 
 export function listProfileUserIdentities() {

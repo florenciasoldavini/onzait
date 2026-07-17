@@ -1,4 +1,7 @@
-import { USER_AVATAR_BUCKET } from "@/features/profile/constants";
+import {
+  PROFILE_AVATAR_SIGNED_URL_TTL_SECONDS,
+  USER_AVATAR_BUCKET
+} from "@/features/profile/constants";
 import {
   buildProfileAvatarPath,
   getMimeTypeFromExtension
@@ -49,7 +52,9 @@ export async function removeProfileAvatarObject({
   userId: string;
 }) {
   if (!path.startsWith(`users/${userId}/avatar/`)) {
-    throw new Error("Refusing to remove an avatar outside the current user path.");
+    throw new Error(
+      "Refusing to remove an avatar outside the current user path."
+    );
   }
 
   const client = requireSupabase();
@@ -62,8 +67,15 @@ export async function removeProfileAvatarObject({
   }
 }
 
-export function getProfileAvatarPublicUrl(path: string) {
+export async function createProfileAvatarSignedUrl(path: string) {
   const client = requireSupabase();
-  return client.storage.from(USER_AVATAR_BUCKET).getPublicUrl(path).data
-    .publicUrl;
+  const { data, error } = await client.storage
+    .from(USER_AVATAR_BUCKET)
+    .createSignedUrl(path, PROFILE_AVATAR_SIGNED_URL_TTL_SECONDS);
+
+  if (error) {
+    throw toRepositoryError(error);
+  }
+
+  return data.signedUrl;
 }

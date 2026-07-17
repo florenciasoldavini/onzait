@@ -1,6 +1,6 @@
 import {
   buildProfileAvatarPath,
-  getProfileAvatarPathFromPublicUrl
+  getProfileAvatarStoragePath
 } from "@/features/profile/avatar-storage";
 import { describe, expect, it } from "vitest";
 
@@ -25,12 +25,30 @@ describe("profile avatar storage paths", () => {
     ).toBe("users/user-id/avatar/avatar-id.png");
   });
 
-  it("extracts only the current user's avatar path from a public URL", () => {
+  it("accepts a stored path for the current user's avatar", () => {
     expect(
-      getProfileAvatarPathFromPublicUrl({
+      getProfileAvatarStoragePath({
         bucket: "user-avatars",
-        publicUrl:
+        reference: "users/user-id/avatar/avatar-id.jpg",
+        userId: "user-id"
+      })
+    ).toBe("users/user-id/avatar/avatar-id.jpg");
+  });
+
+  it("extracts paths from legacy public and signed URLs", () => {
+    expect(
+      getProfileAvatarStoragePath({
+        bucket: "user-avatars",
+        reference:
           "https://project.supabase.co/storage/v1/object/public/user-avatars/users/user-id/avatar/avatar-id.jpg",
+        userId: "user-id"
+      })
+    ).toBe("users/user-id/avatar/avatar-id.jpg");
+    expect(
+      getProfileAvatarStoragePath({
+        bucket: "user-avatars",
+        reference:
+          "https://project.supabase.co/storage/v1/object/sign/user-avatars/users/user-id/avatar/avatar-id.jpg?token=signed",
         userId: "user-id"
       })
     ).toBe("users/user-id/avatar/avatar-id.jpg");
@@ -38,16 +56,16 @@ describe("profile avatar storage paths", () => {
 
   it("rejects external and other-user avatar URLs", () => {
     expect(
-      getProfileAvatarPathFromPublicUrl({
+      getProfileAvatarStoragePath({
         bucket: "user-avatars",
-        publicUrl: "https://images.example.com/avatar.jpg",
+        reference: "https://images.example.com/avatar.jpg",
         userId: "user-id"
       })
     ).toBeNull();
     expect(
-      getProfileAvatarPathFromPublicUrl({
+      getProfileAvatarStoragePath({
         bucket: "user-avatars",
-        publicUrl:
+        reference:
           "https://project.supabase.co/storage/v1/object/public/user-avatars/users/other-user/avatar/avatar-id.jpg",
         userId: "user-id"
       })

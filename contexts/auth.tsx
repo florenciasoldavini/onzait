@@ -286,7 +286,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const nextUser = await saveProfile({
         avatarAsset,
-        currentAvatarUrl: user.avatar,
+        currentAvatarReference: user.avatar,
         profile: payload,
         userId: session.user.id
       });
