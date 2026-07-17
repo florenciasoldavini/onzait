@@ -1,0 +1,181 @@
+import { AuthRepositoryError } from "@/features/auth/errors";
+import {
+  beginOAuthSignIn,
+  changePassword,
+  clearCompletedWebAuthCallback,
+  completeAuthCallback,
+  getAuthCallbackUrl,
+  hasAuthCallbackPayload,
+  parseAuthCallbackParams,
+  requestPasswordReset,
+  resendVerificationEmail,
+  signInWithEmailPassword,
+  signUpWithEmailPassword
+} from "@/features/auth/repositories/auth.repository";
+import {
+  getAuthCallbackIntent,
+  getPostAuthRedirectPath,
+  type AuthCallbackIntent,
+  type SupportedOAuthProvider
+} from "@/lib/auth-callback";
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+export type EmailSignInResult =
+  | { status: "signed-in" }
+  | { email: string; status: "email-unverified" };
+
+export async function signInWithEmail({
+  email,
+  password
+}: {
+  email: string;
+  password: string;
+}): Promise<EmailSignInResult> {
+  const normalizedEmail = normalizeEmail(email);
+
+  try {
+    await signInWithEmailPassword({ email: normalizedEmail, password });
+    return { status: "signed-in" };
+  } catch (error) {
+    if (
+      error instanceof AuthRepositoryError &&
+      error.code === "email-not-confirmed"
+    ) {
+      return { email: normalizedEmail, status: "email-unverified" };
+    }
+
+    throw error;
+  }
+}
+
+export type EmailSignUpResult =
+  | { status: "signed-in" }
+  | { email: string; status: "verification-rate-limited" }
+  | { email: string; status: "verification-sent" };
+
+export async function signUpWithEmail({
+  email,
+  password
+}: {
+  email: string;
+  password: string;
+}): Promise<EmailSignUpResult> {
+  const normalizedEmail = normalizeEmail(email);
+
+  try {
+    const { session } = await signUpWithEmailPassword({
+      email: normalizedEmail,
+      password
+    });
+
+    return session
+      ? { status: "signed-in" }
+      : { email: normalizedEmail, status: "verification-sent" };
+  } catch (error) {
+    if (
+      error instanceof AuthRepositoryError &&
+      error.code === "email-cooldown"
+    ) {
+      return {
+        email: normalizedEmail,
+        status: "verification-rate-limited"
+      };
+    }
+
+    throw error;
+  }
+}
+
+export function signInWithOAuth(provider: SupportedOAuthProvider) {
+  return beginOAuthSignIn(provider);
+}
+
+export function sendPasswordReset(email: string) {
+  return requestPasswordReset(normalizeEmail(email));
+}
+
+export function updateAccountPassword(password: string) {
+  return changePassword(password);
+}
+
+export async function resendEmailVerification(email: string) {
+  try {
+    await resendVerificationEmail(normalizeEmail(email));
+    return { status: "sent" } as const;
+  } catch (error) {
+    if (
+      error instanceof AuthRepositoryError &&
+      error.code === "email-cooldown"
+    ) {
+      return { status: "rate-limited" } as const;
+    }
+
+    throw error;
+  }
+}
+
+export async function preparePasswordRecovery(linkingUrl: string | null) {
+  const activeUrl = getAuthCallbackUrl(linkingUrl);
+
+  if (!activeUrl || !hasAuthCallbackPayload(activeUrl)) {
+    return { shouldUpdatePassword: false };
+  }
+
+  const { session, type } = await completeAuthCallback(activeUrl);
+  clearCompletedWebAuthCallback();
+
+  return {
+    shouldUpdatePassword: type === "recovery" || Boolean(session)
+  };
+}
+
+export class AuthCallbackError extends Error {
+  constructor(
+    message: string,
+    readonly intent: AuthCallbackIntent
+  ) {
+    super(message);
+    this.name = "AuthCallbackError";
+  }
+}
+
+export async function finishAuthCallback(linkingUrl: string | null) {
+  const activeUrl = getAuthCallbackUrl(linkingUrl);
+
+  if (!activeUrl) {
+    throw new AuthCallbackError(
+      "This auth link is missing the session payload. Try signing in again.",
+      { kind: "sign-in" }
+    );
+  }
+
+  const params = parseAuthCallbackParams(activeUrl);
+  const intent = getAuthCallbackIntent(params);
+
+  if (!hasAuthCallbackPayload(activeUrl)) {
+    throw new AuthCallbackError(
+      intent.kind === "identity-link"
+        ? "This link is missing the account confirmation payload. Try linking again."
+        : "This auth link is missing the session payload. Try signing in again.",
+      intent
+    );
+  }
+
+  try {
+    const { type } = await completeAuthCallback(activeUrl);
+    clearCompletedWebAuthCallback();
+
+    return {
+      intent,
+      redirectPath: getPostAuthRedirectPath(type, params.get("next"), intent)
+    };
+  } catch (error) {
+    throw new AuthCallbackError(
+      error instanceof Error ? error.message : "Authentication failed.",
+      intent
+    );
+  }
+}

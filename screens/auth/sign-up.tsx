@@ -15,12 +15,7 @@ import {
 } from "@/components/atoms";
 import { atomSpacing } from "@/components/atoms/theme";
 import { AuthContext } from "@/contexts/auth";
-import { getAuthRedirectUrl, startOAuthSignIn } from "@/lib/auth";
-import {
-  getSupabaseErrorMessage,
-  isSupabaseEmailCooldownError,
-  supabase
-} from "@/lib/supabase";
+import { useEmailSignUp, useOAuthSignIn } from "@/features/auth/hooks";
 import { emailSignupSchema, type EmailSignupInput } from "@/schemas/auth";
 import { AtSignIcon, LockIcon } from "@/components/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,6 +30,8 @@ const appleLogo = require("@/assets/images/auth/apple-logo.png");
 export default function SignUpScreen() {
   const router = useRouter();
   const { authError } = useContext(AuthContext);
+  const emailSignUp = useEmailSignUp();
+  const oauthSignIn = useOAuthSignIn();
   const [formError, setFormError] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loadingAction, setLoadingAction] = useState<
@@ -61,45 +58,25 @@ export default function SignUpScreen() {
   };
 
   const signUpWithEmail = handleSubmit(async ({ email, password }) => {
-    if (!supabase) {
-      setFormError(getSupabaseErrorMessage("Supabase is not configured."));
-      return;
-    }
-
-    const signUpEmail = email.trim().toLowerCase();
-
     setLoadingAction("email");
     setFormError(null);
 
     try {
-      const {
-        data: { session },
-        error
-      } = await supabase.auth.signUp({
-        email: signUpEmail,
-        password,
-        options: {
-          emailRedirectTo: getAuthRedirectUrl("callback")
-        }
-      });
+      const result = await emailSignUp.mutateAsync({ email, password });
 
-      if (error) {
-        if (isSupabaseEmailCooldownError(error)) {
-          router.replace(
-            `/verify-email?email=${encodeURIComponent(signUpEmail)}&notice=rate-limited`
-          );
-        } else {
-          const message = getSupabaseErrorMessage(error);
-          setFormError(message);
-        }
-      } else if (!session) {
+      if (result.status === "verification-rate-limited") {
         router.replace(
-          `/verify-email?email=${encodeURIComponent(signUpEmail)}&notice=sent`
+          `/verify-email?email=${encodeURIComponent(result.email)}&notice=rate-limited`
+        );
+      } else if (result.status === "verification-sent") {
+        router.replace(
+          `/verify-email?email=${encodeURIComponent(result.email)}&notice=sent`
         );
       }
     } catch (error) {
-      const message = getSupabaseErrorMessage(error);
-      setFormError(message);
+      setFormError(
+        error instanceof Error ? error.message : "Unable to create account."
+      );
     } finally {
       setLoadingAction(null);
     }
@@ -109,10 +86,11 @@ export default function SignUpScreen() {
     try {
       setLoadingAction(provider);
       setFormError(null);
-      await startOAuthSignIn(provider);
+      await oauthSignIn.mutateAsync(provider);
     } catch (error) {
-      const message = getSupabaseErrorMessage(error);
-      setFormError(message);
+      setFormError(
+        error instanceof Error ? error.message : "Unable to start sign up."
+      );
     } finally {
       setLoadingAction(null);
     }

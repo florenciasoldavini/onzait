@@ -7,11 +7,7 @@ import {
 } from "@/components/atoms";
 import { atomPalette, atomRadii, atomSpacing } from "@/components/atoms/theme";
 import { AuthShell, authFormControlSize } from "@/components/auth/AuthShell";
-import { resendSignUpConfirmationEmail } from "@/lib/auth";
-import {
-  getSupabaseErrorMessage,
-  isSupabaseEmailCooldownError
-} from "@/lib/supabase";
+import { useEmailVerificationResend } from "@/features/auth/hooks";
 import { emailSchema } from "@/schemas/fields";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -28,6 +24,7 @@ function getEmailParam(email: string | string[] | undefined) {
 }
 
 export default function VerifyEmailScreen() {
+  const verificationResend = useEmailVerificationResend();
   const { email: emailParam, notice: noticeParam } = useLocalSearchParams<{
     email?: string | string[];
     notice?: string | string[];
@@ -74,18 +71,20 @@ export default function VerifyEmailScreen() {
     setIsResending(true);
 
     try {
-      await resendSignUpConfirmationEmail(email);
+      const result = await verificationResend.mutateAsync(email);
+
       setSuccessMessage(
-        "Verification link sent. Check your inbox and spam folder."
+        result.status === "sent"
+          ? "Verification link sent. Check your inbox and spam folder."
+          : null
       );
       setCooldownSeconds(resendCooldownSeconds);
     } catch (error) {
-      if (isSupabaseEmailCooldownError(error)) {
-        setSuccessMessage(null);
-        setCooldownSeconds(resendCooldownSeconds);
-      } else {
-        setErrorMessage(getSupabaseErrorMessage(error));
-      }
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to resend the verification email."
+      );
     } finally {
       setIsResending(false);
     }
