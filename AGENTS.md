@@ -75,6 +75,8 @@ Last reviewed: 2026-07-16
 - Native auth redirects use `onzait://` in development/production builds
 - Expo Go auth redirects use the current `exp://.../--/<path>` callback and must be allow-listed in Supabase while testing OAuth there
 - Identity-linking redirects return through the shared callback and may include a safe in-app `next` path such as `/profile`
+- Hosted Supabase Auth must keep **Allow manual linking** enabled for the Google/Apple profile actions; local/self-hosted testing uses `auth.enable_manual_linking`
+- Callback metadata identifies a linking attempt but is not proof of success; the profile must confirm the provider through `getUserIdentities()` before reporting it as linked
 - Email/password sign-in with an unverified email should route to `/verify-email` instead of showing a form error
 - Verification email rate limits should be represented as a disabled resend countdown, not as a blocking error message
 
