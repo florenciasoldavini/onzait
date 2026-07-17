@@ -3,12 +3,14 @@
     "name": "onzait",
     "slug": "onzait",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "platforms": ["ios", "android", "web"],
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "onzait",
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.florenciasoldavini.onzait",
+      "requireFullScreen": false,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Allow onzait to show your current location on the projects map while you are using the app."
       },
@@ -26,6 +28,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
+      "orientation": "any",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
