@@ -6,6 +6,7 @@ module.exports = defineConfig([
   expoConfig,
   eslintPluginPrettierRecommended,
   {
+    // Deno owns typecheck, lint, and tests for Supabase Edge Functions.
     ignores: ["dist/*", "supabase/functions/**"]
   },
   {

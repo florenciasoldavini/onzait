@@ -3,15 +3,16 @@
 Purpose: architecture snapshot, product decisions, and implementation guardrails for contributors and agents
 Source of truth for: current auth architecture, platform decisions, naming rules, and high-level project constraints
 Update when: auth flow, platform ownership, schema strategy, CI expectations, or product naming decisions change
-Last reviewed: 2026-07-15
+Last reviewed: 2026-07-17
 
 ## Project Snapshot
 
 - Project name: `onzait`
 - Stack: `Expo Router` + `React Native` + `Expo web static export`
 - Backend/data direction:
-  - frontend talks directly to `Supabase Auth` and `public.users`
-  - separate Express/Prisma backend exists under `backend/`, but it is not the main auth path today
+  - the frontend uses Supabase Auth and RLS-protected product tables through repositories
+  - Supabase Edge Functions are the trusted server boundary for privileged, secret, paid, or abuse-sensitive workflows
+  - introduce another backend only when a concrete product requirement cannot be served safely by this architecture
 - Main product goal: mobile-first construction / job-site management app that is also usable in a browser for client feedback
 
 ## Current Platform Setup
@@ -30,6 +31,8 @@ Last reviewed: 2026-07-15
 - Web is the first launch target because it can be deployed on Vercel without app-store distribution, but implementation choices must not block later iOS and Android releases.
 - Use the correct implementation for each environment when a feature needs platform-specific behavior. Prefer shared product logic with platform-specific UI or infrastructure adapters over a lowest-common-denominator workaround.
 - UI responsiveness and functional behavior must both be considered across phone, tablet, and desktop layouts before a feature is treated as complete.
+- Native builds support portrait and landscape rather than locking orientation. Tablet landscape and iPad multitasking layouts are required product surfaces, and installed web apps must not request a fixed orientation.
+- Compact-height landscape layouts must keep primary content and actions reachable. Screens that can overflow vertically must remain scrollable before, during, and after keyboard interaction.
 
 ## Auth Architecture
 
@@ -74,6 +77,8 @@ Last reviewed: 2026-07-15
 - Native auth redirects use `onzait://` in development/production builds
 - Expo Go auth redirects use the current `exp://.../--/<path>` callback and must be allow-listed in Supabase while testing OAuth there
 - Identity-linking redirects return through the shared callback and may include a safe in-app `next` path such as `/profile`
+- Hosted Supabase Auth must keep **Allow manual linking** enabled for the Google/Apple profile actions; local/self-hosted testing uses `auth.enable_manual_linking`
+- Callback metadata identifies a linking attempt but is not proof of success; the profile must confirm the provider through `getUserIdentities()` before reporting it as linked
 - Email/password sign-in with an unverified email should route to `/verify-email` instead of showing a form error
 - Verification email rate limits should be represented as a disabled resend countdown, not as a blocking error message
 
@@ -144,8 +149,9 @@ Last reviewed: 2026-07-15
   - `npm run lint`
   - `npm run build`
   - `npm test`
+  - `npm run functions:verify`
   - pull requests targeting `development` or `main` are reviewed for newly introduced high- or critical-severity dependency vulnerabilities
-- Dependabot checks the root app and `backend/` npm dependencies monthly, groups compatible minor/patch updates, limits open update PRs, and targets routine version updates to `development`
+- Dependabot checks the root app dependencies monthly, groups compatible minor/patch updates, limits open update PRs, and targets routine version updates to `development`
 - Dependabot security alerts and security-update PRs follow GitHub's default-branch behavior and therefore target `main`
 
 ### Useful Local Checks
@@ -154,6 +160,7 @@ Last reviewed: 2026-07-15
 - `npm run build`
 - `npm run lint`
 - `npm test`
+- `npm run functions:verify`
 - `npx supabase test db`
 
 ## Feature Implementation Rules
@@ -172,6 +179,7 @@ Last reviewed: 2026-07-15
 - Services should own product/business workflows and orchestration.
 - Repositories should own raw persistence or external transport calls only.
 - External APIs that require secret keys, expensive quotas, or abuse protection must go through a trusted server boundary with validation, caching where allowed, and rate limiting.
+- Supabase Edge Functions must pass the Deno-owned `npm run functions:verify` typecheck, lint, and tests. Keep them excluded from the Expo TypeScript and ESLint projects because those tools target the Node/React Native runtime rather than Deno.
 - Paid external API boundaries must include durable hard caps before provider calls when provider-side quotas cannot be safely lowered.
 - Google Maps keys are expected to be restricted to only the APIs and platforms currently used. Project address lookup uses server-side Places API (New), selected-address preview functions use server-side Maps Static API, the web projects map uses the Maps JavaScript API, Android project maps use Maps SDK for Android through `react-native-maps`, and iOS project maps use the native default Apple Maps provider unless a future custom native build intentionally enables Google Maps on iOS. If a future feature needs a different Google Maps API or SDK, remind the project owner to update Google Cloud key restrictions before rollout.
 - Do not persistently cache third-party API content unless that provider's terms allow it; store only product data the user selected or created.

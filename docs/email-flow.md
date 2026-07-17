@@ -3,7 +3,7 @@
 Purpose: test and document the first non-auth email path
 Source of truth for: product email boundaries, Edge Function secrets, and the current welcome-email example
 Update when: product email providers, function names, secrets, or invocation rules change
-Last reviewed: 2026-07-06
+Last reviewed: 2026-07-16
 
 ## Current Example
 
@@ -64,7 +64,7 @@ EMAIL_REPLY_TO
 SITE_URL
 ```
 
-`RESEND_API_KEY` is required. Supabase provides `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to deployed Edge Functions. The other values have development fallbacks, but should be set before production.
+`RESEND_API_KEY` is required. Supabase provides `SUPABASE_URL` and server-side API key variables to deployed Edge Functions. The shared auth helper accepts named/current publishable-key variables and the legacy `SUPABASE_ANON_KEY` fallback; privileged email state updates continue to use `SUPABASE_SERVICE_ROLE_KEY`. The other values have development fallbacks, but should be set before production.
 
 ## Deployment Checklist
 

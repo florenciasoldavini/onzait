@@ -73,9 +73,7 @@ Supabase / Storage / Edge Functions
 - **Delivery:** Expo Router and React Native provide shared product code. Web is exported statically to `dist` for Vercel; native configuration is reproducible through Expo app config and EAS.
 - **Monitoring:** Sentry is initialized for runtime error reporting when its public DSN is configured.
 
-### Express/Prisma backend status
-
-`backend/` contains a separate Express/Prisma service with authenticated user and project routes. It is **not the active backend for the current app flow**: the Expo client uses Supabase Auth, RLS-protected tables, Storage, and Edge Functions directly, and no current client feature routes through Express. The service is retained as an experimental/reference backend and is compiled in CI to prevent the checked-in code from silently breaking; it should not be read as the deployed source of truth for current product behavior.
+There is intentionally no separate application server today. A dedicated API or worker should be introduced only when a concrete feature needs capabilities that the current Supabase architecture cannot safely provide, such as durable background jobs, complex multi-system orchestration, or a provider integration that does not fit an Edge Function.
 
 ## Engineering decisions and tradeoffs
 
@@ -92,11 +90,11 @@ Supabase / Storage / Edge Functions
 
 The repository currently configures:
 
-- strict TypeScript checking and Expo ESLint;
+- strict TypeScript checking and Expo ESLint for the app, plus native Deno typecheck and lint for Edge Functions;
 - Vitest unit tests for project validation/query planning, Maps response and error handling, rate limiting, and profile avatar paths;
 - pgTAP tests for Projects RLS/storage policies and Google Maps usage caps;
-- GitHub Actions checks for environment-documentation drift, TypeScript, lint, unit tests, frontend production export, backend compilation, and high/critical dependency vulnerabilities introduced by pull requests;
-- monthly grouped Dependabot version updates for the app and experimental backend, with routine update PRs targeting `development`;
+- GitHub Actions checks for environment-documentation drift, app TypeScript/lint, Edge Function typecheck/lint/tests, unit tests, frontend production export, and high/critical dependency vulnerabilities introduced by pull requests;
+- monthly grouped Dependabot version updates for the app, with routine update PRs targeting `development`;
 - accessibility-aware shared primitives and screen controls, including labels for icon actions, loading announcements, readable status text, and keyboard/tap-target guidance;
 - responsive layouts and platform-specific map components for phone, tablet, desktop web, iOS, and Android;
 - explicit skeleton, spinner, disabled, empty, error, toast, and confirmation states across implemented async and destructive flows.
@@ -111,7 +109,7 @@ npx tsc --noEmit
 npm run lint
 npm test
 npm run build
-npm run build --prefix backend
+npm run functions:verify
 ```
 
 ### Database and local security checks
@@ -148,17 +146,17 @@ The [hosted web build](https://onzait.vercel.app) was reachable when this README
 
 - Node.js 22 or newer
 - npm 10 (the repository package manager declared in `package.json`)
+- Deno 2.1 for local Edge Function verification
 - an Expo-compatible iOS Simulator or Android Emulator for native local development
 - a configured Supabase project for authenticated/product flows
 - Docker and the Supabase CLI only when running the local database test stack
 
 ### Install and run
 
-The repository uses npm and commits separate lockfiles for the app and experimental backend. Use `npm ci` for deterministic installs:
+The repository uses npm. Use `npm ci` for a deterministic install:
 
 ```bash
 npm ci
-npm ci --prefix backend
 ```
 
 Create `.env.local` from the generated contract in `.env.example`, replace the placeholders needed for your target, and verify that the documentation is in sync:
@@ -199,7 +197,6 @@ The environment contract covers:
 - server-side Google Maps keys and hard-cap settings for Supabase Edge Functions;
 - Resend/product-email settings;
 - optional Sentry source-map settings;
-- Prisma database URLs for the separate backend.
 
 See `.env.example` and `env-sync.config.json` for the full current list and deployment targets.
 
@@ -234,4 +231,3 @@ See `.env.example` and `env-sync.config.json` for the full current list and depl
 - `docs/pending-launch-setup.md` — custom domain, auth branding, DNS, and branded-email follow-up
 - `docs/email-flow.md` — welcome email flow and deployment
 - `supabase/README.md` — migrations, RLS, Storage, Edge Functions, and auth URLs
-- `backend/README.md` — separate Express/Prisma service setup

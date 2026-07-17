@@ -2,8 +2,8 @@
 
 Purpose: practical security rules for upcoming MVP feature work
 Source of truth for: security expectations around auth, authorization, RLS, uploads, validation, secrets, and release review
-Update when: auth architecture, storage strategy, client data-access scope, backend ownership, dependency automation, or MVP entity model changes
-Last reviewed: 2026-07-15
+Update when: auth architecture, storage strategy, client data-access scope, trusted server boundaries, dependency automation, or MVP entity model changes
+Last reviewed: 2026-07-16
 
 ## Scope
 
@@ -47,7 +47,9 @@ The main MVP security goal is preventing horizontal privilege escalation:
 - `public.users.id` must continue to match `auth.users.id`.
 - Global role must remain controlled by the database or trusted server path only.
 - The client must not be able to choose or escalate `role`.
-- If future admin-only flows are added, admin status must be checked in trusted policy or backend logic, not by hiding UI controls.
+- Manual OAuth identity linking must start from an authenticated user action, and the UI must re-read Supabase identities before claiming the provider was linked.
+- Auth callback query parameters describe the expected workflow but must not be treated as proof that an account mutation succeeded.
+- If future admin-only flows are added, admin status must be checked in trusted policy or server-side logic, not by hiding UI controls.
 
 ## Authorization and RLS
 
@@ -155,7 +157,7 @@ Every new boundary must validate inputs:
 - route params
 - query params
 - upload metadata
-- backend request bodies
+- server-side request bodies
 
 Minimum validation expectations:
 
@@ -176,22 +178,24 @@ Do not rely on UI-level disabled controls as protection.
 - do not expose service credentials in app code or public env vars
 - be careful with deep links and callback URLs
 - do not render unsanitized HTML
-- avoid leaking sensitive backend or auth internals in user-facing error messages
+- avoid leaking sensitive server-side or auth internals in user-facing error messages
 
 For web specifically:
 
 - ensure keyboard access for sensitive flows
 - ensure auth state changes do not accidentally expose protected screens during hydration
 
-## Backend security
+## Trusted server boundary security
 
-The backend is not the main auth path today, but if MVP features start using it:
+Supabase Edge Functions are the current trusted server boundary. For every privileged or user-scoped function:
 
-- every protected route must authenticate the caller
-- every protected route must authorize the action, not just the session
-- service-role operations must stay server-only
-- request schemas must be validated at the edge
-- security-relevant failures should be logged without exposing secrets
+- authenticate the caller when the operation is user-scoped
+- authorize the action, not just the session
+- keep service-role operations server-only and narrowly scoped
+- validate request schemas before performing work
+- log security-relevant failures without exposing secrets
+
+If a dedicated API or worker is introduced later, it must meet the same requirements before any client feature uses it.
 
 ## External API boundaries
 
@@ -213,7 +217,7 @@ The backend is not the main auth path today, but if MVP features start using it:
 
 - keep dependencies reasonably current
 - remove unused packages when practical
-- Dependabot checks the root app and `backend/` monthly, groups compatible minor/patch updates, limits open update pull requests, and targets routine version updates to `development`
+- Dependabot checks the root app monthly, groups compatible minor/patch updates, limits open update pull requests, and targets routine version updates to `development`
 - Dependabot security alerts and security updates remain enabled; GitHub creates security-update pull requests against the default branch (`main`)
 - pull requests targeting `development` or `main` must pass dependency review when they introduce dependency changes; newly introduced high- or critical-severity vulnerabilities fail the check
 - GitHub secret scanning and push protection supplement the local GitGuardian pre-commit hook
@@ -224,8 +228,8 @@ The backend is not the main auth path today, but if MVP features start using it:
   - `npm run lint`
   - `npm run build`
   - `npm test`
+  - `npm run functions:verify` when Edge Functions or their shared trusted-boundary helpers change
   - `npx supabase test db` when migrations or RLS policies change
-  - `npm run build --prefix backend`
 
 ## MVP release checklist
 

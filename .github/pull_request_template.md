@@ -27,7 +27,7 @@
 - [ ] `npm run lint`
 - [ ] `npm test`
 - [ ] `npm run build`
-- [ ] `npm run build --prefix backend` (when backend code is affected)
+- [ ] `npm run functions:verify` (when Edge Functions or shared function code changes)
 - [ ] Supabase tests (when migrations, RLS policies, or database functions change)
 - [ ] Manual web verification (when applicable)
 - [ ] Manual native verification (when applicable)
@@ -58,7 +58,6 @@
 - [ ] `README.md` updated for setup, commands, CI, or deployment changes
 - [ ] `AGENTS.md` updated for architecture or implementation rules
 - [ ] `supabase/README.md` updated for migrations, RLS, or Supabase behavior
-- [ ] `backend/README.md` updated for backend-specific changes
 - [ ] `env-sync.config.json` and `.env.example` remain synchronized
 - [ ] Design-system documentation updated when shared UI rules changed
 

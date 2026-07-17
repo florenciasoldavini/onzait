@@ -1,14 +1,21 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
+import { createClient } from "@supabase/supabase-js";
+import { isRecord } from "./request.ts";
 
 type GoogleMapsUsageService =
   | "maps_static_preview"
   | "places_autocomplete"
   | "places_resolve";
 
+type GoogleMapsUsageResult = {
+  allowed: boolean;
+  limit_count: number;
+  request_count: number;
+};
+
 export async function consumeGoogleMapsMonthlyLimit({
   defaultLimit,
   envName,
-  service
+  service,
 }: {
   defaultLimit: number;
   envName: string;
@@ -20,7 +27,7 @@ export async function consumeGoogleMapsMonthlyLimit({
     return {
       allowed: false,
       message: "Address lookup is disabled for this environment.",
-      status: 429
+      status: 429,
     };
   }
 
@@ -31,39 +38,59 @@ export async function consumeGoogleMapsMonthlyLimit({
     return {
       allowed: false,
       message: "Address lookup limit storage is not configured.",
-      status: 500
+      status: 500,
     };
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false }
+    auth: { persistSession: false },
   });
   const windowStart = getCurrentMonthStart();
   const { data, error } = await supabase
     .rpc("consume_google_maps_usage", {
       p_limit_count: limit,
       p_service: service,
-      p_window_start: windowStart
+      p_window_start: windowStart,
     })
     .single();
 
-  if (error || !data) {
+  const usage = parseUsageResult(data);
+
+  if (error || !usage) {
     return {
       allowed: false,
       message: "Address lookup limit check failed.",
-      status: 500
+      status: 500,
     };
   }
 
-  if (!data.allowed) {
+  if (!usage.allowed) {
     return {
       allowed: false,
-      message: `Address lookup monthly limit reached (${data.request_count}/${data.limit_count}). Try again next month.`,
-      status: 429
+      message:
+        `Address lookup monthly limit reached (${usage.request_count}/${usage.limit_count}). Try again next month.`,
+      status: 429,
     };
   }
 
   return { allowed: true, status: 200 };
+}
+
+function parseUsageResult(value: unknown): GoogleMapsUsageResult | null {
+  if (
+    !isRecord(value) ||
+    typeof value.allowed !== "boolean" ||
+    typeof value.limit_count !== "number" ||
+    typeof value.request_count !== "number"
+  ) {
+    return null;
+  }
+
+  return {
+    allowed: value.allowed,
+    limit_count: value.limit_count,
+    request_count: value.request_count,
+  };
 }
 
 function getPositiveIntegerEnv(name: string, fallback: number) {

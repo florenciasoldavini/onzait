@@ -11,21 +11,6 @@ import {
 } from "@/components/atoms";
 import { atomPalette, atomRadii, atomSpacing } from "@/components/atoms/theme";
 import { authCardMaxWidth } from "@/components/auth/AuthShell";
-import { AuthContext } from "@/contexts/auth";
-import { useUploadProfileAvatar } from "@/features/profile/hooks";
-import type { ProfileAvatarAsset } from "@/features/profile/repositories/profile-avatar.repository";
-import {
-  profileInfoSchema,
-  profilePasswordSchema,
-  type ProfileInfoInput,
-  type ProfilePasswordInput
-} from "@/features/profile/validation";
-import { updatePassword } from "@/lib/auth";
-import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
-import { zodResolver } from "@hookform/resolvers/zod";
-import type { UserIdentity } from "@supabase/supabase-js";
-import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
 import {
   CameraIcon,
   CheckCircleIcon,
@@ -35,6 +20,31 @@ import {
   PhoneIcon,
   UserIcon
 } from "@/components/icons";
+import { AuthContext } from "@/contexts/auth";
+import {
+  useChangeProfilePassword,
+  useLinkProfileIdentity,
+  useProfileUserIdentities,
+  useUploadProfileAvatar
+} from "@/features/profile/hooks";
+import type { ProfileAvatarAsset } from "@/features/profile/repositories/profile-avatar.repository";
+import {
+  profileInfoSchema,
+  profilePasswordSchema,
+  type ProfileInfoInput,
+  type ProfilePasswordInput
+} from "@/features/profile/validation";
+import {
+  getOAuthProviderLabel,
+  getSupportedOAuthProvider,
+  isIdentityProviderLinked,
+  type SupportedOAuthProvider
+} from "@/lib/auth-callback";
+import { getSupabaseErrorMessage } from "@/lib/supabase";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -93,6 +103,13 @@ function getProfileInfoDefaults(
 
 export default function ProfileScreen() {
   const { logOut, session, updateUserProfile, user } = useContext(AuthContext);
+  const router = useRouter();
+  const { identity_link_check: identityLinkCheckParam } = useLocalSearchParams<{
+    identity_link_check?: string | string[];
+  }>();
+  const returnedLinkProvider = getSupportedOAuthProvider(
+    identityLinkCheckParam
+  );
   const [avatarAsset, setAvatarAsset] = useState<ProfileAvatarAsset | null>(
     null
   );
@@ -101,14 +118,21 @@ export default function ProfileScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [securityStatus, setSecurityStatus] = useState<string | null>(null);
   const [securityError, setSecurityError] = useState<string | null>(null);
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-  const [identities, setIdentities] = useState<UserIdentity[]>([]);
   const [identityError, setIdentityError] = useState<string | null>(null);
-  const [identityLoading, setIdentityLoading] = useState(false);
+  const [identityStatus, setIdentityStatus] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
   const uploadAvatarMutation = useUploadProfileAvatar();
+  const {
+    data: identities = [],
+    error: identitiesQueryError,
+    isFetching: identitiesFetching,
+    isLoading: identitiesInitialLoading,
+    refetch: refetchIdentities
+  } = useProfileUserIdentities(Boolean(session));
+  const linkIdentityMutation = useLinkProfileIdentity();
+  const changePasswordMutation = useChangeProfilePassword();
   const profileForm = useForm<ProfileInfoInput>({
     defaultValues: getProfileInfoDefaults(user),
     mode: "onChange",
@@ -138,9 +162,17 @@ export default function ProfileScreen() {
   const avatar = watchProfileField("avatar");
   const isProfileSaving = isSaving || uploadAvatarMutation.isPending;
   const isProfileSaveDisabled =
-    isProfileSaving ||
-    !isProfileValid ||
-    (!isProfileDirty && !avatarAsset);
+    isProfileSaving || !isProfileValid || (!isProfileDirty && !avatarAsset);
+  const identityLoading = identitiesInitialLoading || identitiesFetching;
+  const displayedIdentityError =
+    identityError ??
+    (identitiesQueryError
+      ? getSupabaseErrorMessage(identitiesQueryError)
+      : null);
+  const linkingProvider = linkIdentityMutation.isPending
+    ? (linkIdentityMutation.variables ?? null)
+    : null;
+  const isUpdatingPassword = changePasswordMutation.isPending;
 
   const linkedProviders = useMemo(() => {
     return new Set(
@@ -149,28 +181,25 @@ export default function ProfileScreen() {
   }, [identities]);
 
   const refreshIdentities = useCallback(async () => {
-    if (!supabase || !session) {
-      setIdentities([]);
-      return;
+    if (!session) {
+      return [];
     }
 
-    setIdentityLoading(true);
     setIdentityError(null);
 
     try {
-      const { data, error } = await supabase.auth.getUserIdentities();
+      const result = await refetchIdentities();
 
-      if (error) {
-        throw error;
+      if (result.error) {
+        throw result.error;
       }
 
-      setIdentities(data.identities);
+      return result.data ?? [];
     } catch (error) {
       setIdentityError(getSupabaseErrorMessage(error));
-    } finally {
-      setIdentityLoading(false);
+      return null;
     }
-  }, [session]);
+  }, [refetchIdentities, session]);
 
   useEffect(() => {
     setAvatarAsset(null);
@@ -195,8 +224,44 @@ export default function ProfileScreen() {
   ]);
 
   useEffect(() => {
-    void refreshIdentities();
-  }, [refreshIdentities]);
+    if (!returnedLinkProvider) {
+      return;
+    }
+
+    let isMounted = true;
+    setActiveTab("methods");
+    setIdentityError(null);
+    setIdentityStatus(null);
+
+    const confirmLinkedIdentity = async () => {
+      const refreshedIdentities = await refreshIdentities();
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (
+        refreshedIdentities &&
+        isIdentityProviderLinked(refreshedIdentities, returnedLinkProvider)
+      ) {
+        setIdentityStatus(
+          `${getOAuthProviderLabel(returnedLinkProvider)} sign-in linked.`
+        );
+      } else if (refreshedIdentities) {
+        setIdentityError(
+          `We couldn't confirm the ${getOAuthProviderLabel(returnedLinkProvider)} link. Try again.`
+        );
+      }
+
+      router.setParams({ identity_link_check: undefined });
+    };
+
+    void confirmLinkedIdentity();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [refreshIdentities, returnedLinkProvider, router]);
 
   const saveProfile = handleProfileSubmit(async (values) => {
     if (!user) {
@@ -236,12 +301,11 @@ export default function ProfileScreen() {
   });
 
   const changePassword = handlePasswordSubmit(async ({ password }) => {
-    setIsUpdatingPassword(true);
     setSecurityError(null);
     setSecurityStatus(null);
 
     try {
-      await updatePassword(password);
+      await changePasswordMutation.mutateAsync(password);
       resetPasswordForm({
         confirmPassword: "",
         password: ""
@@ -249,10 +313,36 @@ export default function ProfileScreen() {
       setSecurityStatus("Password updated.");
     } catch (error) {
       setSecurityError(getSupabaseErrorMessage(error));
-    } finally {
-      setIsUpdatingPassword(false);
     }
   });
+
+  async function linkOAuthProvider(provider: SupportedOAuthProvider) {
+    if (linkedProviders.has(provider) || linkingProvider) {
+      return;
+    }
+
+    setIdentityError(null);
+    setIdentityStatus(null);
+
+    try {
+      await linkIdentityMutation.mutateAsync(provider);
+      const refreshedIdentities = await refreshIdentities();
+
+      if (!refreshedIdentities) {
+        return;
+      }
+
+      if (isIdentityProviderLinked(refreshedIdentities, provider)) {
+        setIdentityStatus(`${getOAuthProviderLabel(provider)} sign-in linked.`);
+      } else {
+        setIdentityError(
+          `We couldn't confirm the ${getOAuthProviderLabel(provider)} link. Try again.`
+        );
+      }
+    } catch (error) {
+      setIdentityError(getSupabaseErrorMessage(error));
+    }
+  }
 
   return (
     <Screen>
@@ -507,20 +597,39 @@ export default function ProfileScreen() {
                   provider="email"
                 />
                 <IdentityMethodRow
+                  isActionDisabled={identityLoading || linkingProvider !== null}
                   isLinked={linkedProviders.has("google")}
+                  isLoading={linkingProvider === "google"}
+                  onLink={() => {
+                    void linkOAuthProvider("google");
+                  }}
                   provider="google"
                 />
                 <IdentityMethodRow
+                  isActionDisabled={identityLoading || linkingProvider !== null}
                   isLinked={linkedProviders.has("apple")}
+                  isLoading={linkingProvider === "apple"}
+                  onLink={() => {
+                    void linkOAuthProvider("apple");
+                  }}
                   provider="apple"
                 />
               </View>
 
-              {identityLoading ? (
+              {linkingProvider ? (
+                <FieldMessage>
+                  Connecting {getOAuthProviderLabel(linkingProvider)}...
+                </FieldMessage>
+              ) : identityLoading ? (
                 <FieldMessage>Checking linked methods...</FieldMessage>
               ) : null}
-              {identityError ? (
-                <FieldMessage tone="error">{identityError}</FieldMessage>
+              {identityStatus ? (
+                <FieldMessage tone="success">{identityStatus}</FieldMessage>
+              ) : null}
+              {displayedIdentityError ? (
+                <FieldMessage tone="error">
+                  {displayedIdentityError}
+                </FieldMessage>
               ) : null}
             </View>
           </AppCard>
@@ -643,10 +752,16 @@ const profileStyles = StyleSheet.create({
 });
 
 function IdentityMethodRow({
+  isActionDisabled = false,
   isLinked,
+  isLoading = false,
+  onLink,
   provider
 }: {
+  isActionDisabled?: boolean;
   isLinked: boolean;
+  isLoading?: boolean;
+  onLink?: () => void;
   provider: IdentityProvider;
 }) {
   const copy = providerCopy[provider];
@@ -694,6 +809,18 @@ function IdentityMethodRow({
             Linked
           </AppText>
         </View>
+      ) : onLink && provider !== "email" ? (
+        <AppButton
+          accessibilityLabel={`Link ${copy.label} sign-in`}
+          fullWidth={false}
+          isDisabled={isActionDisabled}
+          loading={isLoading}
+          onPress={onLink}
+          size="sm"
+          variant="bordered"
+        >
+          Link
+        </AppButton>
       ) : null}
     </View>
   );
