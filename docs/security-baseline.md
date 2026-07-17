@@ -47,6 +47,8 @@ The main MVP security goal is preventing horizontal privilege escalation:
 - `public.users.id` must continue to match `auth.users.id`.
 - Global role must remain controlled by the database or trusted server path only.
 - The client must not be able to choose or escalate `role`.
+- Manual OAuth identity linking must start from an authenticated user action, and the UI must re-read Supabase identities before claiming the provider was linked.
+- Auth callback query parameters describe the expected workflow but must not be treated as proof that an account mutation succeeded.
 - If future admin-only flows are added, admin status must be checked in trusted policy or server-side logic, not by hiding UI controls.
 
 ## Authorization and RLS

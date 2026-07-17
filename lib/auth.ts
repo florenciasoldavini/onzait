@@ -1,3 +1,8 @@
+import {
+  getIdentityLinkCallbackParams,
+  getOAuthProviderLabel,
+  type SupportedOAuthProvider
+} from "@/lib/auth-callback";
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
 import type { Session } from "@supabase/supabase-js";
 import Constants, { ExecutionEnvironment } from "expo-constants";
@@ -7,7 +12,7 @@ import { Platform } from "react-native";
 
 WebBrowser.maybeCompleteAuthSession();
 
-export type SupportedOAuthProvider = "apple" | "google";
+export type { SupportedOAuthProvider } from "@/lib/auth-callback";
 
 export interface AuthRedirectResult {
   session: Session | null;
@@ -165,7 +170,7 @@ export async function startOAuthSignIn(provider: SupportedOAuthProvider) {
   }
 
   const redirectTo = getAuthRedirectUrl("callback");
-  const providerLabel = provider === "google" ? "Google" : "Apple";
+  const providerLabel = getOAuthProviderLabel(provider);
 
   if (Platform.OS === "web") {
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -218,8 +223,11 @@ export async function startOAuthIdentityLink(provider: SupportedOAuthProvider) {
     throw new Error(getSupabaseErrorMessage("Supabase is not configured."));
   }
 
-  const redirectTo = getAuthRedirectUrl("callback", { next: "/profile" });
-  const providerLabel = provider === "google" ? "Google" : "Apple";
+  const redirectTo = getAuthRedirectUrl(
+    "callback",
+    getIdentityLinkCallbackParams(provider)
+  );
+  const providerLabel = getOAuthProviderLabel(provider);
 
   if (Platform.OS === "web") {
     const { data, error } = await supabase.auth.linkIdentity({
@@ -253,6 +261,10 @@ export async function startOAuthIdentityLink(provider: SupportedOAuthProvider) {
   }
 
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
+  if (result.type === "cancel" || result.type === "dismiss") {
+    throw new Error(`${providerLabel} account linking was canceled.`);
+  }
 
   if (result.type !== "success" || !("url" in result) || !result.url) {
     const redirectHelp = isExpoGo()
@@ -311,25 +323,6 @@ export async function updatePassword(password: string) {
   }
 
   return data;
-}
-
-function getSafePostAuthRedirectPath(nextPath: string | null) {
-  if (!nextPath || !nextPath.startsWith("/") || nextPath.startsWith("//")) {
-    return "/";
-  }
-
-  return nextPath;
-}
-
-export function getPostAuthRedirectPath(
-  authType: string | null,
-  nextPath: string | null = null
-) {
-  if (authType === "recovery") {
-    return "/reset-password";
-  }
-
-  return getSafePostAuthRedirectPath(nextPath);
 }
 
 export function clearWebAuthUrlArtifacts() {
