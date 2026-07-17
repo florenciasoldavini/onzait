@@ -11,28 +11,6 @@ import {
 } from "@/components/atoms";
 import { atomPalette, atomRadii, atomSpacing } from "@/components/atoms/theme";
 import { authCardMaxWidth } from "@/components/auth/AuthShell";
-import { AuthContext } from "@/contexts/auth";
-import { useUploadProfileAvatar } from "@/features/profile/hooks";
-import type { ProfileAvatarAsset } from "@/features/profile/repositories/profile-avatar.repository";
-import {
-  profileInfoSchema,
-  profilePasswordSchema,
-  type ProfileInfoInput,
-  type ProfilePasswordInput
-} from "@/features/profile/validation";
-import { startOAuthIdentityLink, updatePassword } from "@/lib/auth";
-import {
-  getOAuthProviderLabel,
-  getSupportedOAuthProvider,
-  isIdentityProviderLinked,
-  type SupportedOAuthProvider
-} from "@/lib/auth-callback";
-import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
-import { zodResolver } from "@hookform/resolvers/zod";
-import type { UserIdentity } from "@supabase/supabase-js";
-import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   CameraIcon,
   CheckCircleIcon,
@@ -42,6 +20,31 @@ import {
   PhoneIcon,
   UserIcon
 } from "@/components/icons";
+import { AuthContext } from "@/contexts/auth";
+import {
+  useChangeProfilePassword,
+  useLinkProfileIdentity,
+  useProfileUserIdentities,
+  useUploadProfileAvatar
+} from "@/features/profile/hooks";
+import type { ProfileAvatarAsset } from "@/features/profile/repositories/profile-avatar.repository";
+import {
+  profileInfoSchema,
+  profilePasswordSchema,
+  type ProfileInfoInput,
+  type ProfilePasswordInput
+} from "@/features/profile/validation";
+import {
+  getOAuthProviderLabel,
+  getSupportedOAuthProvider,
+  isIdentityProviderLinked,
+  type SupportedOAuthProvider
+} from "@/lib/auth-callback";
+import { getSupabaseErrorMessage } from "@/lib/supabase";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -115,17 +118,21 @@ export default function ProfileScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [securityStatus, setSecurityStatus] = useState<string | null>(null);
   const [securityError, setSecurityError] = useState<string | null>(null);
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-  const [identities, setIdentities] = useState<UserIdentity[]>([]);
   const [identityError, setIdentityError] = useState<string | null>(null);
-  const [identityLoading, setIdentityLoading] = useState(true);
   const [identityStatus, setIdentityStatus] = useState<string | null>(null);
-  const [linkingProvider, setLinkingProvider] =
-    useState<SupportedOAuthProvider | null>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
   const uploadAvatarMutation = useUploadProfileAvatar();
+  const {
+    data: identities = [],
+    error: identitiesQueryError,
+    isFetching: identitiesFetching,
+    isLoading: identitiesInitialLoading,
+    refetch: refetchIdentities
+  } = useProfileUserIdentities(Boolean(session));
+  const linkIdentityMutation = useLinkProfileIdentity();
+  const changePasswordMutation = useChangeProfilePassword();
   const profileForm = useForm<ProfileInfoInput>({
     defaultValues: getProfileInfoDefaults(user),
     mode: "onChange",
@@ -156,6 +163,16 @@ export default function ProfileScreen() {
   const isProfileSaving = isSaving || uploadAvatarMutation.isPending;
   const isProfileSaveDisabled =
     isProfileSaving || !isProfileValid || (!isProfileDirty && !avatarAsset);
+  const identityLoading = identitiesInitialLoading || identitiesFetching;
+  const displayedIdentityError =
+    identityError ??
+    (identitiesQueryError
+      ? getSupabaseErrorMessage(identitiesQueryError)
+      : null);
+  const linkingProvider = linkIdentityMutation.isPending
+    ? (linkIdentityMutation.variables ?? null)
+    : null;
+  const isUpdatingPassword = changePasswordMutation.isPending;
 
   const linkedProviders = useMemo(() => {
     return new Set(
@@ -164,31 +181,25 @@ export default function ProfileScreen() {
   }, [identities]);
 
   const refreshIdentities = useCallback(async () => {
-    if (!supabase || !session) {
-      setIdentities([]);
-      setIdentityLoading(false);
+    if (!session) {
       return [];
     }
 
-    setIdentityLoading(true);
     setIdentityError(null);
 
     try {
-      const { data, error } = await supabase.auth.getUserIdentities();
+      const result = await refetchIdentities();
 
-      if (error) {
-        throw error;
+      if (result.error) {
+        throw result.error;
       }
 
-      setIdentities(data.identities);
-      return data.identities;
+      return result.data ?? [];
     } catch (error) {
       setIdentityError(getSupabaseErrorMessage(error));
       return null;
-    } finally {
-      setIdentityLoading(false);
     }
-  }, [session]);
+  }, [refetchIdentities, session]);
 
   useEffect(() => {
     setAvatarAsset(null);
@@ -211,12 +222,6 @@ export default function ProfileScreen() {
     resetProfileForm,
     resetPasswordForm
   ]);
-
-  useEffect(() => {
-    if (!returnedLinkProvider) {
-      void refreshIdentities();
-    }
-  }, [refreshIdentities, returnedLinkProvider]);
 
   useEffect(() => {
     if (!returnedLinkProvider) {
@@ -296,12 +301,11 @@ export default function ProfileScreen() {
   });
 
   const changePassword = handlePasswordSubmit(async ({ password }) => {
-    setIsUpdatingPassword(true);
     setSecurityError(null);
     setSecurityStatus(null);
 
     try {
-      await updatePassword(password);
+      await changePasswordMutation.mutateAsync(password);
       resetPasswordForm({
         confirmPassword: "",
         password: ""
@@ -309,8 +313,6 @@ export default function ProfileScreen() {
       setSecurityStatus("Password updated.");
     } catch (error) {
       setSecurityError(getSupabaseErrorMessage(error));
-    } finally {
-      setIsUpdatingPassword(false);
     }
   });
 
@@ -319,12 +321,11 @@ export default function ProfileScreen() {
       return;
     }
 
-    setLinkingProvider(provider);
     setIdentityError(null);
     setIdentityStatus(null);
 
     try {
-      await startOAuthIdentityLink(provider);
+      await linkIdentityMutation.mutateAsync(provider);
       const refreshedIdentities = await refreshIdentities();
 
       if (!refreshedIdentities) {
@@ -340,8 +341,6 @@ export default function ProfileScreen() {
       }
     } catch (error) {
       setIdentityError(getSupabaseErrorMessage(error));
-    } finally {
-      setLinkingProvider(null);
     }
   }
 
@@ -627,8 +626,10 @@ export default function ProfileScreen() {
               {identityStatus ? (
                 <FieldMessage tone="success">{identityStatus}</FieldMessage>
               ) : null}
-              {identityError ? (
-                <FieldMessage tone="error">{identityError}</FieldMessage>
+              {displayedIdentityError ? (
+                <FieldMessage tone="error">
+                  {displayedIdentityError}
+                </FieldMessage>
               ) : null}
             </View>
           </AppCard>
