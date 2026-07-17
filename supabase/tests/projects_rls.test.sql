@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(17);
+select plan(21);
 
 insert into public.users (
   id,
@@ -214,6 +214,20 @@ select is(
   'normal user cannot read another project cover object'
 );
 
+select results_eq(
+  $$
+    with deleted as (
+      delete from storage.objects
+      where bucket_id = 'project-covers'
+        and name = 'projects/10000000-0000-4000-8000-000000000003/cover/test.jpg'
+      returning 1
+    )
+    select count(*)::integer from deleted
+  $$,
+  $$ values (0) $$,
+  'normal user cannot delete another project cover object'
+);
+
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000003', true);
 
 select is(
@@ -228,6 +242,20 @@ select is(
 );
 
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000001', true);
+
+select results_eq(
+  $$
+    with deleted as (
+      delete from storage.objects
+      where bucket_id = 'project-covers'
+        and name = 'projects/10000000-0000-4000-8000-000000000003/cover/test.jpg'
+      returning 1
+    )
+    select count(*)::integer from deleted
+  $$,
+  $$ values (1) $$,
+  'owner can delete a cover object for own project'
+);
 
 select lives_ok(
   $$
@@ -275,6 +303,20 @@ select is(
   'user cannot list another user avatar object'
 );
 
+select results_eq(
+  $$
+    with deleted as (
+      delete from storage.objects
+      where bucket_id = 'user-avatars'
+        and name = 'users/00000000-0000-4000-8000-000000000001/avatar/profile.jpg'
+      returning 1
+    )
+    select count(*)::integer from deleted
+  $$,
+  $$ values (0) $$,
+  'user cannot delete another user avatar object'
+);
+
 select throws_ok(
   $$
     insert into storage.objects (
@@ -293,6 +335,22 @@ select throws_ok(
   '42501',
   null,
   'user cannot insert avatar object under another user folder'
+);
+
+select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000001', true);
+
+select results_eq(
+  $$
+    with deleted as (
+      delete from storage.objects
+      where bucket_id = 'user-avatars'
+        and name = 'users/00000000-0000-4000-8000-000000000001/avatar/profile.jpg'
+      returning 1
+    )
+    select count(*)::integer from deleted
+  $$,
+  $$ values (1) $$,
+  'user can delete own avatar object'
 );
 
 select * from finish();

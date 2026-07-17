@@ -24,8 +24,7 @@ import { AuthContext } from "@/contexts/auth";
 import {
   useChangeProfilePassword,
   useLinkProfileIdentity,
-  useProfileUserIdentities,
-  useUploadProfileAvatar
+  useProfileUserIdentities
 } from "@/features/profile/hooks";
 import type { ProfileAvatarAsset } from "@/features/profile/repositories/profile-avatar.repository";
 import {
@@ -123,7 +122,6 @@ export default function ProfileScreen() {
   const [identityError, setIdentityError] = useState<string | null>(null);
   const [identityStatus, setIdentityStatus] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
-  const uploadAvatarMutation = useUploadProfileAvatar();
   const {
     data: identities = [],
     error: identitiesQueryError,
@@ -160,7 +158,7 @@ export default function ProfileScreen() {
     reset: resetPasswordForm
   } = securityForm;
   const avatar = watchProfileField("avatar");
-  const isProfileSaving = isSaving || uploadAvatarMutation.isPending;
+  const isProfileSaving = isSaving;
   const isProfileSaveDisabled =
     isProfileSaving || !isProfileValid || (!isProfileDirty && !avatarAsset);
   const identityLoading = identitiesInitialLoading || identitiesFetching;
@@ -274,19 +272,12 @@ export default function ProfileScreen() {
     setStatusMessage(null);
 
     try {
-      const avatarUrl = avatarAsset
-        ? await uploadAvatarMutation.mutateAsync({
-            asset: avatarAsset,
-            userId: user.id
-          })
-        : values.avatar;
-
       const updatedUser = await updateUserProfile({
-        avatar: avatarUrl,
+        avatar: values.avatar,
         first_name: values.firstName.trim(),
         last_name: values.lastName,
         phone_number: values.phoneNumber
-      });
+      }, avatarAsset);
 
       if (updatedUser) {
         setAvatarAsset(null);

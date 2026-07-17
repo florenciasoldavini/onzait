@@ -15,6 +15,38 @@ export function buildProfileAvatarPath({
   return `users/${userId}/avatar/${uuid}.${getAvatarExtension(asset)}`;
 }
 
+export function getProfileAvatarPathFromPublicUrl({
+  bucket,
+  publicUrl,
+  userId
+}: {
+  bucket: string;
+  publicUrl: string | null | undefined;
+  userId: string;
+}) {
+  if (!publicUrl) {
+    return null;
+  }
+
+  try {
+    const marker = `/storage/v1/object/public/${bucket}/`;
+    const pathname = new URL(publicUrl).pathname;
+    const markerIndex = pathname.indexOf(marker);
+
+    if (markerIndex < 0) {
+      return null;
+    }
+
+    const path = decodeURIComponent(
+      pathname.slice(markerIndex + marker.length)
+    );
+
+    return path.startsWith(`users/${userId}/avatar/`) ? path : null;
+  } catch {
+    return null;
+  }
+}
+
 export function getMimeTypeFromExtension(extension: string) {
   if (extension === "png") {
     return "image/png";

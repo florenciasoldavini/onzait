@@ -118,6 +118,11 @@ Baseline rules:
 - enforce file size limits
 - reject files with missing or suspicious metadata
 - do not trust filenames provided by the client
+- upload replacements to immutable unique paths rather than overwriting the currently referenced object
+- remove a newly uploaded object when the following database reference update fails
+- remove the previous object only after the new database reference succeeds
+- use an expected-current-reference check when replacing avatars or project files so concurrent uploads cannot silently overwrite each other
+- report cleanup failures without rolling back a database reference that already points to a valid new object
 
 Recommended path structure:
 

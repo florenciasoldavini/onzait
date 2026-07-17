@@ -46,6 +46,29 @@ export async function uploadProjectCoverObject({
   return path;
 }
 
+export async function removeProjectCoverObject({
+  path,
+  projectId
+}: {
+  path: string;
+  projectId: string;
+}) {
+  if (!path.startsWith(`projects/${projectId}/cover/`)) {
+    throw new Error(
+      "Refusing to remove a project cover outside the expected project path."
+    );
+  }
+
+  const client = requireSupabase();
+  const { error } = await client.storage
+    .from(PROJECT_COVER_BUCKET)
+    .remove([path]);
+
+  if (error) {
+    throw toRepositoryError(error);
+  }
+}
+
 function createRandomId() {
   return (
     globalThis.crypto?.randomUUID?.() ??

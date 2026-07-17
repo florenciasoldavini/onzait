@@ -31,7 +31,7 @@ export async function uploadProfileAvatarObject({
     .upload(path, blob, {
       cacheControl: "3600",
       contentType: asset.mimeType ?? getMimeTypeFromExtension(extension),
-      upsert: true
+      upsert: false
     });
 
   if (error) {
@@ -39,6 +39,27 @@ export async function uploadProfileAvatarObject({
   }
 
   return path;
+}
+
+export async function removeProfileAvatarObject({
+  path,
+  userId
+}: {
+  path: string;
+  userId: string;
+}) {
+  if (!path.startsWith(`users/${userId}/avatar/`)) {
+    throw new Error("Refusing to remove an avatar outside the current user path.");
+  }
+
+  const client = requireSupabase();
+  const { error } = await client.storage
+    .from(USER_AVATAR_BUCKET)
+    .remove([path]);
+
+  if (error) {
+    throw toRepositoryError(error);
+  }
 }
 
 export function getProfileAvatarPublicUrl(path: string) {
