@@ -54,11 +54,15 @@ Last reviewed: 2026-07-17
 - Google/Apple identity linking from the profile screen
 - Password reset
 - Shared callback/session handling lives in [lib/auth.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/lib/auth.ts:1)
+- Auth screens reach Supabase through `features/auth` hooks, services, and repositories; screen-level imports of the Supabase client or shared auth transport are prohibited by ESLint
 
 ### Important Auth Files
 
 - [lib/auth.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/lib/auth.ts:1)
 - [lib/supabase.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/lib/supabase.ts:1)
+- [features/auth/hooks.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/hooks.ts:1)
+- [features/auth/services/auth.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth.service.ts:1)
+- [features/auth/repositories/auth.repository.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/repositories/auth.repository.ts:1)
 - [contexts/auth.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/contexts/auth.tsx:1)
 - [app/\_layout.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/_layout.tsx:1)
 - [app/(auth)/callback.tsx](</Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/(auth)/callback.tsx:1>)

@@ -11,14 +11,10 @@ import {
 } from "@/components/atoms";
 import { atomSpacing } from "@/components/atoms/theme";
 import {
-  clearWebAuthUrlArtifacts,
-  completeAuthSessionFromUrl,
-  getActiveAuthUrl,
-  sendPasswordResetEmail,
-  updatePassword,
-  urlHasAuthPayload
-} from "@/lib/auth";
-import { getSupabaseErrorMessage } from "@/lib/supabase";
+  usePasswordRecoveryPreparation,
+  usePasswordResetRequest,
+  usePasswordUpdate
+} from "@/features/auth/hooks";
 import {
   forgotPasswordSchema,
   resetPasswordSchema,
@@ -38,6 +34,10 @@ type ResetMode = "request" | "update";
 export default function ResetPasswordScreen() {
   const router = useRouter();
   const linkingUrl = Linking.useURL();
+  const { mutateAsync: preparePasswordRecovery } =
+    usePasswordRecoveryPreparation();
+  const { mutateAsync: requestPasswordReset } = usePasswordResetRequest();
+  const { mutateAsync: updatePassword } = usePasswordUpdate();
   const [formError, setFormError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<ResetMode>("request");
@@ -71,12 +71,6 @@ export default function ResetPasswordScreen() {
     (mode === "update" ? !isPasswordUpdateValid : !isResetRequestValid);
 
   useEffect(() => {
-    const activeUrl = getActiveAuthUrl(linkingUrl);
-
-    if (!activeUrl || !urlHasAuthPayload(activeUrl)) {
-      return;
-    }
-
     let isMounted = true;
 
     const prepareRecoverySession = async () => {
@@ -84,15 +78,14 @@ export default function ResetPasswordScreen() {
         setIsLoading(true);
         setFormError(null);
 
-        const { type, session } = await completeAuthSessionFromUrl(activeUrl);
+        const { shouldUpdatePassword } =
+          await preparePasswordRecovery(linkingUrl);
 
         if (!isMounted) {
           return;
         }
 
-        clearWebAuthUrlArtifacts();
-
-        if (type === "recovery" || session) {
+        if (shouldUpdatePassword) {
           setMode("update");
           requestForm.clearErrors();
           updateForm.reset({
@@ -105,7 +98,11 @@ export default function ResetPasswordScreen() {
           return;
         }
 
-        setFormError(getSupabaseErrorMessage(error));
+        setFormError(
+          error instanceof Error
+            ? error.message
+            : "Unable to prepare password recovery."
+        );
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -118,18 +115,21 @@ export default function ResetPasswordScreen() {
     return () => {
       isMounted = false;
     };
-  }, [linkingUrl]);
+  }, [linkingUrl, preparePasswordRecovery, requestForm, updateForm]);
 
   const handleResetRequest = requestForm.handleSubmit(async ({ email }) => {
     setIsLoading(true);
     setFormError(null);
 
     try {
-      await sendPasswordResetEmail(email);
+      await requestPasswordReset(email);
       router.replace("/sign-in");
     } catch (error) {
-      const message = getSupabaseErrorMessage(error);
-      setFormError(message);
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Unable to send the password reset email."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -143,8 +143,11 @@ export default function ResetPasswordScreen() {
       await updatePassword(password);
       router.replace("/");
     } catch (error) {
-      const message = getSupabaseErrorMessage(error);
-      setFormError(message);
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update the password."
+      );
     } finally {
       setIsLoading(false);
     }
