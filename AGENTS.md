@@ -3,7 +3,7 @@
 Purpose: architecture snapshot, product decisions, and implementation guardrails for contributors and agents
 Source of truth for: current auth architecture, platform decisions, naming rules, and high-level project constraints
 Update when: auth flow, platform ownership, schema strategy, CI expectations, or product naming decisions change
-Last reviewed: 2026-07-16
+Last reviewed: 2026-07-17
 
 ## Project Snapshot
 
@@ -31,6 +31,8 @@ Last reviewed: 2026-07-16
 - Web is the first launch target because it can be deployed on Vercel without app-store distribution, but implementation choices must not block later iOS and Android releases.
 - Use the correct implementation for each environment when a feature needs platform-specific behavior. Prefer shared product logic with platform-specific UI or infrastructure adapters over a lowest-common-denominator workaround.
 - UI responsiveness and functional behavior must both be considered across phone, tablet, and desktop layouts before a feature is treated as complete.
+- Native builds support portrait and landscape rather than locking orientation. Tablet landscape and iPad multitasking layouts are required product surfaces, and installed web apps must not request a fixed orientation.
+- Compact-height landscape layouts must keep primary content and actions reachable. Screens that can overflow vertically must remain scrollable before, during, and after keyboard interaction.
 
 ## Auth Architecture
 

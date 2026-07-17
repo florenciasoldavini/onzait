@@ -173,7 +173,6 @@ export function Screen({
       ]}
       keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       keyboardShouldPersistTaps="handled"
-      scrollEnabled={!shouldAvoidKeyboard || keyboardVisible}
       showsVerticalScrollIndicator={false}
     >
       {container}
