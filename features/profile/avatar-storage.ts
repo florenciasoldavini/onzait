@@ -15,6 +15,57 @@ export function buildProfileAvatarPath({
   return `users/${userId}/avatar/${uuid}.${getAvatarExtension(asset)}`;
 }
 
+export function getProfileAvatarStoragePath({
+  bucket,
+  reference,
+  userId
+}: {
+  bucket: string;
+  reference: string | null | undefined;
+  userId?: string;
+}) {
+  const normalizedReference = reference?.trim();
+
+  if (!normalizedReference) {
+    return null;
+  }
+
+  if (isProfileAvatarPath(normalizedReference, userId)) {
+    return normalizedReference;
+  }
+
+  try {
+    const pathname = new URL(normalizedReference).pathname;
+    const markers = [
+      `/storage/v1/object/public/${bucket}/`,
+      `/storage/v1/object/sign/${bucket}/`,
+      `/storage/v1/object/authenticated/${bucket}/`
+    ];
+    const marker = markers.find((candidate) => pathname.includes(candidate));
+
+    if (!marker) {
+      return null;
+    }
+
+    const path = decodeURIComponent(
+      pathname.slice(pathname.indexOf(marker) + marker.length)
+    );
+
+    return isProfileAvatarPath(path, userId) ? path : null;
+  } catch {
+    return null;
+  }
+}
+
+export function isExternalProfileAvatarUrl(reference: string) {
+  try {
+    const url = new URL(reference);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
 export function getMimeTypeFromExtension(extension: string) {
   if (extension === "png") {
     return "image/png";
@@ -39,6 +90,22 @@ function createRandomId() {
   return (
     globalThis.crypto?.randomUUID?.() ??
     `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
+}
+
+function isProfileAvatarPath(path: string, userId?: string) {
+  const [usersSegment, ownerId, avatarSegment, fileName, ...rest] =
+    path.split("/");
+
+  return (
+    usersSegment === "users" &&
+    Boolean(ownerId) &&
+    (!userId || ownerId === userId) &&
+    avatarSegment === "avatar" &&
+    Boolean(fileName) &&
+    fileName !== "." &&
+    fileName !== ".." &&
+    rest.length === 0
   );
 }
 

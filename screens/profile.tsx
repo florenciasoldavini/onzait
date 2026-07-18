@@ -24,8 +24,8 @@ import { AuthContext } from "@/contexts/auth";
 import {
   useChangeProfilePassword,
   useLinkProfileIdentity,
-  useProfileUserIdentities,
-  useUploadProfileAvatar
+  useProfileAvatarUrl,
+  useProfileUserIdentities
 } from "@/features/profile/hooks";
 import type { ProfileAvatarAsset } from "@/features/profile/repositories/profile-avatar.repository";
 import {
@@ -48,6 +48,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
+  ActivityIndicator,
   Platform,
   Pressable,
   StyleSheet,
@@ -123,7 +124,6 @@ export default function ProfileScreen() {
   const [identityError, setIdentityError] = useState<string | null>(null);
   const [identityStatus, setIdentityStatus] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
-  const uploadAvatarMutation = useUploadProfileAvatar();
   const {
     data: identities = [],
     error: identitiesQueryError,
@@ -160,7 +160,12 @@ export default function ProfileScreen() {
     reset: resetPasswordForm
   } = securityForm;
   const avatar = watchProfileField("avatar");
-  const isProfileSaving = isSaving || uploadAvatarMutation.isPending;
+  const {
+    data: avatarDisplayUrl = null,
+    error: avatarDisplayError,
+    isLoading: avatarDisplayLoading
+  } = useProfileAvatarUrl(avatar);
+  const isProfileSaving = isSaving;
   const isProfileSaveDisabled =
     isProfileSaving || !isProfileValid || (!isProfileDirty && !avatarAsset);
   const identityLoading = identitiesInitialLoading || identitiesFetching;
@@ -274,19 +279,15 @@ export default function ProfileScreen() {
     setStatusMessage(null);
 
     try {
-      const avatarUrl = avatarAsset
-        ? await uploadAvatarMutation.mutateAsync({
-            asset: avatarAsset,
-            userId: user.id
-          })
-        : values.avatar;
-
-      const updatedUser = await updateUserProfile({
-        avatar: avatarUrl,
-        first_name: values.firstName.trim(),
-        last_name: values.lastName,
-        phone_number: values.phoneNumber
-      });
+      const updatedUser = await updateUserProfile(
+        {
+          avatar: values.avatar,
+          first_name: values.firstName.trim(),
+          last_name: values.lastName,
+          phone_number: values.phoneNumber
+        },
+        avatarAsset
+      );
 
       if (updatedUser) {
         setAvatarAsset(null);
@@ -381,7 +382,8 @@ export default function ProfileScreen() {
                   }}
                 >
                   <AvatarPicker
-                    currentUrl={avatar}
+                    currentUrl={avatarDisplayUrl ?? ""}
+                    isLoading={avatarDisplayLoading}
                     onChange={(asset) => {
                       setAvatarAsset(asset);
                       setFormError(null);
@@ -389,6 +391,11 @@ export default function ProfileScreen() {
                     }}
                     value={avatarAsset}
                   />
+                  {avatarDisplayError ? (
+                    <FieldMessage tone="error">
+                      Profile photo unavailable. Try refreshing the page.
+                    </FieldMessage>
+                  ) : null}
                 </View>
 
                 <Controller
@@ -654,10 +661,12 @@ export default function ProfileScreen() {
 
 function AvatarPicker({
   currentUrl,
+  isLoading,
   onChange,
   value
 }: {
   currentUrl: string;
+  isLoading: boolean;
   onChange: (asset: ProfileAvatarAsset) => void;
   value: ProfileAvatarAsset | null;
 }) {
@@ -701,7 +710,15 @@ function AvatarPicker({
         Platform.OS === "web" ? profileStyles.webCursor : null
       ])}
     >
-      {previewUri ? (
+      {value?.uri ? (
+        <Image
+          contentFit="cover"
+          source={{ uri: value.uri }}
+          style={profileStyles.avatarImage}
+        />
+      ) : isLoading ? (
+        <ActivityIndicator color={atomPalette.textSubtle} />
+      ) : previewUri ? (
         <Image
           contentFit="cover"
           source={{ uri: previewUri }}

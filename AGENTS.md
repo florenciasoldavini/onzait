@@ -187,6 +187,9 @@ Last reviewed: 2026-07-17
 - Paid external API boundaries must include durable hard caps before provider calls when provider-side quotas cannot be safely lowered.
 - Google Maps keys are expected to be restricted to only the APIs and platforms currently used. Project address lookup uses server-side Places API (New), selected-address preview functions use server-side Maps Static API, the web projects map uses the Maps JavaScript API, Android project maps use Maps SDK for Android through `react-native-maps`, and iOS project maps use the native default Apple Maps provider unless a future custom native build intentionally enables Google Maps on iOS. If a future feature needs a different Google Maps API or SDK, remind the project owner to update Google Cloud key restrictions before rollout.
 - Do not persistently cache third-party API content unless that provider's terms allow it; store only product data the user selected or created.
+- Storage replacements must use immutable unique object paths and service-owned compensation: delete a newly uploaded object if its database reference cannot be committed, and delete the previous object only after the new reference succeeds. Avatar and project-cover reference changes must compare the expected previous reference to prevent concurrent replacements from overwriting each other.
+- User avatars live in the private `user-avatars` bucket. Profile rows store stable avatar object paths (or external OAuth avatar URLs), UI hooks resolve short-lived signed URLs, authenticated users may read avatars without listing other users' objects, and only owners may upload or delete their avatar objects.
+- Storage cleanup must go through the Supabase Storage API under the applicable DELETE policy. A failed cleanup after a successful database update must not roll back the valid new reference; report it to monitoring for reconciliation.
 
 ## Web / Hosting Notes
 

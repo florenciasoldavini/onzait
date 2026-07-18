@@ -1,11 +1,13 @@
 import {
   createProjectCoverSignedUrl,
+  removeProjectCoverObject,
   uploadProjectCoverObject
 } from "@/features/projects/repositories/project-covers.repository";
 import {
   getProjectRow,
   insertProjectRow,
   listProjectRows,
+  replaceProjectCoverPath,
   softDeleteProjectRow,
   updateProjectRow
 } from "@/features/projects/repositories/projects.repository";
@@ -15,6 +17,7 @@ import type {
   ProjectFilters,
   UpdateProjectInput
 } from "@/features/projects/types";
+import { Sentry } from "@/lib/sentry";
 
 export async function listProjects({
   filters,
@@ -62,9 +65,61 @@ export async function uploadProjectCover({
   asset: { fileName?: string | null; mimeType?: string | null; uri: string };
   projectId: string;
 }) {
+  const project = await getProjectRow(projectId);
+
+  if (!project) {
+    throw new Error("Project not found.");
+  }
+
   const coverPath = await uploadProjectCoverObject({ asset, projectId });
-  await updateProjectRow(projectId, { cover_image_path: coverPath });
+
+  try {
+    await replaceProjectCoverPath({
+      expectedCurrentPath: project.cover_image_path,
+      newPath: coverPath,
+      projectId
+    });
+  } catch (error) {
+    await removeProjectCoverSafely({
+      cleanupReason: "compensation",
+      path: coverPath,
+      projectId
+    });
+    throw error;
+  }
+
+  if (
+    project.cover_image_path &&
+    project.cover_image_path !== coverPath
+  ) {
+    await removeProjectCoverSafely({
+      cleanupReason: "replacement",
+      path: project.cover_image_path,
+      projectId
+    });
+  }
+
   return coverPath;
+}
+
+async function removeProjectCoverSafely({
+  cleanupReason,
+  path,
+  projectId
+}: {
+  cleanupReason: "compensation" | "replacement";
+  path: string;
+  projectId: string;
+}) {
+  try {
+    await removeProjectCoverObject({ path, projectId });
+  } catch (cleanupError) {
+    Sentry.captureException(cleanupError, {
+      tags: {
+        storage_cleanup: `project-cover-${cleanupReason}`
+      }
+    });
+  }
 }
 
 async function addCoverUrls(projects: Project[]) {
