@@ -11,7 +11,10 @@ import {
   PROJECT_TYPE_LABELS
 } from "@/features/projects/constants";
 import { getProjectsMapViewport } from "@/features/projects/map-points";
-import type { Project, ProjectStatus } from "@/features/projects/types";
+import type {
+  ProjectStatus,
+  ProjectSummary
+} from "@/features/projects/types";
 import { useLiveUserLocation } from "@/features/projects/use-live-user-location";
 import {
   FolderOpen,
@@ -123,8 +126,8 @@ export function ProjectsMapView({
   projects
 }: {
   fillAvailableSpace?: boolean;
-  onOpenProject: (project: Project) => void;
-  projects: Project[];
+  onOpenProject: (project: ProjectSummary) => void;
+  projects: ProjectSummary[];
 }) {
   const locatedProjects = useMemo(
     () =>
@@ -217,7 +220,7 @@ function InteractiveGoogleMap({
   apiKey: string;
   initialZoom: number;
   onSelectProject: (projectId: string) => void;
-  projects: Project[];
+  projects: ProjectSummary[];
   selectedProjectId: string | null;
 }) {
   const mapElementRef = useRef<HTMLDivElement | null>(null);
@@ -565,7 +568,7 @@ function SelectedProjectCard({
 }: {
   onClose: () => void;
   onOpenProject: () => void;
-  project: Project;
+  project: ProjectSummary;
 }) {
   return (
     <AppCard padding="sm" style={styles.selectedCard}>
@@ -614,7 +617,7 @@ function SelectedProjectCard({
   );
 }
 
-function getMapCenter(projects: Project[]) {
+function getMapCenter(projects: ProjectSummary[]) {
   const total = projects.reduce(
     (sum, project) => ({
       lat: sum.lat + project.latitude,

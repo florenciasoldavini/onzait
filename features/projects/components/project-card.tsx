@@ -11,7 +11,10 @@ import {
   PROJECT_STATUS_LABELS,
   PROJECT_TYPE_LABELS
 } from "@/features/projects/constants";
-import type { Project, ProjectStatus } from "@/features/projects/types";
+import type {
+  ProjectStatus,
+  ProjectSummary
+} from "@/features/projects/types";
 import { Image } from "expo-image";
 import { ImageOff, MapPinned } from "lucide-react-native";
 import { useEffect, useState } from "react";
@@ -37,7 +40,7 @@ export function ProjectCard({
 }: {
   isDeleting?: boolean;
   onPress: () => void;
-  project: Project;
+  project: ProjectSummary;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const pressScale = useSharedValue(1);

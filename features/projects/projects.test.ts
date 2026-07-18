@@ -196,10 +196,10 @@ describe("project filters and query planning", () => {
       userRole: "user"
     });
 
-    expect(plan.order).toEqual({
-      ascending: false,
-      column: "created_at"
-    });
+    expect(plan.orders).toEqual([
+      { ascending: false, column: "created_at" },
+      { ascending: true, column: "id" }
+    ]);
   });
 
   it("sorts alphabetically when requested", () => {
@@ -209,10 +209,10 @@ describe("project filters and query planning", () => {
       userRole: "user"
     });
 
-    expect(plan.order).toEqual({
-      ascending: true,
-      column: "name"
-    });
+    expect(plan.orders).toEqual([
+      { ascending: true, column: "name" },
+      { ascending: true, column: "id" }
+    ]);
   });
 
   it("sorts descending when requested", () => {
@@ -222,10 +222,10 @@ describe("project filters and query planning", () => {
       userRole: "user"
     });
 
-    expect(plan.order).toEqual({
-      ascending: false,
-      column: "name"
-    });
+    expect(plan.orders).toEqual([
+      { ascending: false, column: "name" },
+      { ascending: true, column: "id" }
+    ]);
   });
 
   it("sorts creation ascending when requested", () => {
@@ -235,10 +235,10 @@ describe("project filters and query planning", () => {
       userRole: "user"
     });
 
-    expect(plan.order).toEqual({
-      ascending: true,
-      column: "created_at"
-    });
+    expect(plan.orders).toEqual([
+      { ascending: true, column: "created_at" },
+      { ascending: true, column: "id" }
+    ]);
   });
 });
 

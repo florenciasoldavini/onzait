@@ -3,7 +3,7 @@
 Purpose: practical performance rules for the upcoming MVP feature layer
 Source of truth for: performance expectations around app startup, navigation, lists, data fetching, uploads, and release review
 Update when: routing strategy, data-fetching patterns, list architecture, image/upload workflow, or rendering approach changes
-Last reviewed: 2026-05-12
+Last reviewed: 2026-07-18
 
 ## Scope
 
@@ -73,6 +73,9 @@ Baseline rules:
 
 - query only the columns a screen actually needs
 - separate list queries from detail queries
+- require pagination for every entity collection request, including workflows that eventually traverse every page
+- enforce bounded default and maximum page sizes at the repository boundary
+- use deterministic ordering with a unique tie-breaker so page boundaries remain stable
 - avoid refetching entire parent records after small mutations
 - avoid repeated requests triggered by trivial navigation changes
 - reuse recent data when appropriate
@@ -92,6 +95,7 @@ Baseline rules:
 - use `FlatList` or `SectionList` for long collections
 - avoid rendering long arrays directly with `.map()` in screen bodies
 - paginate or progressively load larger datasets
+- never bypass repository pagination for map, export, admin, or background collection reads
 - keep row and card components visually rich but structurally lightweight
 - use stable keys
 - minimize rerenders when a single row changes
@@ -150,6 +154,14 @@ Baseline rules:
 - avoid importing heavy modules in top-level shared entry files unless necessary
 - be careful with large UI or utility dependencies
 - avoid shipping unnecessary code to public-facing routes
+
+Current enforced export budgets:
+
+- initial JavaScript: at most 6,000,000 raw bytes and 1,250,000 gzip bytes
+- initial CSS: at most 100,000 raw bytes
+- authenticated feature screens and heavy optional integrations should use route or interaction-level code splitting when it reduces the initial graph
+
+Run `npm run build` followed by `npm run bundle:check` after changing shared dependencies, route imports, NativeWind content paths, or font loading.
 
 ## Perceived performance
 

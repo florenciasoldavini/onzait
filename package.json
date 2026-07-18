@@ -34,6 +34,7 @@
   "scripts": {
     "start": "expo start",
     "build": "expo export --platform web",
+    "bundle:check": "node ./scripts/check-web-bundle-size.js",
     "env:example": "node ./scripts/generate-env-example.js",
     "env:check": "node ./scripts/generate-env-example.js --check",
     "email:dev": "react-email dev --dir supabase/functions/_shared/email",

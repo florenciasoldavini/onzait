@@ -40,6 +40,23 @@ export interface Project {
   updated_at: string | null;
 }
 
+export type ProjectSummary = Pick<
+  Project,
+  | "address"
+  | "cover_image_path"
+  | "estimated_end_date"
+  | "id"
+  | "latitude"
+  | "longitude"
+  | "name"
+  | "phase"
+  | "progress_percentage"
+  | "project_type"
+  | "status"
+> & {
+  cover_image_url?: string | null;
+};
+
 export interface ProjectFilters {
   buildingType?: ProjectBuildingType | "all";
   buildingTypes?: ProjectBuildingType[];
