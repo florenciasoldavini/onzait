@@ -3,7 +3,7 @@
 Purpose: architecture snapshot, product decisions, and implementation guardrails for contributors and agents
 Source of truth for: current auth architecture, platform decisions, naming rules, and high-level project constraints
 Update when: auth flow, platform ownership, schema strategy, CI expectations, or product naming decisions change
-Last reviewed: 2026-07-17
+Last reviewed: 2026-07-18
 
 ## Project Snapshot
 
@@ -173,6 +173,7 @@ Last reviewed: 2026-07-17
 - Every feature must explicitly account for web, iOS, and Android behavior. If the correct implementation differs by platform, use platform-specific files or adapters while keeping the business logic shared.
 - When adding a new project rule or product constraint, scan existing features, docs, env config, and tests for places where the rule already applies. Refactor, document follow-up work, or clearly call out any existing gap instead of applying the rule only to future code.
 - Every async surface must handle loading explicitly with an appropriate spinner, skeleton, disabled state, optimistic state, or other clear indicator.
+- Every request that lists or "gets all" records from an entity must be paginated at the repository/transport boundary. Unbounded collection reads are prohibited, including map, export, admin, and background workflows. Use a bounded default and maximum page size, deterministic ordering with a stable unique tie-breaker, summary-only columns for list screens, and virtualized or progressively rendered collection UI. Single-record lookups are exempt.
 - Every destructive action that deletes persistent project or account data must require an explicit confirmation modal before the mutation runs. The modal must identify what will be deleted, provide distinct Cancel and danger-styled Delete actions, prevent repeat submission while pending, and keep mutation errors visible without closing.
 - Production submit forms must use `react-hook-form` with a Zod schema resolver. Keep form values, validation errors, validity, submission state, and edit dirty-state in the form controller rather than duplicating them with local `useState`.
 - Local component state is only for transient UI-only behavior such as password visibility, picker/popover open state, autocomplete session state, and non-submit search/filter fields.

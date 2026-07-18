@@ -87,6 +87,9 @@ jobs:
       - name: Build production web app
         run: npm run build
 
+      - name: Check web bundle budgets
+        run: npm run bundle:check
+
   edge_functions:
     name: Edge Functions
     runs-on: ubuntu-latest
