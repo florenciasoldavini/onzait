@@ -3,6 +3,8 @@ import {
   isSupabaseConfigured,
   supabase
 } from "@/lib/supabase";
+import type { ProfileAvatarAsset } from "@/features/profile/repositories/profile-avatar.repository";
+import { saveProfile } from "@/features/profile/services/profile.service";
 import { Sentry } from "@/lib/sentry";
 import { sendWelcomeToOnzaitEmail } from "@/services/email.service";
 import type { User } from "@/types/models/user";
@@ -25,7 +27,8 @@ interface AuthContextType {
   logOut: () => Promise<void>;
   session: Session | null;
   updateUserProfile: (
-    profile: Partial<EditableUserProfile>
+    profile: Partial<EditableUserProfile>,
+    avatarAsset?: ProfileAvatarAsset | null
   ) => Promise<User | null>;
   user: User | null;
 }
@@ -266,9 +269,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateUserProfile = async (
-    profile: Partial<EditableUserProfile>
+    profile: Partial<EditableUserProfile>,
+    avatarAsset?: ProfileAvatarAsset | null
   ): Promise<User | null> => {
-    if (!supabase || !session) {
+    if (!session || !user) {
       return null;
     }
 
@@ -276,27 +280,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       avatar: profile.avatar?.trim() || null,
       first_name: profile.first_name?.trim() ?? user?.first_name ?? "",
       last_name: profile.last_name?.trim() || null,
-      phone_number: profile.phone_number?.trim() || null,
-      updated_at: new Date().toISOString()
+      phone_number: profile.phone_number?.trim() || null
     };
 
-    const { data, error } = await supabase
-      .from("users")
-      .update(payload)
-      .eq("id", session.user.id)
-      .select()
-      .single();
-
-    if (error) {
+    try {
+      const nextUser = await saveProfile({
+        avatarAsset,
+        currentAvatarReference: user.avatar,
+        profile: payload,
+        userId: session.user.id
+      });
+      setUser(nextUser);
+      setAuthError(null);
+      return nextUser;
+    } catch (error) {
       setAuthError(getSupabaseErrorMessage(error));
-      return null;
+      throw error;
     }
-
-    const nextUser = data as User;
-    setUser(nextUser);
-    setAuthError(null);
-
-    return nextUser;
   };
 
   const hydrateUser = async (nextSession: Session | null) => {

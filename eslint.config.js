@@ -22,6 +22,33 @@ module.exports = defineConfig([
     }
   },
   {
+    files: ["screens/auth/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/lib/auth",
+              message:
+                "Auth screens must use feature hooks instead of auth transport helpers."
+            },
+            {
+              name: "@/lib/supabase",
+              message:
+                "Auth screens must use feature hooks instead of the Supabase client."
+            },
+            {
+              name: "@supabase/supabase-js",
+              message:
+                "Auth screens must use feature hooks instead of the Supabase client."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
     rules: {
       "react/no-unescaped-entities": "off",
       "@typescript-eslint/no-unused-vars": [

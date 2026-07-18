@@ -110,6 +110,44 @@ export async function updateProjectRow(
   return data as Project;
 }
 
+export async function replaceProjectCoverPath({
+  expectedCurrentPath,
+  newPath,
+  projectId
+}: {
+  expectedCurrentPath: string | null;
+  newPath: string;
+  projectId: string;
+}) {
+  const client = requireSupabase();
+  let query = client
+    .from("projects")
+    .update({
+      cover_image_path: newPath,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", projectId)
+    .is("deleted_at", null);
+
+  query = expectedCurrentPath
+    ? query.eq("cover_image_path", expectedCurrentPath)
+    : query.is("cover_image_path", null);
+
+  const { data, error } = await query.select().maybeSingle();
+
+  if (error) {
+    throw toRepositoryError(error);
+  }
+
+  if (!data) {
+    throw new Error(
+      "The project cover changed while this upload was in progress. Refresh and try again."
+    );
+  }
+
+  return data as Project;
+}
+
 export async function softDeleteProjectRow(projectId: string) {
   const client = requireSupabase();
   const { error } = await client

@@ -16,12 +16,7 @@ import {
 } from "@/components/atoms";
 import { atomSpacing } from "@/components/atoms/theme";
 import { AuthContext } from "@/contexts/auth";
-import { startOAuthSignIn } from "@/lib/auth";
-import {
-  getSupabaseErrorMessage,
-  isSupabaseEmailNotConfirmedError,
-  supabase
-} from "@/lib/supabase";
+import { useEmailSignIn, useOAuthSignIn } from "@/features/auth/hooks";
 import { loginSchema, type LoginInput } from "@/schemas/auth";
 import { AtSignIcon, LockIcon } from "@/components/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,6 +31,8 @@ const appleLogo = require("@/assets/images/auth/apple-logo.png");
 export default function SignInScreen() {
   const router = useRouter();
   const { authError } = useContext(AuthContext);
+  const emailSignIn = useEmailSignIn();
+  const oauthSignIn = useOAuthSignIn();
   const [formError, setFormError] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loadingAction, setLoadingAction] = useState<
@@ -62,36 +59,21 @@ export default function SignInScreen() {
   };
 
   const signInWithEmail = handleSubmit(async ({ email, password }) => {
-    if (!supabase) {
-      setFormError(getSupabaseErrorMessage("Supabase is not configured."));
-      return;
-    }
-
-    const signInEmail = email.trim().toLowerCase();
-
     setLoadingAction("email");
     setFormError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: signInEmail,
-        password
-      });
+      const result = await emailSignIn.mutateAsync({ email, password });
 
-      if (error) {
-        if (isSupabaseEmailNotConfirmedError(error)) {
-          router.replace(
-            `/verify-email?email=${encodeURIComponent(signInEmail)}`
-          );
-          return;
-        }
-
-        const message = getSupabaseErrorMessage(error);
-        setFormError(message);
+      if (result.status === "email-unverified") {
+        router.replace(
+          `/verify-email?email=${encodeURIComponent(result.email)}`
+        );
       }
     } catch (error) {
-      const message = getSupabaseErrorMessage(error);
-      setFormError(message);
+      setFormError(
+        error instanceof Error ? error.message : "Unable to sign in."
+      );
     } finally {
       setLoadingAction(null);
     }
@@ -101,10 +83,11 @@ export default function SignInScreen() {
     try {
       setLoadingAction(provider);
       setFormError(null);
-      await startOAuthSignIn(provider);
+      await oauthSignIn.mutateAsync(provider);
     } catch (error) {
-      const message = getSupabaseErrorMessage(error);
-      setFormError(message);
+      setFormError(
+        error instanceof Error ? error.message : "Unable to start sign in."
+      );
     } finally {
       setLoadingAction(null);
     }
