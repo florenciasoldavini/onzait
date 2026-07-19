@@ -4,6 +4,7 @@ import {
   AppHeading,
   AppText,
   Breadcrumb,
+  EmptyState,
   Screen,
   SkeletonBlock,
   useAppToast
@@ -16,6 +17,7 @@ import {
 } from "@/features/projects/constants";
 import { useProject, useSoftDeleteProject } from "@/features/projects/hooks";
 import type { Project } from "@/features/projects/types";
+import { getUserFacingErrorMessage } from "@/lib/user-facing-errors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Camera,
@@ -24,6 +26,7 @@ import {
   EllipsisVertical,
   ListChecks,
   Pencil,
+  RefreshCw,
   Trash2
 } from "lucide-react-native";
 import { useRef, useState } from "react";
@@ -71,6 +74,44 @@ export default function ProjectDetailScreen() {
     ? params.projectId[0]
     : params.projectId;
   const projectQuery = useProject(projectId);
+
+  if (projectQuery.isError) {
+    return (
+      <Screen centered>
+        <EmptyState
+          action={{
+            icon: RefreshCw,
+            label: "Retry",
+            onPress: () => {
+              void projectQuery.refetch();
+            }
+          }}
+          description={getUserFacingErrorMessage(
+            projectQuery.error,
+            "We couldn't load this project. Check your connection and try again."
+          )}
+          icon={CircleAlert}
+          title="Project unavailable"
+        />
+      </Screen>
+    );
+  }
+
+  if (!projectQuery.isLoading && !projectQuery.data) {
+    return (
+      <Screen centered>
+        <EmptyState
+          action={{
+            label: "Back to projects",
+            onPress: () => router.replace("/projects" as never)
+          }}
+          description="This project may have been removed or you may not have access."
+          icon={CircleAlert}
+          title="Project not found"
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -198,10 +239,10 @@ function ProjectActionsMenu({
       });
       router.replace("/projects" as never);
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Project could not be deleted.";
+      const message = getUserFacingErrorMessage(
+        error,
+        "We couldn't delete this project. Try again."
+      );
 
       setDeleteError(message);
       appToast.show({

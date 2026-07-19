@@ -1,19 +1,15 @@
-export async function getMapsFunctionErrorMessage(error: unknown) {
+export function getMapsFunctionErrorMessage(error: unknown, fallback: string) {
   const response = getFunctionErrorResponse(error);
 
-  if (response) {
-    const payload = await response
-      .clone()
-      .json()
-      .catch(() => null);
-    const message = getFunctionErrorMessage(payload);
-
-    if (message) {
-      return message;
-    }
+  if (response?.status === 401 || response?.status === 403) {
+    return "Your session has expired or cannot access maps. Sign in and try again.";
   }
 
-  return null;
+  if (response?.status === 429) {
+    return "Too many map requests were made. Wait a moment and try again.";
+  }
+
+  return fallback;
 }
 
 function getFunctionErrorResponse(error: unknown) {
@@ -24,25 +20,6 @@ function getFunctionErrorResponse(error: unknown) {
     (error as { context?: unknown }).context instanceof Response
   ) {
     return (error as { context: Response }).context;
-  }
-
-  return null;
-}
-
-function getFunctionErrorMessage(payload: unknown) {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const error = (payload as { error?: unknown }).error;
-  const message = (payload as { message?: unknown }).message;
-
-  if (typeof error === "string" && error.trim()) {
-    return error;
-  }
-
-  if (typeof message === "string" && message.trim()) {
-    return message;
   }
 
   return null;

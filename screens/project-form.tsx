@@ -55,6 +55,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import { getUserFacingErrorMessage } from "@/lib/user-facing-errors";
 import { useRouter } from "expo-router";
 import {
   CalendarDays,
@@ -62,6 +63,7 @@ import {
   ChevronRight,
   ImagePlus,
   MapPinned,
+  RefreshCw,
   Save
 } from "lucide-react-native";
 import { useContext, useEffect, useRef, useState } from "react";
@@ -209,7 +211,10 @@ export function ProjectFormScreen({
       router.replace(`/projects/${projectId}` as never);
     } catch (error) {
       setFormError(
-        error instanceof Error ? error.message : "Project could not be saved."
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't save this project. Review your connection and try again."
+        )
       );
     }
   });
@@ -222,6 +227,41 @@ export function ProjectFormScreen({
           <SkeletonBlock height={220} />
           <SkeletonBlock height={320} />
         </View>
+      </Screen>
+    );
+  }
+
+  if (mode === "edit" && projectQuery.isError) {
+    return (
+      <Screen centered>
+        <AppCard padding="lg">
+          <View style={{ gap: atomSpacing[4] }}>
+            <AppHeading variant="section">Project unavailable</AppHeading>
+            <AppText tone="muted">
+              {getUserFacingErrorMessage(
+                projectQuery.error,
+                "We couldn't load this project for editing. Check your connection and try again."
+              )}
+            </AppText>
+            <View style={{ gap: atomSpacing[3] }}>
+              <AppButton
+                icon={RefreshCw}
+                onPress={() => {
+                  void projectQuery.refetch();
+                }}
+              >
+                Retry
+              </AppButton>
+              <AppButton
+                color="neutral"
+                onPress={() => router.replace("/projects" as never)}
+                variant="bordered"
+              >
+                Back to projects
+              </AppButton>
+            </View>
+          </View>
+        </AppCard>
       </Screen>
     );
   }
@@ -589,10 +629,10 @@ function AddressField({
     !suggestionsQuery.isFetching &&
     !suggestionsQuery.isError &&
     suggestions.length === 0;
-  const autocompleteError =
-    suggestionsQuery.error instanceof Error
-      ? suggestionsQuery.error.message
-      : "Address suggestions are unavailable right now.";
+  const autocompleteError = getUserFacingErrorMessage(
+    suggestionsQuery.error,
+    "Address suggestions are unavailable right now. Try again shortly."
+  );
 
   useEffect(() => {
     if (value?.address && value.address !== query) {
@@ -736,10 +776,10 @@ function AddressLocationPreview({ value }: { value: ResolvedProjectAddress }) {
   }
 
   if (mapPreviewQuery.isError) {
-    const message =
-      mapPreviewQuery.error instanceof Error
-        ? mapPreviewQuery.error.message
-        : "Map preview is unavailable right now.";
+    const message = getUserFacingErrorMessage(
+      mapPreviewQuery.error,
+      "Map preview is unavailable right now. Try again shortly."
+    );
 
     return <FieldMessage tone="error">{message}</FieldMessage>;
   }
@@ -967,30 +1007,48 @@ function CoverPicker({
   value: ProjectFormValues["coverAsset"];
 }) {
   const previewUri = value?.uri ?? currentUrl;
+  const [pickerError, setPickerError] = useState<string | null>(null);
 
   const pickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    setPickerError(null);
 
-    if (!permission.granted) {
-      return;
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        setPickerError(
+          permission.canAskAgain
+            ? "Photo access is required to choose a project cover. Allow access and try again."
+            : "Photo access is disabled. Enable it in your device settings, then try again."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.82
+      });
+
+      if (result.canceled || !result.assets[0]) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      onChange({
+        fileName: asset.fileName,
+        mimeType: asset.mimeType,
+        uri: asset.uri
+      });
+    } catch (error) {
+      setPickerError(
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't open your photo library. Try again."
+        )
+      );
     }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.82
-    });
-
-    if (result.canceled || !result.assets[0]) {
-      return;
-    }
-
-    const asset = result.assets[0];
-    onChange({
-      fileName: asset.fileName,
-      mimeType: asset.mimeType,
-      uri: asset.uri
-    });
   };
 
   return (
@@ -1020,6 +1078,9 @@ function CoverPicker({
           </View>
         )}
       </Pressable>
+      {pickerError ? (
+        <FieldMessage tone="error">{pickerError}</FieldMessage>
+      ) : null}
     </View>
   );
 }

@@ -40,7 +40,7 @@ function toAuthRepositoryError(error: unknown) {
       ? "email-cooldown"
       : "unknown";
 
-  return new AuthRepositoryError(getSupabaseErrorMessage(error), code);
+  return new AuthRepositoryError(getSupabaseErrorMessage(error), code, error);
 }
 
 async function runAuthRequest<T>(request: () => Promise<T>) {

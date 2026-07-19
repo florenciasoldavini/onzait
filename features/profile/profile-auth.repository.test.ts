@@ -18,8 +18,8 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 vi.mock("@/lib/supabase", () => ({
-  getSupabaseErrorMessage: (error: unknown) =>
-    error instanceof Error ? error.message : String(error),
+  getSupabaseErrorMessage: () =>
+    "We couldn't load your sign-in methods. Try again.",
   supabase: {
     auth: {
       getUserIdentities: authMocks.getUserIdentities
@@ -49,7 +49,7 @@ describe("profile auth repository", () => {
     });
 
     await expect(getProfileUserIdentities()).rejects.toThrow(
-      "Identity lookup failed"
+      "We couldn't load your sign-in methods. Try again."
     );
   });
 

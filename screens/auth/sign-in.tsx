@@ -20,6 +20,7 @@ import { useEmailSignIn, useOAuthSignIn } from "@/features/auth/hooks";
 import { loginSchema, type LoginInput } from "@/schemas/auth";
 import { AtSignIcon, LockIcon } from "@/components/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { getUserFacingErrorMessage } from "@/lib/user-facing-errors";
 import { useRouter } from "expo-router";
 import { useContext, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -72,7 +73,10 @@ export default function SignInScreen() {
       }
     } catch (error) {
       setFormError(
-        error instanceof Error ? error.message : "Unable to sign in."
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't sign you in. Check your details and try again."
+        )
       );
     } finally {
       setLoadingAction(null);
@@ -86,7 +90,10 @@ export default function SignInScreen() {
       await oauthSignIn.mutateAsync(provider);
     } catch (error) {
       setFormError(
-        error instanceof Error ? error.message : "Unable to start sign in."
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't start that sign-in method. Try again."
+        )
       );
     } finally {
       setLoadingAction(null);

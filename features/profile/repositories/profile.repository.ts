@@ -2,6 +2,7 @@ import {
   requireSupabase,
   toRepositoryError
 } from "@/features/projects/repositories/supabase.repository";
+import { UserFacingError } from "@/lib/user-facing-errors";
 import type { User } from "@/types/models/user";
 
 export type ProfileUpdateInput = Pick<
@@ -43,7 +44,7 @@ export async function updateProfileRow({
   }
 
   if (!data) {
-    throw new Error(
+    throw new UserFacingError(
       "The profile avatar changed while this upload was in progress. Refresh and try again."
     );
   }

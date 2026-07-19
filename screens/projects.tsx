@@ -35,6 +35,7 @@ import type {
   ProjectType
 } from "@/features/projects/types";
 import { useRouter } from "expo-router";
+import { getUserFacingErrorMessage } from "@/lib/user-facing-errors";
 import {
   ArrowUpDown,
   FolderPlus,
@@ -242,11 +243,10 @@ export default function ProjectsScreen() {
           void projectsQuery.refetch();
         }
       }}
-      description={
-        projectsQuery.error instanceof Error
-          ? projectsQuery.error.message
-          : "Projects could not be loaded."
-      }
+      description={getUserFacingErrorMessage(
+        projectsQuery.error,
+        "We couldn't load your projects. Check your connection and try again."
+      )}
       title="Projects unavailable"
     />
   ) : (

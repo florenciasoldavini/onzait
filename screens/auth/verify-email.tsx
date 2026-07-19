@@ -9,6 +9,7 @@ import { atomPalette, atomRadii, atomSpacing } from "@/components/atoms/theme";
 import { AuthShell, authFormControlSize } from "@/components/auth/AuthShell";
 import { useEmailVerificationResend } from "@/features/auth/hooks";
 import { emailSchema } from "@/schemas/fields";
+import { getUserFacingErrorMessage } from "@/lib/user-facing-errors";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
@@ -81,9 +82,10 @@ export default function VerifyEmailScreen() {
       setCooldownSeconds(resendCooldownSeconds);
     } catch (error) {
       setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Unable to resend the verification email."
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't resend the verification email. Try again."
+        )
       );
     } finally {
       setIsResending(false);

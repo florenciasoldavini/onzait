@@ -20,6 +20,7 @@ import type {
 } from "@/features/projects/types";
 import type { OffsetPageRequest, PaginatedResult } from "@/lib/pagination";
 import { Sentry } from "@/lib/sentry";
+import { UserFacingError } from "@/lib/user-facing-errors";
 
 export async function listProjects({
   filters,
@@ -82,7 +83,9 @@ export async function uploadProjectCover({
   const project = await getProjectRow(projectId);
 
   if (!project) {
-    throw new Error("Project not found.");
+    throw new UserFacingError(
+      "This project could not be found. Return to projects and try again."
+    );
   }
 
   const coverPath = await uploadProjectCoverObject({ asset, projectId });

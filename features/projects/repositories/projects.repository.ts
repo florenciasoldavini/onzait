@@ -15,6 +15,7 @@ import {
   toPaginatedResult,
   type OffsetPageRequest
 } from "@/lib/pagination";
+import { UserFacingError } from "@/lib/user-facing-errors";
 
 const PROJECT_SUMMARY_COLUMNS = [
   "address",
@@ -102,7 +103,7 @@ export async function insertProjectRow(input: CreateProjectInput) {
   }
 
   if (!user) {
-    throw new Error("You must be signed in to save projects.");
+    throw new UserFacingError("You must be signed in to save projects.");
   }
 
   const { data, error } = await client
@@ -168,7 +169,7 @@ export async function replaceProjectCoverPath({
   }
 
   if (!data) {
-    throw new Error(
+    throw new UserFacingError(
       "The project cover changed while this upload was in progress. Refresh and try again."
     );
   }
