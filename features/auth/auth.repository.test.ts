@@ -2,12 +2,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   beginOAuthSignIn,
+  getCurrentAuthSession,
+  observeAuthSession,
+  signOutAuthSession,
   signInWithEmailPassword,
   signUpWithEmailPassword
 } from "@/features/auth/repositories/auth.repository";
 
 const authMocks = vi.hoisted(() => ({
+  getSession: vi.fn(),
   getAuthRedirectUrl: vi.fn(() => "https://onzait.test/callback"),
+  onAuthStateChange: vi.fn(),
+  signOut: vi.fn(),
   signInWithOAuth: vi.fn(),
   signInWithPassword: vi.fn(),
   signUp: vi.fn()
@@ -37,6 +43,9 @@ vi.mock("@/lib/supabase", () => ({
     error instanceof Error && error.message === "unconfirmed",
   supabase: {
     auth: {
+      getSession: authMocks.getSession,
+      onAuthStateChange: authMocks.onAuthStateChange,
+      signOut: authMocks.signOut,
       signInWithPassword: authMocks.signInWithPassword,
       signUp: authMocks.signUp
     }
@@ -109,5 +118,28 @@ describe("auth repository", () => {
       code: "unknown",
       message: "We couldn't complete this request. Please try again."
     });
+  });
+
+  it("owns session restoration, observation, and sign-out transport", async () => {
+    const session = { access_token: "token" };
+    const unsubscribe = vi.fn();
+    const listener = vi.fn();
+    authMocks.getSession.mockResolvedValue({
+      data: { session },
+      error: null
+    });
+    authMocks.onAuthStateChange.mockImplementation((callback) => {
+      callback("SIGNED_IN", session);
+      return { data: { subscription: { unsubscribe } } };
+    });
+    authMocks.signOut.mockResolvedValue({ error: null });
+
+    await expect(getCurrentAuthSession()).resolves.toEqual(session);
+    const stopObserving = observeAuthSession(listener);
+    await expect(signOutAuthSession()).resolves.toBeUndefined();
+
+    expect(listener).toHaveBeenCalledWith(session);
+    stopObserving();
+    expect(unsubscribe).toHaveBeenCalledOnce();
   });
 });

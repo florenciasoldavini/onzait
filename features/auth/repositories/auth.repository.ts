@@ -131,3 +131,41 @@ export function completeAuthCallback(url: string) {
 export function clearCompletedWebAuthCallback() {
   clearWebAuthUrlArtifacts();
 }
+
+export function isAuthSessionAvailable() {
+  return Boolean(supabase);
+}
+
+export async function getCurrentAuthSession() {
+  return runAuthRequest(async () => {
+    const { data, error } = await requireAuthClient().getSession();
+
+    if (error) {
+      throw error;
+    }
+
+    return data.session;
+  });
+}
+
+export function observeAuthSession(
+  listener: (session: import("@supabase/supabase-js").Session | null) => void
+) {
+  const {
+    data: { subscription }
+  } = requireAuthClient().onAuthStateChange((_event, session) => {
+    listener(session);
+  });
+
+  return () => subscription.unsubscribe();
+}
+
+export async function signOutAuthSession() {
+  return runAuthRequest(async () => {
+    const { error } = await requireAuthClient().signOut();
+
+    if (error) {
+      throw error;
+    }
+  });
+}
