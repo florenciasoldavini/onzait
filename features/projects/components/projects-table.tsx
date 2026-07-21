@@ -135,13 +135,11 @@ function ProjectTableRow({
       accessibilityLabel={`Open ${project.name}`}
       accessibilityRole="button"
       onPress={onPress}
-      style={({ hovered, pressed }) => ({
+      style={({ pressed }) => ({
         alignItems: "center",
         backgroundColor: pressed
           ? atomPalette.surfaceRaised
-          : hovered
-            ? atomPalette.surfaceLow
-            : atomPalette.surface,
+          : atomPalette.surface,
         borderBottomColor: atomPalette.borderSubtle,
         borderBottomWidth: isLast ? 0 : 1,
         flexDirection: "row",

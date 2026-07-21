@@ -123,13 +123,9 @@ function SideNavigationDestination({
       accessibilityRole="tab"
       accessibilityState={{ selected: focused }}
       onPress={() => router.navigate(destination.href as never)}
-      style={({ hovered, pressed }) => ({
+      style={({ pressed }) => ({
         alignItems: "center",
-        backgroundColor: focused
-          ? `${atomPalette.accent}12`
-          : hovered
-            ? atomPalette.surfaceLow
-            : "transparent",
+        backgroundColor: focused ? `${atomPalette.accent}12` : "transparent",
         borderRadius: atomRadii.md,
         flexDirection: expanded ? "row" : "column",
         gap: expanded ? atomSpacing[3] : atomSpacing[1],

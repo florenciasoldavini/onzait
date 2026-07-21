@@ -714,12 +714,10 @@ function ProfileSectionNavigation({
             accessibilityState={{ selected }}
             key={tab.value}
             onPress={() => onChange(tab.value)}
-            style={({ hovered, pressed }) => ({
+            style={({ pressed }) => ({
               backgroundColor: selected
                 ? `${atomPalette.accent}14`
-                : hovered
-                  ? atomPalette.surfaceLow
-                  : "transparent",
+                : "transparent",
               borderColor: selected ? `${atomPalette.accent}3D` : "transparent",
               borderRadius: atomRadii.md,
               borderWidth: 1,
