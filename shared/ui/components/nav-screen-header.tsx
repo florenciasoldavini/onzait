@@ -6,11 +6,13 @@ import type { ReactNode } from "react";
 import { View, type StyleProp, type ViewStyle } from "react-native";
 
 export function NavScreenHeader({
+  action,
   breadcrumbLabel,
   description,
   style,
   title
 }: {
+  action?: ReactNode;
   breadcrumbLabel?: ReactNode;
   description?: ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -22,7 +24,19 @@ export function NavScreenHeader({
         items={[{ label: breadcrumbLabel ?? title }]}
         showTrailingSeparator
       />
-      <AppHeading variant="hero">{title}</AppHeading>
+      <View
+        style={{
+          alignItems: "center",
+          flexDirection: "row",
+          gap: atomSpacing[4],
+          justifyContent: "space-between"
+        }}
+      >
+        <AppHeading style={{ flex: 1 }} variant="hero">
+          {title}
+        </AppHeading>
+        {action}
+      </View>
       {typeof description === "string" ? (
         <AppText tone="muted">{description}</AppText>
       ) : (

@@ -11,6 +11,7 @@ import {
 } from "@/shared/ui/components";
 import { atomPalette, atomRadii, atomSpacing } from "@/shared/ui/components/theme";
 import { authCardMaxWidth } from "@/features/auth/components/auth-shell";
+import { useLayoutMode } from "@/shared/hooks/use-layout-mode";
 import {
   CameraIcon,
   CheckCircleIcon,
@@ -105,6 +106,7 @@ function getProfileInfoDefaults(
 
 export default function ProfileScreen() {
   const { logOut, session, updateUserProfile, user } = useAuth();
+  const { isExpanded } = useLayoutMode();
   const router = useRouter();
   const { identity_link_check: identityLinkCheckParam } = useLocalSearchParams<{
     identity_link_check?: string | string[];
@@ -352,7 +354,7 @@ export default function ProfileScreen() {
         style={{
           alignSelf: "center",
           gap: atomSpacing[5],
-          maxWidth: authCardMaxWidth,
+          maxWidth: isExpanded ? 1040 : authCardMaxWidth,
           width: "100%"
         }}
       >
@@ -361,11 +363,40 @@ export default function ProfileScreen() {
           title="Profile"
         />
 
-        <SegmentedTabs
-          onChange={setActiveTab}
-          options={profileTabs}
-          value={activeTab}
-        />
+        <View
+          style={[
+            profileStyles.workspace,
+            isExpanded ? profileStyles.workspaceExpanded : null
+          ]}
+        >
+          {isExpanded ? (
+            <View style={profileStyles.sectionSidebar}>
+              <ProfileSectionNavigation
+                activeTab={activeTab}
+                onChange={setActiveTab}
+              />
+              <AppButton
+                color="danger"
+                icon={LogoutIcon}
+                iconAfter={false}
+                onPress={() => {
+                  void logOut();
+                }}
+                size="sm"
+                variant="bordered"
+              >
+                Log Out
+              </AppButton>
+            </View>
+          ) : (
+            <SegmentedTabs
+              onChange={setActiveTab}
+              options={profileTabs}
+              value={activeTab}
+            />
+          )}
+
+          <View style={profileStyles.sectionContent}>
 
         {activeTab === "profile" ? (
           <AppCard padding="lg">
@@ -643,20 +674,67 @@ export default function ProfileScreen() {
           </AppCard>
         ) : null}
 
-        <AppButton
-          icon={LogoutIcon}
-          iconAfter={false}
-          onPress={() => {
-            void logOut();
-          }}
-          size="md"
-          color="danger"
-          variant="bordered"
-        >
-          Log Out
-        </AppButton>
+          </View>
+        </View>
+
+        {!isExpanded ? (
+          <AppButton
+            icon={LogoutIcon}
+            iconAfter={false}
+            onPress={() => {
+              void logOut();
+            }}
+            size="md"
+            color="danger"
+            variant="bordered"
+          >
+            Log Out
+          </AppButton>
+        ) : null}
       </View>
     </Screen>
+  );
+}
+
+function ProfileSectionNavigation({
+  activeTab,
+  onChange
+}: {
+  activeTab: ProfileTab;
+  onChange: (tab: ProfileTab) => void;
+}) {
+  return (
+    <View accessibilityRole="tablist" style={{ gap: atomSpacing[2] }}>
+      {profileTabs.map((tab) => {
+        const selected = tab.value === activeTab;
+
+        return (
+          <Pressable
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
+            key={tab.value}
+            onPress={() => onChange(tab.value)}
+            style={({ hovered, pressed }) => ({
+              backgroundColor: selected
+                ? `${atomPalette.accent}14`
+                : hovered
+                  ? atomPalette.surfaceLow
+                  : "transparent",
+              borderColor: selected ? `${atomPalette.accent}3D` : "transparent",
+              borderRadius: atomRadii.md,
+              borderWidth: 1,
+              opacity: pressed ? 0.72 : 1,
+              paddingHorizontal: atomSpacing[4],
+              paddingVertical: atomSpacing[3]
+            })}
+          >
+            <AppText tone={selected ? "accent" : "muted"} variant="label">
+              {tab.label}
+            </AppText>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
@@ -787,9 +865,26 @@ const profileStyles = StyleSheet.create({
     right: 4,
     width: 32
   },
+  sectionContent: {
+    flex: 1,
+    gap: atomSpacing[5],
+    minWidth: 0
+  },
+  sectionSidebar: {
+    gap: atomSpacing[4],
+    justifyContent: "space-between",
+    width: 224
+  },
   webCursor: {
     cursor: "pointer"
-  } as ViewStyle
+  } as ViewStyle,
+  workspace: {
+    gap: atomSpacing[5]
+  },
+  workspaceExpanded: {
+    alignItems: "flex-start",
+    flexDirection: "row"
+  }
 });
 
 function IdentityMethodRow({

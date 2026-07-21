@@ -81,6 +81,12 @@ An active entity must have one canonical TypeScript contract. Zod schemas valida
 4. Put reusable code in `shared/` only when it is genuinely product-agnostic or already needed by more than one feature.
 5. Add unit, flow, and database/RLS tests appropriate to the feature.
 
+## Adaptive Presentation
+
+Onzait shares routes, feature state, hooks, services, and repositories across supported devices while allowing layout-specific navigation and feature presentations. Reusable layout classification and application-shell primitives belong under `shared/`; feature-specific compact, medium, or expanded presentations belong to the owning feature.
+
+Use platform-specific files for genuine platform implementation differences, not as a substitute for width-driven adaptation. The complete layout contract, navigation model, presentation rules, and verification matrix live in [adaptive-layout-strategy.md](./adaptive-layout-strategy.md).
+
 ## Naming
 
 - Directories and non-component modules use kebab-case.

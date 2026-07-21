@@ -1,4 +1,8 @@
-import { atomLayout, atomPalette, atomSpacing } from "@/shared/ui/components/theme";
+import {
+  atomLayout,
+  atomPalette,
+  atomSpacing
+} from "@/shared/ui/components/theme";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Keyboard,
@@ -162,6 +166,7 @@ export function Screen({
       ref={scrollRef}
       automaticallyAdjustKeyboardInsets={shouldAvoidKeyboard}
       bounces={!shouldAvoidKeyboard || keyboardVisible}
+      contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={[
         {
           flexGrow: 1,

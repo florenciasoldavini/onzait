@@ -29,6 +29,7 @@ The interface should prioritize clarity, structure, and operational confidence o
 - The primary accent is cobalt blue.
 - Surfaces use warm editorial neutrals rather than stark white everywhere.
 - Typography uses Geist for primary UI text and JetBrains Mono for labels, metadata, and technical accents.
+- JetBrains Mono is always rendered in uppercase and is reserved for short labels, compact metadata, codes, and restrained technical accents. User-authored names, addresses, descriptions, and ordinary reading text use Geist.
 - Shape language is moderately rounded: controls use the shared control radius, cards use the shared card radius, and true pills are reserved for patterns that need them.
 - Most hierarchy should come from typography, spacing, borders, and surface contrast before extra color.
 

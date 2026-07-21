@@ -9,13 +9,21 @@ import {
   SkeletonBlock,
   useAppToast
 } from "@/shared/ui/components";
-import { atomPalette, atomRadii, atomSpacing } from "@/shared/ui/components/theme";
+import {
+  atomPalette,
+  atomRadii,
+  atomSpacing
+} from "@/shared/ui/components/theme";
+import { useLayoutMode } from "@/shared/hooks/use-layout-mode";
 import {
   PROJECT_PHASE_LABELS,
   PROJECT_PHASES,
   PROJECT_STATUS_LABELS
 } from "@/features/projects/constants/project.constants";
-import { useProject, useSoftDeleteProject } from "@/features/projects/hooks/use-projects";
+import {
+  useProject,
+  useSoftDeleteProject
+} from "@/features/projects/hooks/use-projects";
 import type { Project } from "@/features/projects/types/project.types";
 import { formatDateOnly } from "@/shared/utils/date-only";
 import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
@@ -70,6 +78,7 @@ const projectActions = [
 
 export default function ProjectDetailScreen() {
   const router = useRouter();
+  const { isExpanded } = useLayoutMode();
   const params = useLocalSearchParams<{ projectId: string }>();
   const projectId = Array.isArray(params.projectId)
     ? params.projectId[0]
@@ -134,15 +143,32 @@ export default function ProjectDetailScreen() {
           projectId={projectId}
         />
 
-        <ProjectProgressCard
-          isLoading={projectQuery.isLoading}
-          project={projectQuery.data}
-        />
+        <View
+          style={[
+            styles.detailWorkspace,
+            isExpanded ? styles.detailWorkspaceExpanded : null
+          ]}
+        >
+          <ProjectProgressCard
+            expanded={isExpanded}
+            isLoading={projectQuery.isLoading}
+            project={projectQuery.data}
+          />
 
-        <View style={styles.actionGrid}>
-          {projectActions.map((action) => (
-            <ProjectActionCard key={action.index} {...action} />
-          ))}
+          <View
+            style={[
+              styles.actionGrid,
+              isExpanded ? styles.actionGridExpanded : null
+            ]}
+          >
+            {projectActions.map((action) => (
+              <ProjectActionCard
+                expanded={isExpanded}
+                key={action.index}
+                {...action}
+              />
+            ))}
+          </View>
         </View>
       </View>
     </Screen>
@@ -413,15 +439,23 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function ProjectProgressCard({
+  expanded,
   isLoading,
   project
 }: {
+  expanded: boolean;
   isLoading: boolean;
   project: Project | null | undefined;
 }) {
   if (isLoading) {
     return (
-      <View style={[styles.progressCard, styles.progressCardLoading]}>
+      <View
+        style={[
+          styles.progressCard,
+          expanded ? styles.progressCardExpanded : null,
+          styles.progressCardLoading
+        ]}
+      >
         <SkeletonBlock height={18} width="44%" />
         <SkeletonBlock height={56} width="66%" />
         <SkeletonBlock height={118} width="52%" />
@@ -432,7 +466,13 @@ function ProjectProgressCard({
 
   if (!project) {
     return (
-      <View style={[styles.progressCard, styles.progressCardUnavailable]}>
+      <View
+        style={[
+          styles.progressCard,
+          expanded ? styles.progressCardExpanded : null,
+          styles.progressCardUnavailable
+        ]}
+      >
         <AppText tone="subtle" variant="meta">
           PROJECT_PROGRESS_UNAVAILABLE
         </AppText>
@@ -450,7 +490,12 @@ function ProjectProgressCard({
     .replaceAll(" ", "_");
 
   return (
-    <View style={styles.progressCard}>
+    <View
+      style={[
+        styles.progressCard,
+        expanded ? styles.progressCardExpanded : null
+      ]}
+    >
       <View style={styles.progressDataBadge}>
         <View style={styles.progressDataDot} />
         <AppText tone="accent" variant="label">
@@ -537,10 +582,11 @@ function ProjectProgressCard({
 
 function ProjectActionCard({
   accent,
+  expanded,
   icon: Icon,
   index,
   label
-}: (typeof projectActions)[number]) {
+}: (typeof projectActions)[number] & { expanded: boolean }) {
   const [isHovered, setIsHovered] = useState(false);
   const iconColor = accent ? atomPalette.accentText : atomPalette.textMuted;
   const textTone = accent ? "inverse" : "default";
@@ -555,6 +601,7 @@ function ProjectActionCard({
       onPress={() => undefined}
       style={({ pressed }) => [
         styles.actionCard,
+        expanded ? styles.actionCardExpanded : null,
         accent ? styles.actionCardAccent : styles.actionCardDefault,
         isHovered && !accent ? styles.actionCardHovered : null,
         pressed ? styles.actionCardPressed : null,
@@ -614,6 +661,15 @@ const styles = StyleSheet.create({
     gap: atomSpacing[5],
     maxWidth: 744,
     width: "100%"
+  },
+  actionCardExpanded: {
+    maxWidth: undefined,
+    padding: atomSpacing[5]
+  },
+  actionGridExpanded: {
+    alignSelf: "stretch",
+    flex: 0.72,
+    maxWidth: 420
   },
   actionLabel: {
     alignItems: "flex-start"
@@ -675,6 +731,13 @@ const styles = StyleSheet.create({
   pageStack: {
     gap: atomSpacing[6]
   },
+  detailWorkspace: {
+    gap: atomSpacing[5]
+  },
+  detailWorkspaceExpanded: {
+    alignItems: "stretch",
+    flexDirection: "row"
+  },
   progressCard: {
     alignSelf: "center",
     backgroundColor: atomPalette.surface,
@@ -691,6 +754,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: atomSpacing[6],
     paddingTop: atomSpacing[16]
+  },
+  progressCardExpanded: {
+    alignSelf: "stretch",
+    flex: 1,
+    maxWidth: undefined
   },
   progressCardLoading: {
     gap: atomSpacing[6],
