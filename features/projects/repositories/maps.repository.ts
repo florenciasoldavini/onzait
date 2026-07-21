@@ -7,7 +7,7 @@ import { getMapsFunctionErrorMessage } from "@/features/projects/maps-errors";
 import {
   requireSupabase,
   toRepositoryError
-} from "@/features/projects/repositories/supabase.repository";
+} from "@/infrastructure/supabase/repository";
 import type {
   AddressSuggestion,
   ResolvedProjectAddress,

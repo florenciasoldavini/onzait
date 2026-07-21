@@ -516,7 +516,7 @@ This Step 2 foundation should translate into:
 
 Primary files that should eventually align with this spec:
 
-- [components/ui/gluestack-ui-provider/config.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/components/ui/gluestack-ui-provider/config.ts:1)
+- [shared/ui/primitives/gluestack-ui-provider/config.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/shared/ui/primitives/gluestack-ui-provider/config.ts:1)
 - [tailwind.config.js](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/tailwind.config.js:1)
 - [app/_layout.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/_layout.tsx:1)
 

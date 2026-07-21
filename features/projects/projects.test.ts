@@ -17,7 +17,7 @@ import {
   toCreateProjectInput,
   validateProjectForm
 } from "@/features/projects/validation";
-import { consumeFixedWindowRateLimit } from "@/lib/rate-limit";
+import { consumeFixedWindowRateLimit } from "@/shared/utils/rate-limit";
 import { describe, expect, it } from "vitest";
 
 const validValues: ProjectFormValues = {

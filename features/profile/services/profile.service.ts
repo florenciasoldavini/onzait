@@ -1,8 +1,8 @@
 import {
   getProfileAvatarPublicUrl,
-  uploadProfileAvatarObject,
-  type ProfileAvatarAsset
+  uploadProfileAvatarObject
 } from "@/features/profile/repositories/profile-avatar.repository";
+import type { ProfileAvatarAsset } from "@/features/profile/types";
 
 export async function uploadProfileAvatar({
   asset,

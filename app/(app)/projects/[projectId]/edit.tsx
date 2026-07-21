@@ -1,4 +1,4 @@
-import { ProjectFormScreen } from "@/screens/project-form";
+import { ProjectFormScreen } from "@/features/projects/screens/project-form-screen";
 import { useLocalSearchParams } from "expo-router";
 
 export default function EditProjectRoute() {

@@ -1,4 +1,4 @@
-import { AuthContext } from "@/contexts/auth";
+import { useAuth } from "@/features/auth/use-auth";
 import {
   autocompleteProjectAddress,
   getProjectAddressMapPreview,
@@ -22,12 +22,12 @@ import type {
 } from "@/features/projects/types";
 import { normalizeProjectFilters } from "@/features/projects/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const projectsKey = ["projects"] as const;
 
 export function useProjects(filters: ProjectFilters) {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const normalizedFilters = useMemo(
     () => normalizeProjectFilters(filters),
     [filters]
@@ -55,7 +55,7 @@ export function useProject(projectId?: string) {
 
 export function useCreateProject() {
   const queryClient = useQueryClient();
-  const { createUser, session, user } = useContext(AuthContext);
+  const { createUser, session, user } = useAuth();
 
   return useMutation({
     mutationFn: async (input: CreateProjectInput) => {

@@ -3,7 +3,7 @@
 Purpose: test and document the first non-auth email path
 Source of truth for: product email boundaries, Edge Function secrets, and the current welcome-email example
 Update when: product email providers, function names, secrets, or invocation rules change
-Last reviewed: 2026-07-16
+Last reviewed: 2026-07-21
 
 ## Current Example
 
@@ -11,8 +11,8 @@ The first product email example is `welcome-to-onzait`.
 
 Flow:
 
-1. App code calls `sendWelcomeToOnzaitEmail` from `services/email.service.ts`.
-2. The service calls `invokeWelcomeToOnzaitEmail` from `repositories/email.repository.ts`.
+1. App code calls `sendWelcomeToOnzaitEmail` from `features/auth/services/welcome-email.service.ts`.
+2. The service calls `invokeWelcomeToOnzaitEmail` from `features/auth/repositories/welcome-email.repository.ts`.
 3. The repository invokes the Supabase Edge Function `welcome-to-onzait`.
 4. The Edge Function validates the signed-in user with Supabase Auth.
 5. The Edge Function uses its service-role Supabase client to reserve `public.users.welcome_email_sent_at` only when the marker is still empty.
@@ -23,7 +23,7 @@ The client also does not write the sent marker; that belongs to the Edge Functio
 
 ## Trigger Rule
 
-The welcome email should trigger after the user's email is verified and the app has created or loaded their `public.users` profile. In practice, `contexts/auth.tsx` calls the email service when a signed-in user is hydrated and `welcome_email_sent_at` is empty.
+The welcome email should trigger after the user's email is verified and the app has created or loaded their `public.users` profile. In practice, `features/auth/provider.tsx` calls the email service when a signed-in user is hydrated and `welcome_email_sent_at` is empty.
 
 The email is intentionally not sent at raw signup time because email/password users may still be unverified. The marker keeps the email once-per-user across future logins, page refreshes, and app launches.
 

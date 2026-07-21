@@ -1,11 +1,11 @@
-import { AppCard, AppHeading, AppText } from "@/components/atoms";
-import { atomMotion } from "@/components/atoms/motion";
+import { AppCard, AppHeading, AppText } from "@/shared/ui/components";
+import { atomMotion } from "@/shared/ui/components/motion";
 import {
   atomCardRadius,
   atomPalette,
   atomRadii,
   atomSpacing
-} from "@/components/atoms/theme";
+} from "@/shared/ui/components/theme";
 import {
   PROJECT_PHASE_LABELS,
   PROJECT_STATUS_LABELS,

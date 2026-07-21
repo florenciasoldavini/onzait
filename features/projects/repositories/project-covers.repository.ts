@@ -2,7 +2,7 @@ import { PROJECT_COVER_BUCKET } from "@/features/projects/constants";
 import {
   requireSupabase,
   toRepositoryError
-} from "@/features/projects/repositories/supabase.repository";
+} from "@/infrastructure/supabase/repository";
 
 const COVER_SIGNED_URL_SECONDS = 60 * 60;
 

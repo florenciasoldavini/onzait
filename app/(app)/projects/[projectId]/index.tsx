@@ -1,5 +1,5 @@
-import { ProjectFormScreen } from "@/screens/project-form";
-import ProjectDetailScreen from "@/screens/project-detail";
+import { ProjectFormScreen } from "@/features/projects/screens/project-form-screen";
+import ProjectDetailScreen from "@/features/projects/screens/project-detail-screen";
 import { useLocalSearchParams } from "expo-router";
 
 export default function ProjectDetailRoute() {

@@ -6,13 +6,8 @@ import {
 import {
   requireSupabase,
   toRepositoryError
-} from "@/features/projects/repositories/supabase.repository";
-
-export type ProfileAvatarAsset = {
-  fileName?: string | null;
-  mimeType?: string | null;
-  uri: string;
-};
+} from "@/infrastructure/supabase/repository";
+import type { ProfileAvatarAsset } from "@/features/profile/types";
 
 export async function uploadProfileAvatarObject({
   asset,

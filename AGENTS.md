@@ -15,6 +15,19 @@ Last reviewed: 2026-07-16
   - introduce another backend only when a concrete product requirement cannot be served safely by this architecture
 - Main product goal: mobile-first construction / job-site management app that is also usable in a browser for client feedback
 
+## Source Architecture
+
+- The maintained architecture guide lives in [docs/source-architecture.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/source-architecture.md:1).
+- Onzait uses a feature-first source architecture.
+- `app/` owns Expo Router route declarations and layouts only. Route files should delegate product UI to feature screens.
+- Product domains live under `features/<feature>/`. A feature may own its screens, components, hooks, services, repositories, schemas, types, utilities, and tests.
+- Active features and planned domain contracts use the same ownership rule; do not recreate global `screens`, `hooks`, `services`, `repositories`, `schemas`, or `types/models` layers.
+- Reusable product-agnostic UI, hooks, utilities, theme helpers, and splash behavior live under `shared/`.
+- SDK clients and technical adapters live under `infrastructure/`. Product UI must not import infrastructure or repositories directly.
+- Supabase migrations, Edge Functions, and database tests remain under the root `supabase/` directory because they are independently verified and deployed.
+- Dependency direction is `app -> feature screen/component -> feature hook/service -> feature repository -> infrastructure`.
+- `shared/` must never import from `features/`. Cross-feature imports should use the owning feature's public hook, service, provider, or type rather than its repository internals.
+
 ## Current Platform Setup
 
 - Web is deployed on Vercel
@@ -51,21 +64,24 @@ Last reviewed: 2026-07-16
 - Account profile editing
 - Google/Apple identity linking from the profile screen
 - Password reset
-- Shared callback/session handling lives in [lib/auth.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/lib/auth.ts:1)
+- Shared callback and redirect handling lives in [features/auth/services/auth.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth.service.ts:1)
+- Session/profile orchestration lives in [features/auth/services/auth-session.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth-session.service.ts:1)
 
 ### Important Auth Files
 
-- [lib/auth.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/lib/auth.ts:1)
-- [lib/supabase.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/lib/supabase.ts:1)
-- [contexts/auth.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/contexts/auth.tsx:1)
+- [features/auth/services/auth.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth.service.ts:1)
+- [features/auth/services/auth-session.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth-session.service.ts:1)
+- [features/auth/repositories/auth.repository.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/repositories/auth.repository.ts:1)
+- [infrastructure/supabase/client.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/infrastructure/supabase/client.ts:1)
+- [features/auth/provider.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/provider.tsx:1)
 - [app/\_layout.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/_layout.tsx:1)
 - [app/(auth)/callback.tsx](</Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/(auth)/callback.tsx:1>)
 - [app/(auth)/verify-email.tsx](</Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/(auth)/verify-email.tsx:1>)
-- [screens/auth/sign-in.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/screens/auth/sign-in.tsx:1)
-- [screens/auth/sign-up.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/screens/auth/sign-up.tsx:1)
-- [screens/auth/verify-email.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/screens/auth/verify-email.tsx:1)
-- [screens/auth/reset-password.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/screens/auth/reset-password.tsx:1)
-- [screens/profile.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/screens/profile.tsx:1)
+- [features/auth/screens/sign-in-screen.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/screens/sign-in-screen.tsx:1)
+- [features/auth/screens/sign-up-screen.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/screens/sign-up-screen.tsx:1)
+- [features/auth/screens/verify-email-screen.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/screens/verify-email-screen.tsx:1)
+- [features/auth/screens/reset-password-screen.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/screens/reset-password-screen.tsx:1)
+- [features/profile/screens/profile-screen.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/profile/screens/profile-screen.tsx:1)
 
 ### Auth Gotchas
 
@@ -169,7 +185,7 @@ Last reviewed: 2026-07-16
 - Production submit forms must use `react-hook-form` with a Zod schema resolver. Keep form values, validation errors, validity, submission state, and edit dirty-state in the form controller rather than duplicating them with local `useState`.
 - Local component state is only for transient UI-only behavior such as password visibility, picker/popover open state, autocomplete session state, and non-submit search/filter fields.
 - Form submit buttons must stay disabled until every required input is complete. When a form mixes required and optional fields, use one label convention only: optional fields show the shared discreet `(optional)` hint, and required fields are left unmarked.
-- Use the dependency direction `screens/components -> hooks -> services -> repositories -> Supabase/Storage/Edge Functions`.
+- Use the dependency direction `app -> feature screens/components -> feature hooks/services -> feature repositories -> infrastructure/Supabase Storage/Edge Functions`.
 - UI components should not call Supabase, Storage, Google, or other external services directly; use feature hooks.
 - Hooks should own React Query/cache behavior only and call feature services for workflows.
 - Services should own product/business workflows and orchestration.

@@ -2,7 +2,7 @@ import { buildProjectListQueryPlan } from "@/features/projects/query-builders";
 import {
   requireSupabase,
   toRepositoryError
-} from "@/features/projects/repositories/supabase.repository";
+} from "@/infrastructure/supabase/repository";
 import type {
   CreateProjectInput,
   Project,

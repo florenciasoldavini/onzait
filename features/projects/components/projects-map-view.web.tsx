@@ -1,10 +1,10 @@
-import { AppButton, AppCard, AppHeading, AppText } from "@/components/atoms";
+import { AppButton, AppCard, AppHeading, AppText } from "@/shared/ui/components";
 import {
   atomCardRadius,
   atomPalette,
   atomRadii,
   atomSpacing
-} from "@/components/atoms/theme";
+} from "@/shared/ui/components/theme";
 import {
   PROJECT_PHASE_LABELS,
   PROJECT_STATUS_LABELS,

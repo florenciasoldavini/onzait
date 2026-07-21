@@ -1,10 +1,9 @@
-import { AuthContext } from "@/contexts/auth";
-import HomeScreen from "@/screens/home";
+import { useAuth } from "@/features/auth/use-auth";
+import HomeScreen from "@/features/home/screens/home-screen";
 import { Redirect } from "expo-router";
-import { useContext } from "react";
 
 export default function PreviewRoute() {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
 
   if (user?.role !== "admin") {
     return <Redirect href="/projects" />;
