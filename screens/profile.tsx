@@ -41,6 +41,7 @@ import {
   type SupportedOAuthProvider
 } from "@/lib/auth-callback";
 import { getSupabaseErrorMessage } from "@/lib/supabase";
+import { getUserFacingErrorMessage } from "@/lib/user-facing-errors";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -671,66 +672,89 @@ function AvatarPicker({
   value: ProfileAvatarAsset | null;
 }) {
   const previewUri = value?.uri ?? currentUrl.trim();
+  const [pickerError, setPickerError] = useState<string | null>(null);
 
   const pickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    setPickerError(null);
 
-    if (!permission.granted) {
-      return;
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        setPickerError(
+          permission.canAskAgain
+            ? "Photo access is required to choose a profile picture. Allow access and try again."
+            : "Photo access is disabled. Enable it in your device settings, then try again."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.82
+      });
+
+      if (result.canceled || !result.assets[0]) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      onChange({
+        fileName: asset.fileName,
+        mimeType: asset.mimeType,
+        uri: asset.uri
+      });
+    } catch (error) {
+      setPickerError(
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't open your photo library. Try again."
+        )
+      );
     }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.82
-    });
-
-    if (result.canceled || !result.assets[0]) {
-      return;
-    }
-
-    const asset = result.assets[0];
-    onChange({
-      fileName: asset.fileName,
-      mimeType: asset.mimeType,
-      uri: asset.uri
-    });
   };
 
   return (
-    <Pressable
-      accessibilityLabel="Change profile photo"
-      accessibilityRole="button"
-      onPress={() => {
-        void pickImage();
-      }}
-      style={StyleSheet.flatten([
-        profileStyles.avatarPicker,
-        Platform.OS === "web" ? profileStyles.webCursor : null
-      ])}
-    >
-      {value?.uri ? (
-        <Image
-          contentFit="cover"
-          source={{ uri: value.uri }}
-          style={profileStyles.avatarImage}
-        />
-      ) : isLoading ? (
-        <ActivityIndicator color={atomPalette.textSubtle} />
-      ) : previewUri ? (
-        <Image
-          contentFit="cover"
-          source={{ uri: previewUri }}
-          style={profileStyles.avatarImage}
-        />
-      ) : (
-        <CameraIcon color={atomPalette.textSubtle} size="lg" />
-      )}
-      <View style={profileStyles.avatarPickerBadge}>
-        <CameraIcon color={atomPalette.accentText} size="sm" />
-      </View>
-    </Pressable>
+    <View style={{ gap: atomSpacing[2] }}>
+      <Pressable
+        accessibilityLabel="Change profile photo"
+        accessibilityRole="button"
+        onPress={() => {
+          void pickImage();
+        }}
+        style={StyleSheet.flatten([
+          profileStyles.avatarPicker,
+          Platform.OS === "web" ? profileStyles.webCursor : null
+        ])}
+      >
+        {value?.uri ? (
+          <Image
+            contentFit="cover"
+            source={{ uri: value.uri }}
+            style={profileStyles.avatarImage}
+          />
+        ) : isLoading ? (
+          <ActivityIndicator color={atomPalette.textSubtle} />
+        ) : previewUri ? (
+          <Image
+            contentFit="cover"
+            source={{ uri: previewUri }}
+            style={profileStyles.avatarImage}
+          />
+        ) : (
+          <CameraIcon color={atomPalette.textSubtle} size="lg" />
+        )}
+        <View style={profileStyles.avatarPickerBadge}>
+          <CameraIcon color={atomPalette.accentText} size="sm" />
+        </View>
+      </Pressable>
+      {pickerError ? (
+        <FieldMessage tone="error">{pickerError}</FieldMessage>
+      ) : null}
+    </View>
   );
 }
 

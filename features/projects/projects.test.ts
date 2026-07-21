@@ -369,17 +369,31 @@ describe("live user location", () => {
 });
 
 describe("Google Maps repository errors", () => {
-  it("preserves Edge Function error payload messages", async () => {
+  it("does not expose Edge Function error payload messages", () => {
     const error = new Error(
       "Edge Function returned a non-2xx status code"
     ) as Error & { context: Response };
     error.context = new Response(
-      JSON.stringify({ error: "Google Maps is not configured." }),
+      JSON.stringify({ error: "private provider configuration detail" }),
       { status: 500 }
     );
 
-    await expect(getMapsFunctionErrorMessage(error)).resolves.toBe(
-      "Google Maps is not configured."
+    expect(
+      getMapsFunctionErrorMessage(
+        error,
+        "Map preview is unavailable right now."
+      )
+    ).toBe("Map preview is unavailable right now.");
+  });
+
+  it("maps rate limits from the stable HTTP status", () => {
+    const error = new Error("Function failed") as Error & {
+      context: Response;
+    };
+    error.context = new Response(null, { status: 429 });
+
+    expect(getMapsFunctionErrorMessage(error, "Fallback")).toBe(
+      "Too many map requests were made. Wait a moment and try again."
     );
   });
 });

@@ -35,7 +35,7 @@ interface AuthContextType {
 
 const defaultAuthError = isSupabaseConfigured
   ? null
-  : "Supabase is not configured yet. Add your new project URL and publishable key to .env.local and restart Expo.";
+  : "The app is not connected to its data service. Try again later.";
 
 export const AuthContext = createContext<AuthContextType>({
   authError: defaultAuthError,
@@ -227,11 +227,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (error) {
       const isDuplicate =
-        (typeof error === "object" &&
-          error &&
-          "code" in error &&
-          String(error.code) === "23505") ||
-        getSupabaseErrorMessage(error).toLowerCase().includes("duplicate");
+        typeof error === "object" &&
+        error &&
+        "code" in error &&
+        String(error.code) === "23505";
 
       if (isDuplicate) {
         const { data: existingUser } = await supabase

@@ -10,6 +10,7 @@ import {
   getOAuthProviderLabel,
   type AuthCallbackIntent
 } from "@/lib/auth-callback";
+import { getUserFacingErrorMessage } from "@/lib/user-facing-errors";
 import * as Linking from "expo-linking";
 import { useRouter, type Href } from "expo-router";
 import { useEffect, useState } from "react";
@@ -60,7 +61,12 @@ export default function AuthCallbackScreen() {
             : "We couldn't finish the sign-in redirect."
         );
         setErrorMessage(
-          error instanceof Error ? error.message : "Authentication failed."
+          getUserFacingErrorMessage(
+            error,
+            intent.kind === "identity-link"
+              ? "We couldn't finish linking this sign-in method. Return to your profile and try again."
+              : "We couldn't finish signing you in. Return to sign in and try again."
+          )
         );
       }
     };

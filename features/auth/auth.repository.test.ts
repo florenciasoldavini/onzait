@@ -5,7 +5,6 @@ import {
   signInWithEmailPassword,
   signUpWithEmailPassword
 } from "@/features/auth/repositories/auth.repository";
-import { AuthRepositoryError } from "@/features/auth/errors";
 
 const authMocks = vi.hoisted(() => ({
   getAuthRedirectUrl: vi.fn(() => "https://onzait.test/callback"),
@@ -29,7 +28,9 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/supabase", () => ({
   getSupabaseErrorMessage: (error: unknown) =>
-    error instanceof Error ? error.message : String(error),
+    error instanceof Error && error.message === "unconfirmed"
+      ? "Confirm your email address before signing in."
+      : "We couldn't complete this request. Please try again.",
   isSupabaseEmailCooldownError: (error: unknown) =>
     error instanceof Error && error.message === "cooldown",
   isSupabaseEmailNotConfirmedError: (error: unknown) =>
@@ -75,9 +76,10 @@ describe("auth repository", () => {
         email: "user@example.com",
         password: "secret"
       })
-    ).rejects.toEqual(
-      new AuthRepositoryError("unconfirmed", "email-not-confirmed")
-    );
+    ).rejects.toMatchObject({
+      code: "email-not-confirmed",
+      message: "Confirm your email address before signing in."
+    });
   });
 
   it("owns sign-up redirect configuration", async () => {
@@ -103,8 +105,9 @@ describe("auth repository", () => {
   it("normalizes OAuth transport failures", async () => {
     authMocks.signInWithOAuth.mockRejectedValue(new Error("oauth failed"));
 
-    await expect(beginOAuthSignIn("google")).rejects.toEqual(
-      new AuthRepositoryError("oauth failed", "unknown")
-    );
+    await expect(beginOAuthSignIn("google")).rejects.toMatchObject({
+      code: "unknown",
+      message: "We couldn't complete this request. Please try again."
+    });
   });
 });

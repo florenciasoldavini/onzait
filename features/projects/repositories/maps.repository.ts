@@ -4,10 +4,7 @@ import {
   mapStaticMapPreview
 } from "@/features/projects/maps";
 import { getMapsFunctionErrorMessage } from "@/features/projects/maps-errors";
-import {
-  requireSupabase,
-  toRepositoryError
-} from "@/features/projects/repositories/supabase.repository";
+import { requireSupabase } from "@/features/projects/repositories/supabase.repository";
 import type {
   AddressSuggestion,
   ResolvedProjectAddress,
@@ -15,6 +12,7 @@ import type {
   StaticMapPreview,
   StaticMapViewport
 } from "@/features/projects/types";
+import { UserFacingError } from "@/lib/user-facing-errors";
 
 export async function autocompleteAddressSuggestions({
   input,
@@ -29,7 +27,10 @@ export async function autocompleteAddressSuggestions({
   });
 
   if (error) {
-    throw await toMapsFunctionError(error);
+    throw toMapsFunctionError(
+      error,
+      "Address suggestions are unavailable right now. Try again shortly."
+    );
   }
 
   return mapAddressSuggestions(data);
@@ -48,7 +49,10 @@ export async function resolveAddressSuggestion({
   });
 
   if (error) {
-    throw await toMapsFunctionError(error);
+    throw toMapsFunctionError(
+      error,
+      "We couldn't load that address. Select it again and retry."
+    );
   }
 
   return mapResolvedAddress(data);
@@ -81,7 +85,10 @@ export async function getStaticMapPreview({
   });
 
   if (error) {
-    throw await toMapsFunctionError(error);
+    throw toMapsFunctionError(
+      error,
+      "Map preview is unavailable right now. Try again shortly."
+    );
   }
 
   return mapStaticMapPreview(data);
@@ -102,12 +109,9 @@ function getMapCenter(points: StaticMapPoint[]) {
   };
 }
 
-export async function toMapsFunctionError(error: unknown) {
-  const message = await getMapsFunctionErrorMessage(error);
-
-  if (message) {
-    return new Error(message);
-  }
-
-  return toRepositoryError(error);
+export function toMapsFunctionError(error: unknown, fallback: string) {
+  return new UserFacingError(
+    getMapsFunctionErrorMessage(error, fallback),
+    error
+  );
 }

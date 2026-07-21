@@ -1,14 +1,17 @@
+import { UserFacingError } from "@/lib/user-facing-errors";
+
 export type AuthRepositoryErrorCode =
   | "email-cooldown"
   | "email-not-confirmed"
   | "unknown";
 
-export class AuthRepositoryError extends Error {
+export class AuthRepositoryError extends UserFacingError {
   constructor(
     message: string,
-    readonly code: AuthRepositoryErrorCode = "unknown"
+    readonly code: AuthRepositoryErrorCode = "unknown",
+    cause?: unknown
   ) {
-    super(message);
+    super(message, cause);
     this.name = "AuthRepositoryError";
   }
 }

@@ -1,6 +1,7 @@
 import { startOAuthIdentityLink, updatePassword } from "@/lib/auth";
 import type { SupportedOAuthProvider } from "@/lib/auth-callback";
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
+import { UserFacingError } from "@/lib/user-facing-errors";
 
 function requireAuthClient() {
   if (!supabase) {
@@ -14,7 +15,7 @@ export async function getProfileUserIdentities() {
   const { data, error } = await requireAuthClient().getUserIdentities();
 
   if (error) {
-    throw new Error(getSupabaseErrorMessage(error));
+    throw new UserFacingError(getSupabaseErrorMessage(error), error);
   }
 
   return data.identities;

@@ -26,6 +26,7 @@ import {
   DEFAULT_PAGE_SIZE,
   type PaginatedResult
 } from "@/lib/pagination";
+import { UserFacingError } from "@/lib/user-facing-errors";
 import {
   type InfiniteData,
   useInfiniteQuery,
@@ -86,13 +87,13 @@ export function useCreateProject() {
   return useMutation({
     mutationFn: async (input: CreateProjectInput) => {
       if (!session) {
-        throw new Error("You must be signed in to save projects.");
+        throw new UserFacingError("You must be signed in to save projects.");
       }
 
       const currentUser = user ?? (await createUser(session));
 
       if (!currentUser) {
-        throw new Error(
+        throw new UserFacingError(
           "We could not finish setting up your account. Sign out and back in, then try again."
         );
       }
@@ -147,7 +148,9 @@ export function useUploadProjectCover(defaultProjectId?: string) {
       const resolvedProjectId = projectId ?? defaultProjectId;
 
       if (!resolvedProjectId) {
-        throw new Error("Missing project id for cover upload.");
+        throw new UserFacingError(
+          "We couldn't identify the project for this cover. Return to the project and try again."
+        );
       }
 
       return uploadProjectCover({ asset, projectId: resolvedProjectId });
