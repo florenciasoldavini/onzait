@@ -15,9 +15,9 @@ import {
   PROJECT_PHASES,
   PROJECT_STATUS_LABELS
 } from "@/features/projects/constants";
-import { formatProjectDate } from "@/features/projects/date";
 import { useProject, useSoftDeleteProject } from "@/features/projects/hooks";
 import type { Project } from "@/features/projects/types";
+import { formatDateOnly } from "@/lib/date-only";
 import { getUserFacingErrorMessage } from "@/lib/user-facing-errors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -485,7 +485,7 @@ function ProjectProgressCard({
               selectable
               style={styles.progressMetricValue}
             >
-              {formatProjectDate(project.estimated_end_date)}
+              {formatDateOnly(project.estimated_end_date, { fallback: "TBD" })}
             </AppText>
           </View>
         </View>

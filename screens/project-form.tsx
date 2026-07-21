@@ -41,7 +41,6 @@ import {
   useResolveAddress,
   useUpdateProject
 } from "@/features/projects/hooks";
-import { formatProjectDate } from "@/features/projects/date";
 import type {
   Project,
   ProjectFormValues,
@@ -53,6 +52,7 @@ import {
   toCreateProjectInput,
   toUpdateProjectInput
 } from "@/features/projects/validation";
+import { formatDateOnly } from "@/lib/date-only";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -871,7 +871,7 @@ function CalendarDateField({
           size={18}
         />
         <AppText tone={value ? "default" : "subtle"} variant="body">
-          {formatProjectDate(value, { fallback: "Select date" })}
+          {formatDateOnly(value, { fallback: "Select date" })}
         </AppText>
       </Pressable>
 
@@ -926,7 +926,7 @@ function CalendarDateField({
 
                 return (
                   <Pressable
-                    accessibilityLabel={`Select ${formatProjectDate(
+                    accessibilityLabel={`Select ${formatDateOnly(
                       toCalendarDateValue(day.date)
                     )}`}
                     accessibilityRole="button"

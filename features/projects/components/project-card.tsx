@@ -11,8 +11,8 @@ import {
   PROJECT_STATUS_LABELS,
   PROJECT_TYPE_LABELS
 } from "@/features/projects/constants";
-import { formatProjectDate } from "@/features/projects/date";
 import type { ProjectStatus, ProjectSummary } from "@/features/projects/types";
+import { formatDateOnly } from "@/lib/date-only";
 import { Image } from "expo-image";
 import { ImageOff, MapPinned } from "lucide-react-native";
 import { useEffect, useState } from "react";
@@ -170,9 +170,9 @@ export function ProjectCard({
                     )}`}
                   />
                   <ProjectMetaLabel
-                    value={`ETA · ${formatProjectDate(
-                      project.estimated_end_date
-                    )}`}
+                    value={`ETA · ${formatDateOnly(project.estimated_end_date, {
+                      fallback: "TBD"
+                    })}`}
                   />
                 </View>
               </View>
