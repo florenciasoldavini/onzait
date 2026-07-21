@@ -11,14 +11,10 @@ import {
 } from "@/shared/ui/components";
 import { atomSpacing } from "@/shared/ui/components/theme";
 import {
-  clearWebAuthUrlArtifacts,
-  completeAuthSessionFromUrl,
-  getAuthErrorMessage,
-  getActiveAuthUrl,
-  sendPasswordResetEmail,
-  updatePassword,
-  urlHasAuthPayload
-} from "@/features/auth/services/auth.service";
+  usePasswordRecoveryPreparation,
+  usePasswordResetRequest,
+  usePasswordUpdate
+} from "@/features/auth/hooks/use-auth-mutations";
 import {
   forgotPasswordSchema,
   resetPasswordSchema,
@@ -27,6 +23,7 @@ import {
 } from "@/features/auth/schemas/auth.schemas";
 import { AtSignIcon, LockIcon } from "@/shared/ui/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -38,6 +35,10 @@ type ResetMode = "request" | "update";
 export default function ResetPasswordScreen() {
   const router = useRouter();
   const linkingUrl = Linking.useURL();
+  const { mutateAsync: preparePasswordRecovery } =
+    usePasswordRecoveryPreparation();
+  const { mutateAsync: requestPasswordReset } = usePasswordResetRequest();
+  const { mutateAsync: updatePassword } = usePasswordUpdate();
   const [formError, setFormError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<ResetMode>("request");
@@ -71,12 +72,6 @@ export default function ResetPasswordScreen() {
     (mode === "update" ? !isPasswordUpdateValid : !isResetRequestValid);
 
   useEffect(() => {
-    const activeUrl = getActiveAuthUrl(linkingUrl);
-
-    if (!activeUrl || !urlHasAuthPayload(activeUrl)) {
-      return;
-    }
-
     let isMounted = true;
 
     const prepareRecoverySession = async () => {
@@ -84,15 +79,14 @@ export default function ResetPasswordScreen() {
         setIsLoading(true);
         setFormError(null);
 
-        const { type, session } = await completeAuthSessionFromUrl(activeUrl);
+        const { shouldUpdatePassword } =
+          await preparePasswordRecovery(linkingUrl);
 
         if (!isMounted) {
           return;
         }
 
-        clearWebAuthUrlArtifacts();
-
-        if (type === "recovery" || session) {
+        if (shouldUpdatePassword) {
           setMode("update");
           requestForm.clearErrors();
           updateForm.reset({
@@ -105,7 +99,12 @@ export default function ResetPasswordScreen() {
           return;
         }
 
-        setFormError(getAuthErrorMessage(error));
+        setFormError(
+          getUserFacingErrorMessage(
+            error,
+            "We couldn't open this password recovery link. Request a new link and try again."
+          )
+        );
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -118,18 +117,22 @@ export default function ResetPasswordScreen() {
     return () => {
       isMounted = false;
     };
-  }, [linkingUrl]);
+  }, [linkingUrl, preparePasswordRecovery, requestForm, updateForm]);
 
   const handleResetRequest = requestForm.handleSubmit(async ({ email }) => {
     setIsLoading(true);
     setFormError(null);
 
     try {
-      await sendPasswordResetEmail(email);
+      await requestPasswordReset(email);
       router.replace("/sign-in");
     } catch (error) {
-      const message = getAuthErrorMessage(error);
-      setFormError(message);
+      setFormError(
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't send the password reset email. Try again."
+        )
+      );
     } finally {
       setIsLoading(false);
     }
@@ -143,8 +146,12 @@ export default function ResetPasswordScreen() {
       await updatePassword(password);
       router.replace("/");
     } catch (error) {
-      const message = getAuthErrorMessage(error);
-      setFormError(message);
+      setFormError(
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't update your password. Try again."
+        )
+      );
     } finally {
       setIsLoading(false);
     }

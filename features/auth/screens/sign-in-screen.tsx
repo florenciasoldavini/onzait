@@ -15,16 +15,12 @@ import {
   TextField
 } from "@/shared/ui/components";
 import { atomSpacing } from "@/shared/ui/components/theme";
-import {
-  getAuthErrorMessage,
-  isAuthEmailNotConfirmedError,
-  signInWithEmailPassword,
-  startOAuthSignIn
-} from "@/features/auth/services/auth.service";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useEmailSignIn, useOAuthSignIn } from "@/features/auth/hooks/use-auth-mutations";
 import { loginSchema, type LoginInput } from "@/features/auth/schemas/auth.schemas";
 import { AtSignIcon, LockIcon } from "@/shared/ui/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -36,6 +32,8 @@ const appleLogo = require("@/assets/images/auth/apple-logo.png");
 export default function SignInScreen() {
   const router = useRouter();
   const { authError } = useAuth();
+  const emailSignIn = useEmailSignIn();
+  const oauthSignIn = useOAuthSignIn();
   const [formError, setFormError] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loadingAction, setLoadingAction] = useState<
@@ -62,20 +60,24 @@ export default function SignInScreen() {
   };
 
   const signInWithEmail = handleSubmit(async ({ email, password }) => {
-    const signInEmail = email.trim().toLowerCase();
-
     setLoadingAction("email");
     setFormError(null);
 
     try {
-      await signInWithEmailPassword(signInEmail, password);
-    } catch (error) {
-      if (isAuthEmailNotConfirmedError(error)) {
-        router.replace(`/verify-email?email=${encodeURIComponent(signInEmail)}`);
-        return;
-      }
+      const result = await emailSignIn.mutateAsync({ email, password });
 
-      setFormError(getAuthErrorMessage(error));
+      if (result.status === "email-unverified") {
+        router.replace(
+          `/verify-email?email=${encodeURIComponent(result.email)}`
+        );
+      }
+    } catch (error) {
+      setFormError(
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't sign you in. Check your details and try again."
+        )
+      );
     } finally {
       setLoadingAction(null);
     }
@@ -85,10 +87,14 @@ export default function SignInScreen() {
     try {
       setLoadingAction(provider);
       setFormError(null);
-      await startOAuthSignIn(provider);
+      await oauthSignIn.mutateAsync(provider);
     } catch (error) {
-      const message = getAuthErrorMessage(error);
-      setFormError(message);
+      setFormError(
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't start that sign-in method. Try again."
+        )
+      );
     } finally {
       setLoadingAction(null);
     }

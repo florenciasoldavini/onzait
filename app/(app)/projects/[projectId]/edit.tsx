@@ -1,5 +1,13 @@
-import { ProjectFormScreen } from "@/features/projects/screens/project-form-screen";
+import { RouteLoadingScreen } from "@/shared/route-loading-screen";
 import { useLocalSearchParams } from "expo-router";
+import { lazy, Suspense } from "react";
+
+const ProjectFormScreen = lazy(async () => {
+  const module = await import(
+    "@/features/projects/screens/project-form-screen"
+  );
+  return { default: module.ProjectFormScreen };
+});
 
 export default function EditProjectRoute() {
   const params = useLocalSearchParams<{ projectId: string }>();
@@ -7,5 +15,9 @@ export default function EditProjectRoute() {
     ? params.projectId[0]
     : params.projectId;
 
-  return <ProjectFormScreen mode="edit" projectId={projectId} />;
+  return (
+    <Suspense fallback={<RouteLoadingScreen />}>
+      <ProjectFormScreen mode="edit" projectId={projectId} />
+    </Suspense>
+  );
 }

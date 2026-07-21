@@ -1,308 +1,192 @@
+import { AuthRepositoryError } from "@/features/auth/errors/auth.errors";
 import {
-  beginOAuthIdentityLink,
   beginOAuthSignIn,
   changePassword,
-  exchangeAuthCode,
-  getAuthUserIdentities,
+  clearCompletedWebAuthCallback,
+  completeAuthCallback,
+  getAuthCallbackUrl,
+  hasAuthCallbackPayload,
+  parseAuthCallbackParams,
   requestPasswordReset,
-  resendSignupConfirmation,
-  signInWithEmailPassword as signInWithEmailPasswordRequest,
-  signUpWithEmailPassword as signUpWithEmailPasswordRequest,
-  setAuthSession
+  resendVerificationEmail,
+  signInWithEmailPassword,
+  signUpWithEmailPassword
 } from "@/features/auth/repositories/auth.repository";
 import {
-  getSupabaseErrorMessage,
-  isSupabaseEmailCooldownError,
-  isSupabaseEmailNotConfirmedError,
-  isSupabaseEmailRateLimitError,
-  isSupabaseEmailSendQuotaError
-} from "@/infrastructure/supabase/client";
-import type { Session } from "@supabase/supabase-js";
-import Constants, { ExecutionEnvironment } from "expo-constants";
-import * as Linking from "expo-linking";
-import * as WebBrowser from "expo-web-browser";
-import { Platform } from "react-native";
+  getAuthCallbackIntent,
+  getPostAuthRedirectPath,
+  type AuthCallbackIntent,
+  type SupportedOAuthProvider
+} from "@/features/auth/utils/auth-callback";
+import {
+  UserFacingError,
+  getUserFacingErrorMessage
+} from "@/shared/utils/user-facing-errors";
 
-WebBrowser.maybeCompleteAuthSession();
-
-export type SupportedOAuthProvider = "apple" | "google";
-
-export interface AuthRedirectResult {
-  session: Session | null;
-  type: string | null;
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
 }
 
-function getConfiguredSiteUrl() {
-  const configuredSiteUrl = process.env.EXPO_PUBLIC_SITE_URL?.trim();
+export type EmailSignInResult =
+  | { status: "signed-in" }
+  | { email: string; status: "email-unverified" };
 
-  if (configuredSiteUrl) {
-    return configuredSiteUrl.replace(/\/+$/, "");
-  }
+export async function signInWithEmail({
+  email,
+  password
+}: {
+  email: string;
+  password: string;
+}): Promise<EmailSignInResult> {
+  const normalizedEmail = normalizeEmail(email);
 
-  if (typeof window !== "undefined" && window.location.origin) {
-    return window.location.origin.replace(/\/+$/, "");
-  }
-
-  return null;
-}
-
-function getBrowserOrigin() {
-  if (typeof window === "undefined" || !window.location.origin) {
-    return null;
-  }
-
-  return window.location.origin.replace(/\/+$/, "");
-}
-
-function isExpoGo() {
-  return Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-}
-
-function getNativeAuthRedirectUrl(
-  path: "callback" | "reset-password",
-  queryParams?: Record<string, string>
-) {
-  return Linking.createURL(path, {
-    queryParams,
-    scheme: isExpoGo() ? "exp" : "onzait"
-  });
-}
-
-function getCombinedSearchParams(url: URL) {
-  const searchParams = new URLSearchParams(url.search);
-  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
-
-  for (const [key, value] of hashParams.entries()) {
-    if (!searchParams.has(key)) {
-      searchParams.set(key, value);
-    }
-  }
-
-  return searchParams;
-}
-
-export function getAuthRedirectUrl(
-  path: "callback" | "reset-password" = "callback",
-  queryParams?: Record<string, string>
-) {
-  if (Platform.OS === "web") {
-    const siteUrl = getBrowserOrigin() ?? getConfiguredSiteUrl();
-
-    if (!siteUrl) {
-      throw new Error(
-        "Missing EXPO_PUBLIC_SITE_URL. Add it to your env vars before using hosted auth redirects."
-      );
+  try {
+    await signInWithEmailPassword({ email: normalizedEmail, password });
+    return { status: "signed-in" };
+  } catch (error) {
+    if (
+      error instanceof AuthRepositoryError &&
+      error.code === "email-not-confirmed"
+    ) {
+      return { email: normalizedEmail, status: "email-unverified" };
     }
 
-    const searchParams = new URLSearchParams(queryParams);
-    const search = searchParams.size > 0 ? `?${searchParams.toString()}` : "";
-
-    return `${siteUrl}/${path}${search}`;
+    throw error;
   }
-
-  return getNativeAuthRedirectUrl(path, queryParams);
 }
 
-export function getAuthParamsFromUrl(url: string) {
-  return getCombinedSearchParams(new URL(url));
-}
+export type EmailSignUpResult =
+  | { status: "signed-in" }
+  | { email: string; status: "verification-rate-limited" }
+  | { email: string; status: "verification-sent" };
 
-export function urlHasAuthPayload(url: string) {
-  const params = getAuthParamsFromUrl(url);
+export async function signUpWithEmail({
+  email,
+  password
+}: {
+  email: string;
+  password: string;
+}): Promise<EmailSignUpResult> {
+  const normalizedEmail = normalizeEmail(email);
 
-  return (
-    params.has("access_token") ||
-    params.has("refresh_token") ||
-    params.has("code") ||
-    params.has("error") ||
-    params.has("error_description") ||
-    params.has("type")
-  );
-}
-
-export function getActiveAuthUrl(linkingUrl: string | null) {
-  if (linkingUrl) {
-    return linkingUrl;
-  }
-
-  if (typeof window !== "undefined") {
-    return window.location.href;
-  }
-
-  return null;
-}
-
-export async function completeAuthSessionFromUrl(
-  url: string
-): Promise<AuthRedirectResult> {
-  const params = getAuthParamsFromUrl(url);
-  const authType = params.get("type");
-  const errorDescription =
-    params.get("error_description") ?? params.get("error");
-  const code = params.get("code");
-  const accessToken = params.get("access_token");
-  const refreshToken = params.get("refresh_token");
-
-  if (errorDescription) {
-    throw new Error(errorDescription);
-  }
-
-  if (code) {
-    return { session: await exchangeAuthCode(code), type: authType };
-  }
-
-  if (accessToken && refreshToken) {
-    return {
-      session: await setAuthSession(accessToken, refreshToken),
-      type: authType
-    };
-  }
-
-  return { session: null, type: authType };
-}
-
-export async function startOAuthSignIn(provider: SupportedOAuthProvider) {
-  const redirectTo = getAuthRedirectUrl("callback");
-  const providerLabel = provider === "google" ? "Google" : "Apple";
-
-  if (Platform.OS === "web") {
-    return beginOAuthSignIn({
-      provider,
-      options: { redirectTo }
+  try {
+    const { session } = await signUpWithEmailPassword({
+      email: normalizedEmail,
+      password
     });
-  }
 
-  const data = await beginOAuthSignIn({
-    provider,
-    options: {
-      redirectTo,
-      skipBrowserRedirect: true
+    return session
+      ? { status: "signed-in" }
+      : { email: normalizedEmail, status: "verification-sent" };
+  } catch (error) {
+    if (
+      error instanceof AuthRepositoryError &&
+      error.code === "email-cooldown"
+    ) {
+      return {
+        email: normalizedEmail,
+        status: "verification-rate-limited"
+      };
     }
-  });
 
-  if (!data?.url) {
-    throw new Error(
-      `${providerLabel} sign-in could not start because Supabase did not return an OAuth URL.`
-    );
+    throw error;
   }
-
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-
-  if (result.type !== "success" || !("url" in result) || !result.url) {
-    const redirectHelp = isExpoGo()
-      ? `Add the current Expo Go redirect URL (${redirectTo}) to Supabase Auth redirect URLs, or test ${providerLabel} sign-in in a development build using onzait://callback.`
-      : `Add ${redirectTo} to Supabase Auth redirect URLs.`;
-
-    throw new Error(
-      `${providerLabel} sign-in did not return to the app. ${redirectHelp}`
-    );
-  }
-
-  return completeAuthSessionFromUrl(result.url);
 }
 
-export async function startOAuthIdentityLink(provider: SupportedOAuthProvider) {
-  const redirectTo = getAuthRedirectUrl("callback", { next: "/profile" });
-  const providerLabel = provider === "google" ? "Google" : "Apple";
-
-  if (Platform.OS === "web") {
-    return beginOAuthIdentityLink({
-      provider,
-      options: { redirectTo }
-    });
-  }
-
-  const data = await beginOAuthIdentityLink({
-    provider,
-    options: {
-      redirectTo,
-      skipBrowserRedirect: true
-    }
-  });
-
-  if (!data?.url) {
-    throw new Error(
-      `${providerLabel} linking could not start because Supabase did not return an OAuth URL.`
-    );
-  }
-
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-
-  if (result.type !== "success" || !("url" in result) || !result.url) {
-    const redirectHelp = isExpoGo()
-      ? `Add the current Expo Go redirect URL (${redirectTo}) to Supabase Auth redirect URLs, or test ${providerLabel} linking in a development build using onzait://callback.`
-      : `Add ${redirectTo} to Supabase Auth redirect URLs.`;
-
-    throw new Error(
-      `${providerLabel} linking did not return to the app. ${redirectHelp}`
-    );
-  }
-
-  return completeAuthSessionFromUrl(result.url);
+export function signInWithOAuth(provider: SupportedOAuthProvider) {
+  return beginOAuthSignIn(provider);
 }
 
-export async function sendPasswordResetEmail(email: string) {
-  await requestPasswordReset(email, getAuthRedirectUrl("reset-password"));
+export function sendPasswordReset(email: string) {
+  return requestPasswordReset(normalizeEmail(email));
 }
 
-export async function resendSignUpConfirmationEmail(email: string) {
-  await resendSignupConfirmation(email, getAuthRedirectUrl("callback"));
-}
-
-export async function updatePassword(password: string) {
+export function updateAccountPassword(password: string) {
   return changePassword(password);
 }
 
-export function signInWithEmailPassword(email: string, password: string) {
-  return signInWithEmailPasswordRequest(email, password);
+export async function resendEmailVerification(email: string) {
+  try {
+    await resendVerificationEmail(normalizeEmail(email));
+    return { status: "sent" } as const;
+  } catch (error) {
+    if (
+      error instanceof AuthRepositoryError &&
+      error.code === "email-cooldown"
+    ) {
+      return { status: "rate-limited" } as const;
+    }
+
+    throw error;
+  }
 }
 
-export function signUpWithEmailPassword(email: string, password: string) {
-  return signUpWithEmailPasswordRequest({
-    email,
-    emailRedirectTo: getAuthRedirectUrl("callback"),
-    password
-  });
-}
+export async function preparePasswordRecovery(linkingUrl: string | null) {
+  const activeUrl = getAuthCallbackUrl(linkingUrl);
 
-export function getLinkedAuthIdentities() {
-  return getAuthUserIdentities();
-}
-
-export {
-  getSupabaseErrorMessage as getAuthErrorMessage,
-  isSupabaseEmailCooldownError as isAuthEmailCooldownError,
-  isSupabaseEmailNotConfirmedError as isAuthEmailNotConfirmedError,
-  isSupabaseEmailRateLimitError as isAuthEmailRateLimitError,
-  isSupabaseEmailSendQuotaError as isAuthEmailSendQuotaError
-};
-
-function getSafePostAuthRedirectPath(nextPath: string | null) {
-  if (!nextPath || !nextPath.startsWith("/") || nextPath.startsWith("//")) {
-    return "/";
+  if (!activeUrl || !hasAuthCallbackPayload(activeUrl)) {
+    return { shouldUpdatePassword: false };
   }
 
-  return nextPath;
+  const { session, type } = await completeAuthCallback(activeUrl);
+  clearCompletedWebAuthCallback();
+
+  return {
+    shouldUpdatePassword: type === "recovery" || Boolean(session)
+  };
 }
 
-export function getPostAuthRedirectPath(
-  authType: string | null,
-  nextPath: string | null = null
-) {
-  if (authType === "recovery") {
-    return "/reset-password";
+export class AuthCallbackError extends UserFacingError {
+  constructor(
+    message: string,
+    readonly intent: AuthCallbackIntent,
+    cause?: unknown
+  ) {
+    super(message, cause);
+    this.name = "AuthCallbackError";
   }
-
-  return getSafePostAuthRedirectPath(nextPath);
 }
 
-export function clearWebAuthUrlArtifacts() {
-  const origin = getBrowserOrigin();
+export async function finishAuthCallback(linkingUrl: string | null) {
+  const activeUrl = getAuthCallbackUrl(linkingUrl);
 
-  if (typeof window === "undefined" || !origin) {
-    return;
+  if (!activeUrl) {
+    throw new AuthCallbackError(
+      "This auth link is missing the session payload. Try signing in again.",
+      { kind: "sign-in" }
+    );
   }
 
-  const cleanUrl = `${origin}${window.location.pathname}`;
-  window.history.replaceState({}, document.title, cleanUrl);
+  const params = parseAuthCallbackParams(activeUrl);
+  const intent = getAuthCallbackIntent(params);
+
+  if (!hasAuthCallbackPayload(activeUrl)) {
+    throw new AuthCallbackError(
+      intent.kind === "identity-link"
+        ? "This link is missing the account confirmation payload. Try linking again."
+        : "This auth link is missing the session payload. Try signing in again.",
+      intent
+    );
+  }
+
+  try {
+    const { type } = await completeAuthCallback(activeUrl);
+    clearCompletedWebAuthCallback();
+
+    return {
+      intent,
+      redirectPath: getPostAuthRedirectPath(type, params.get("next"), intent)
+    };
+  } catch (error) {
+    throw new AuthCallbackError(
+      getUserFacingErrorMessage(
+        error,
+        intent.kind === "identity-link"
+          ? "We couldn't finish linking this sign-in method. Try again."
+          : "We couldn't finish signing you in. Try again."
+      ),
+      intent,
+      error
+    );
+  }
 }

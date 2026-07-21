@@ -7,7 +7,7 @@ export interface ProjectListQueryPlan {
     operator: "eq" | "ilike" | "in" | "is";
     value: unknown;
   }[];
-  order: { ascending: boolean; column: string };
+  orders: { ascending: boolean; column: string }[];
 }
 
 export function buildProjectListQueryPlan({
@@ -70,9 +70,12 @@ export function buildProjectListQueryPlan({
 
   return {
     filters: queryFilters,
-    order: {
-      ascending: normalized.sort.endsWith("_asc"),
-      column: normalized.sort.startsWith("name") ? "name" : "created_at"
-    }
+    orders: [
+      {
+        ascending: normalized.sort.endsWith("_asc"),
+        column: normalized.sort.startsWith("name") ? "name" : "created_at"
+      },
+      { ascending: true, column: "id" }
+    ]
   };
 }

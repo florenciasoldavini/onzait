@@ -1,206 +1,171 @@
-import type { User } from "@/features/auth/types/auth.types";
+import { AuthRepositoryError } from "@/features/auth/errors/auth.errors";
+import {
+  clearWebAuthUrlArtifacts,
+  completeAuthSessionFromUrl,
+  getActiveAuthUrl,
+  getAuthParamsFromUrl,
+  getAuthRedirectUrl,
+  resendSignUpConfirmationEmail,
+  sendPasswordResetEmail,
+  startOAuthSignIn,
+  updatePassword,
+  urlHasAuthPayload
+} from "@/features/auth/repositories/auth-transport.repository";
+import type { SupportedOAuthProvider } from "@/features/auth/utils/auth-callback";
 import {
   getSupabaseErrorMessage,
+  isSupabaseEmailCooldownError,
+  isSupabaseEmailNotConfirmedError,
   supabase
 } from "@/infrastructure/supabase/client";
-import type {
-  AuthChangeEvent,
-  Session,
-  SignInWithOAuthCredentials
-} from "@supabase/supabase-js";
 
-type UserInsert = Omit<
-  User,
-  "created_at" | "deleted_at" | "updated_at" | "welcome_email_sent_at"
->;
-
-function requireSupabase() {
+function requireAuthClient() {
   if (!supabase) {
-    throw new Error(getSupabaseErrorMessage("Supabase is not configured."));
+    throw new AuthRepositoryError(
+      getSupabaseErrorMessage("Supabase is not configured.")
+    );
   }
 
-  return supabase;
+  return supabase.auth;
 }
 
-export async function exchangeAuthCode(code: string) {
-  const { data, error } = await requireSupabase().auth.exchangeCodeForSession(
-    code
-  );
+function toAuthRepositoryError(error: unknown) {
+  if (error instanceof AuthRepositoryError) {
+    return error;
+  }
 
-  if (error) throw error;
-  return data.session;
+  const code = isSupabaseEmailNotConfirmedError(error)
+    ? "email-not-confirmed"
+    : isSupabaseEmailCooldownError(error)
+      ? "email-cooldown"
+      : "unknown";
+
+  return new AuthRepositoryError(getSupabaseErrorMessage(error), code, error);
 }
 
-export async function setAuthSession(
-  accessToken: string,
-  refreshToken: string
-) {
-  const { data, error } = await requireSupabase().auth.setSession({
-    access_token: accessToken,
-    refresh_token: refreshToken
+async function runAuthRequest<T>(request: () => Promise<T>) {
+  try {
+    return await request();
+  } catch (error) {
+    throw toAuthRepositoryError(error);
+  }
+}
+
+export async function signInWithEmailPassword({
+  email,
+  password
+}: {
+  email: string;
+  password: string;
+}) {
+  return runAuthRequest(async () => {
+    const { data, error } = await requireAuthClient().signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
   });
-
-  if (error) throw error;
-  return data.session;
-}
-
-export async function beginOAuthSignIn(
-  credentials: SignInWithOAuthCredentials
-) {
-  const { data, error } = await requireSupabase().auth.signInWithOAuth(
-    credentials
-  );
-
-  if (error) throw error;
-  return data;
-}
-
-export async function beginOAuthIdentityLink(
-  credentials: SignInWithOAuthCredentials
-) {
-  const { data, error } = await requireSupabase().auth.linkIdentity(credentials);
-
-  if (error) throw error;
-  return data;
-}
-
-export async function requestPasswordReset(
-  email: string,
-  redirectTo: string
-) {
-  const { error } = await requireSupabase().auth.resetPasswordForEmail(email, {
-    redirectTo
-  });
-
-  if (error) throw error;
-}
-
-export async function resendSignupConfirmation(
-  email: string,
-  emailRedirectTo: string
-) {
-  const { error } = await requireSupabase().auth.resend({
-    email,
-    options: { emailRedirectTo },
-    type: "signup"
-  });
-
-  if (error) throw error;
-}
-
-export async function changePassword(password: string) {
-  const { data, error } = await requireSupabase().auth.updateUser({ password });
-
-  if (error) throw error;
-  return data;
-}
-
-export async function signInWithEmailPassword(
-  email: string,
-  password: string
-) {
-  const { data, error } = await requireSupabase().auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error) throw error;
-  return data;
 }
 
 export async function signUpWithEmailPassword({
   email,
-  emailRedirectTo,
   password
 }: {
   email: string;
-  emailRedirectTo: string;
   password: string;
 }) {
-  const { data, error } = await requireSupabase().auth.signUp({
-    email,
-    options: { emailRedirectTo },
-    password
-  });
+  return runAuthRequest(async () => {
+    const { data, error } = await requireAuthClient().signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: getAuthRedirectUrl("callback")
+      }
+    });
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  });
 }
 
-export async function getAuthUserIdentities() {
-  const { data, error } = await requireSupabase().auth.getUserIdentities();
+export function beginOAuthSignIn(provider: SupportedOAuthProvider) {
+  return runAuthRequest(() => startOAuthSignIn(provider));
+}
 
-  if (error) throw error;
-  return data.identities;
+export function requestPasswordReset(email: string) {
+  return runAuthRequest(() => sendPasswordResetEmail(email));
+}
+
+export function resendVerificationEmail(email: string) {
+  return runAuthRequest(() => resendSignUpConfirmationEmail(email));
+}
+
+export function changePassword(password: string) {
+  return runAuthRequest(() => updatePassword(password));
+}
+
+export function getAuthCallbackUrl(linkingUrl: string | null) {
+  return getActiveAuthUrl(linkingUrl);
+}
+
+export function hasAuthCallbackPayload(url: string) {
+  return urlHasAuthPayload(url);
+}
+
+export function parseAuthCallbackParams(url: string) {
+  return getAuthParamsFromUrl(url);
+}
+
+export function completeAuthCallback(url: string) {
+  return runAuthRequest(() => completeAuthSessionFromUrl(url));
+}
+
+export function clearCompletedWebAuthCallback() {
+  clearWebAuthUrlArtifacts();
+}
+
+export function isAuthSessionAvailable() {
+  return Boolean(supabase);
 }
 
 export async function getCurrentAuthSession() {
-  const { data, error } = await requireSupabase().auth.getSession();
+  return runAuthRequest(async () => {
+    const { data, error } = await requireAuthClient().getSession();
 
-  if (error) throw error;
-  return data.session;
+    if (error) {
+      throw error;
+    }
+
+    return data.session;
+  });
 }
 
-export function subscribeToAuthState(
-  listener: (event: AuthChangeEvent, session: Session | null) => void
+export function observeAuthSession(
+  listener: (session: import("@supabase/supabase-js").Session | null) => void
 ) {
   const {
     data: { subscription }
-  } = requireSupabase().auth.onAuthStateChange(listener);
+  } = requireAuthClient().onAuthStateChange((_event, session) => {
+    listener(session);
+  });
 
   return () => subscription.unsubscribe();
 }
 
 export async function signOutAuthSession() {
-  const { error } = await requireSupabase().auth.signOut();
+  return runAuthRequest(async () => {
+    const { error } = await requireAuthClient().signOut();
 
-  if (error) throw error;
-}
-
-export async function insertUserProfile(payload: UserInsert) {
-  const { data, error } = await requireSupabase()
-    .from("users")
-    .insert(payload)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data as User;
-}
-
-export async function findUserProfileByEmail(email: string) {
-  const { data, error } = await requireSupabase()
-    .from("users")
-    .select("*")
-    .eq("email", email)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data as User | null;
-}
-
-export async function findUserProfileById(id: string) {
-  const { data, error } = await requireSupabase()
-    .from("users")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data as User | null;
-}
-
-export async function updateUserProfileRecord(
-  id: string,
-  patch: Partial<User>
-) {
-  const { data, error } = await requireSupabase()
-    .from("users")
-    .update(patch)
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data as User;
+    if (error) {
+      throw error;
+    }
+  });
 }

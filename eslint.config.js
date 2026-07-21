@@ -22,6 +22,57 @@ module.exports = defineConfig([
     }
   },
   {
+    files: ["features/auth/screens/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/features/auth/repositories/auth-transport.repository",
+              message:
+                "Auth screens must use feature hooks instead of auth transport helpers."
+            },
+            {
+              name: "@/infrastructure/supabase/client",
+              message:
+                "Auth screens must use feature hooks instead of the Supabase client."
+            },
+            {
+              name: "@supabase/supabase-js",
+              message:
+                "Auth screens must use feature hooks instead of the Supabase client."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    files: ["features/auth/providers/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/infrastructure/supabase/client",
+              message:
+                "Contexts own React state only. Access Supabase through feature services and repositories."
+            }
+          ],
+          patterns: [
+            {
+              group: ["@/features/**/repositories/**"],
+              message:
+                "Contexts must call feature services instead of repositories directly."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
     rules: {
       "no-restricted-imports": [
         "error",

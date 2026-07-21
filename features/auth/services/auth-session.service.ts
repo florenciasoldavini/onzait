@@ -1,17 +1,23 @@
 import {
-  findUserProfileByEmail,
-  findUserProfileById,
-  getCurrentAuthSession,
-  insertUserProfile,
-  signOutAuthSession,
-  subscribeToAuthState,
-  updateUserProfileRecord
-} from "@/features/auth/repositories/auth.repository";
-import type { User } from "@/features/auth/types/auth.types";
+  AuthProfileRepositoryError,
+  findAuthProfileById,
+  insertAuthProfile,
+  updateAuthProfileBackfill,
+  type AuthProfileBackfill,
+  type AuthProfileInsert
+} from "@/features/auth/repositories/auth-profile.repository";
 import {
-  getSupabaseErrorMessage,
-  isSupabaseConfigured
-} from "@/infrastructure/supabase/client";
+  getCurrentAuthSession,
+  isAuthSessionAvailable,
+  observeAuthSession,
+  signOutAuthSession
+} from "@/features/auth/repositories/auth.repository";
+import type { ProfileAvatarAsset } from "@/features/profile/repositories/profile-avatar.repository";
+import { saveProfile } from "@/features/profile/services/profile.service";
+import { Sentry } from "@/infrastructure/monitoring/sentry";
+import { UserFacingError } from "@/shared/utils/user-facing-errors";
+import { sendWelcomeToOnzaitEmail } from "@/features/auth/services/welcome-email.service";
+import type { User } from "@/features/auth/types/auth.types";
 import type { Session } from "@supabase/supabase-js";
 
 export type EditableUserProfile = Pick<
@@ -19,10 +25,9 @@ export type EditableUserProfile = Pick<
   "avatar" | "first_name" | "last_name" | "phone_number"
 >;
 
-export const isAuthConfigured = isSupabaseConfigured;
-export const getAuthErrorMessage = getSupabaseErrorMessage;
-
 type AuthProfileMetadata = Record<string, unknown>;
+
+const welcomeEmailAttempts = new Set<string>();
 
 function getCleanString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -36,7 +41,9 @@ function getMetadataValue(
     for (const key of keys) {
       const value = getCleanString(metadata[key]);
 
-      if (value) return value;
+      if (value) {
+        return value;
+      }
     }
   }
 
@@ -44,7 +51,9 @@ function getMetadataValue(
 }
 
 function getNameParts(fullName: string | null) {
-  if (!fullName) return { firstName: null, lastName: null };
+  if (!fullName) {
+    return { firstName: null, lastName: null };
+  }
 
   const parts = fullName.split(/\s+/).filter(Boolean);
 
@@ -67,7 +76,10 @@ function getAuthMetadataSources(session: Session) {
   ] satisfies AuthProfileMetadata[];
 }
 
-function buildFallbackProfile(session: Session, profile?: Partial<User>) {
+export function buildAuthProfile(
+  session: Session,
+  profile?: Partial<User>
+): AuthProfileInsert {
   const email = (session.user.email ?? profile?.email ?? "")
     .trim()
     .toLowerCase();
@@ -76,7 +88,8 @@ function buildFallbackProfile(session: Session, profile?: Partial<User>) {
   const fullName =
     getMetadataValue(metadataSources, ["full_name", "name", "display_name"]) ??
     getMetadataValue(metadataSources, ["fullName", "displayName"]);
-  const { firstName, lastName } = getNameParts(fullName);
+  const { firstName: fullNameFirstName, lastName: fullNameLastName } =
+    getNameParts(fullName);
 
   return {
     avatar:
@@ -89,28 +102,31 @@ function buildFallbackProfile(session: Session, profile?: Partial<User>) {
       getCleanString(profile?.first_name) ??
       getMetadataValue(metadataSources, ["first_name", "given_name"]) ??
       getMetadataValue(metadataSources, ["firstName", "givenName"]) ??
-      firstName ??
+      fullNameFirstName ??
       emailName,
     id: session.user.id,
     last_name:
       getCleanString(profile?.last_name) ??
       getMetadataValue(metadataSources, ["last_name", "family_name"]) ??
       getMetadataValue(metadataSources, ["lastName", "familyName"]) ??
-      lastName ??
+      fullNameLastName ??
       null,
     phone_number:
       getCleanString(profile?.phone_number) ??
       getMetadataValue(metadataSources, ["phone_number", "phone"]) ??
       getMetadataValue(metadataSources, ["phoneNumber"]) ??
       null,
-    role: "user" as const
+    role: "user"
   };
 }
 
-function buildProfileBackfillPatch(existingUser: User, session: Session) {
-  const authProfile = buildFallbackProfile(session);
+export function getAuthProfileBackfill(
+  existingUser: User,
+  session: Session
+): AuthProfileBackfill | null {
+  const authProfile = buildAuthProfile(session);
   const emailName = getEmailName(authProfile.email).toLowerCase();
-  const patch: Partial<EditableUserProfile> = {};
+  const patch: AuthProfileBackfill = {};
   const existingFirstName = existingUser.first_name.trim().toLowerCase();
   const authFirstName = authProfile.first_name.trim();
 
@@ -137,72 +153,119 @@ function buildProfileBackfillPatch(existingUser: User, session: Session) {
   return Object.keys(patch).length > 0 ? patch : null;
 }
 
-function isDuplicateProfileError(error: unknown) {
-  return (
-    (typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      String(error.code) === "23505") ||
-    (error instanceof Error && error.message.toLowerCase().includes("duplicate"))
-  );
+export function hasAuthSessionSupport() {
+  return isAuthSessionAvailable();
+}
+
+export function loadCurrentAuthSession() {
+  return getCurrentAuthSession();
+}
+
+export function subscribeToAuthSession(
+  listener: (session: Session | null) => void
+) {
+  return observeAuthSession(listener);
+}
+
+export function logOutCurrentSession() {
+  return signOutAuthSession();
 }
 
 export async function createAuthUser(
   session: Session,
   profile?: Partial<User>
 ) {
-  const payload = buildFallbackProfile(session, profile);
+  const payload = buildAuthProfile(session, profile);
 
   try {
-    return await insertUserProfile(payload);
+    return await insertAuthProfile(payload);
   } catch (error) {
-    if (!isDuplicateProfileError(error)) throw error;
+    if (
+      error instanceof AuthProfileRepositoryError &&
+      error.code === "duplicate"
+    ) {
+      const existingUser = await findAuthProfileById(session.user.id);
 
-    const existingUser = await findUserProfileByEmail(payload.email);
+      if (existingUser) {
+        return existingUser;
+      }
 
-    if (existingUser?.id === payload.id) return existingUser;
+      throw new UserFacingError(
+        "This email is already linked to another account. Sign in using the method you used previously.",
+        error
+      );
+    }
 
-    throw new Error(
-      "This email is already linked to a different sign-in method. Use the method you signed up with first, then link the additional provider from your profile."
-    );
+    throw error;
   }
 }
 
 export async function hydrateAuthUser(session: Session) {
-  const existingUser = await findUserProfileById(session.user.id);
+  const existingUser = await findAuthProfileById(session.user.id);
 
-  if (!existingUser) return createAuthUser(session);
+  if (!existingUser) {
+    return createAuthUser(session);
+  }
 
-  const backfillPatch = buildProfileBackfillPatch(existingUser, session);
+  const backfill = getAuthProfileBackfill(existingUser, session);
 
-  if (!backfillPatch) return existingUser;
+  if (!backfill) {
+    return existingUser;
+  }
 
   try {
-    return await updateUserProfileRecord(session.user.id, {
-      ...backfillPatch,
-      updated_at: new Date()
+    return await updateAuthProfileBackfill({
+      profile: backfill,
+      userId: session.user.id
     });
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { auth_profile: "metadata-backfill" }
+    });
     return existingUser;
   }
 }
 
-export function updateAuthUserProfile(
-  session: Session,
-  currentUser: User | null,
-  profile: Partial<EditableUserProfile>
-) {
-  return updateUserProfileRecord(session.user.id, {
-    avatar: profile.avatar?.trim() || null,
-    first_name: profile.first_name?.trim() ?? currentUser?.first_name ?? "",
-    last_name: profile.last_name?.trim() || null,
-    phone_number: profile.phone_number?.trim() || null,
-    updated_at: new Date()
+export function updateAuthenticatedUserProfile({
+  avatarAsset,
+  currentUser,
+  profile,
+  session
+}: {
+  avatarAsset?: ProfileAvatarAsset | null;
+  currentUser: User;
+  profile: Partial<EditableUserProfile>;
+  session: Session;
+}) {
+  return saveProfile({
+    avatarAsset,
+    currentAvatarReference: currentUser.avatar,
+    profile: {
+      avatar: profile.avatar?.trim() || null,
+      first_name: profile.first_name?.trim() ?? currentUser.first_name,
+      last_name: profile.last_name?.trim() || null,
+      phone_number: profile.phone_number?.trim() || null
+    },
+    userId: session.user.id
   });
 }
 
-export {
-  getCurrentAuthSession,
-  signOutAuthSession,
-  subscribeToAuthState
-};
+export async function deliverWelcomeEmailIfNeeded(user: User) {
+  if (user.welcome_email_sent_at || welcomeEmailAttempts.has(user.id)) {
+    return user;
+  }
+
+  welcomeEmailAttempts.add(user.id);
+
+  try {
+    const result = await sendWelcomeToOnzaitEmail({ name: user.first_name });
+    const sentAt = result?.welcome_email_sent_at;
+
+    return sentAt ? { ...user, welcome_email_sent_at: new Date(sentAt) } : user;
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { auth_profile: "welcome-email" }
+    });
+    return user;
+  }
+}

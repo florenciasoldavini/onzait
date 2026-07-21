@@ -1,19 +1,20 @@
-import { sendWelcomeToOnzaitEmail } from "@/features/auth/services/welcome-email.service";
 import {
   createAuthUser,
-  getAuthErrorMessage,
-  getCurrentAuthSession,
+  deliverWelcomeEmailIfNeeded,
+  hasAuthSessionSupport,
   hydrateAuthUser,
-  isAuthConfigured,
-  signOutAuthSession,
-  subscribeToAuthState,
-  updateAuthUserProfile,
+  loadCurrentAuthSession,
+  logOutCurrentSession,
+  subscribeToAuthSession,
+  updateAuthenticatedUserProfile,
   type EditableUserProfile
 } from "@/features/auth/services/auth-session.service";
-import type { User } from "@/features/auth/types/auth.types";
+import type { ProfileAvatarAsset } from "@/features/profile/services/profile.service";
 import { Sentry } from "@/infrastructure/monitoring/sentry";
+import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
+import type { User } from "@/features/auth/types/auth.types";
 import type { Session } from "@supabase/supabase-js";
-import { createContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
 
 interface AuthContextType {
   authError: string | null;
@@ -25,14 +26,15 @@ interface AuthContextType {
   logOut: () => Promise<void>;
   session: Session | null;
   updateUserProfile: (
-    profile: Partial<EditableUserProfile>
+    profile: Partial<EditableUserProfile>,
+    avatarAsset?: ProfileAvatarAsset | null
   ) => Promise<User | null>;
   user: User | null;
 }
 
-const defaultAuthError = isAuthConfigured
+const defaultAuthError = hasAuthSessionSupport()
   ? null
-  : "Supabase is not configured yet. Add your new project URL and publishable key to .env.local and restart Expo.";
+  : "The app is not connected to its data service. Try again later.";
 
 export const AuthContext = createContext<AuthContextType>({
   authError: defaultAuthError,
@@ -49,39 +51,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const welcomeEmailAttemptsRef = useRef<Set<string>>(new Set());
+  const authTransitionRef = useRef(0);
 
-  const maybeSendWelcomeEmail = (nextUser: User) => {
-    if (
-      nextUser.welcome_email_sent_at ||
-      welcomeEmailAttemptsRef.current.has(nextUser.id)
-    ) {
-      return;
-    }
+  const setAuthenticatedUser = useCallback((nextUser: User) => {
+    setUser(nextUser);
+    setAuthError(null);
 
-    welcomeEmailAttemptsRef.current.add(nextUser.id);
-
-    void sendWelcomeToOnzaitEmail({ name: nextUser.first_name })
-      .then((result) => {
-        const welcomeEmailSentAt = result?.welcome_email_sent_at;
-
-        if (!welcomeEmailSentAt) {
-          return;
-        }
-
-        setUser((currentUser) =>
-          currentUser?.id === nextUser.id
-            ? {
-                ...currentUser,
-                welcome_email_sent_at: new Date(welcomeEmailSentAt)
-              }
-            : currentUser
-        );
-      })
-      .catch((error) => {
-        Sentry.captureException(error);
-      });
-  };
+    void deliverWelcomeEmailIfNeeded(nextUser).then((welcomedUser) => {
+      setUser((currentUser) =>
+        currentUser?.id === welcomedUser.id &&
+        welcomedUser.welcome_email_sent_at
+          ? {
+              ...currentUser,
+              welcome_email_sent_at: welcomedUser.welcome_email_sent_at
+            }
+          : currentUser
+      );
+    });
+  }, []);
 
   const createUser = async (
     nextSession: Session,
@@ -89,66 +76,95 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   ): Promise<User | null> => {
     try {
       const nextUser = await createAuthUser(nextSession, profile);
-
-      setUser(nextUser);
-      setAuthError(null);
-      maybeSendWelcomeEmail(nextUser);
+      setAuthenticatedUser(nextUser);
       return nextUser;
     } catch (error) {
-      setAuthError(getAuthErrorMessage(error));
+      setAuthError(
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't finish setting up your account. Sign out and back in, then try again."
+        )
+      );
       return null;
     }
   };
 
   const updateUserProfile = async (
-    profile: Partial<EditableUserProfile>
+    profile: Partial<EditableUserProfile>,
+    avatarAsset?: ProfileAvatarAsset | null
   ): Promise<User | null> => {
-    if (!session) return null;
+    if (!session || !user) {
+      return null;
+    }
 
     try {
-      const nextUser = await updateAuthUserProfile(session, user, profile);
-
+      const nextUser = await updateAuthenticatedUserProfile({
+        avatarAsset,
+        currentUser: user,
+        profile,
+        session
+      });
       setUser(nextUser);
       setAuthError(null);
       return nextUser;
     } catch (error) {
-      setAuthError(getAuthErrorMessage(error));
-      return null;
+      setAuthError(
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't update your profile. Check your connection and try again."
+        )
+      );
+      throw error;
     }
   };
 
-  const hydrateUser = async (nextSession: Session | null) => {
-    if (!nextSession) {
+  const hydrateUser = useCallback(
+    async (nextSession: Session | null) => {
+      const transition = ++authTransitionRef.current;
       setSession(nextSession);
-      setUser(null);
-      return;
-    }
 
-    setSession(nextSession);
+      if (!nextSession) {
+        setUser(null);
+        setAuthError(null);
+        return;
+      }
 
-    try {
-      const nextUser = await hydrateAuthUser(nextSession);
+      try {
+        const nextUser = await hydrateAuthUser(nextSession);
 
-      setUser(nextUser);
-      setAuthError(null);
-      maybeSendWelcomeEmail(nextUser);
-    } catch (error) {
-      setAuthError(getAuthErrorMessage(error));
-      setUser(null);
-    }
-  };
+        if (transition === authTransitionRef.current) {
+          setAuthenticatedUser(nextUser);
+        }
+      } catch (error) {
+        if (transition === authTransitionRef.current) {
+          setAuthError(
+            getUserFacingErrorMessage(
+              error,
+              "We couldn't load your account. Check your connection and try again."
+            )
+          );
+          setUser(null);
+        }
+      }
+    },
+    [setAuthenticatedUser]
+  );
 
   const logOut = async () => {
     try {
-      await signOutAuthSession();
+      await logOutCurrentSession();
+      authTransitionRef.current += 1;
+      setSession(null);
+      setUser(null);
+      setAuthError(null);
     } catch (error) {
-      setAuthError(getAuthErrorMessage(error));
-      return;
+      setAuthError(
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't sign you out. Check your connection and try again."
+        )
+      );
     }
-
-    setSession(null);
-    setUser(null);
-    setAuthError(null);
   };
 
   useEffect(() => {
@@ -169,52 +185,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [session, user]);
 
   useEffect(() => {
-    if (!isAuthConfigured) {
+    if (!hasAuthSessionSupport()) {
       setIsLoading(false);
       return;
     }
 
     let isMounted = true;
 
-    const initializeAuth = async () => {
-      try {
-        const currentSession = await getCurrentAuthSession();
+    const finishHydration = async (nextSession: Session | null) => {
+      await hydrateUser(nextSession);
 
-        if (!isMounted) {
-          return;
-        }
-
-        await hydrateUser(currentSession);
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
-        setAuthError(getAuthErrorMessage(error));
-        setSession(null);
-        setUser(null);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+      if (isMounted) {
+        setIsLoading(false);
       }
     };
 
-    initializeAuth();
-
-    const unsubscribe = subscribeToAuthState((_event, nextSession) => {
-      void hydrateUser(nextSession).finally(() => {
+    void loadCurrentAuthSession()
+      .then((nextSession) => finishHydration(nextSession))
+      .catch((error) => {
         if (isMounted) {
+          setAuthError(
+            getUserFacingErrorMessage(
+              error,
+              "We couldn't restore your session. Sign in and try again."
+            )
+          );
+          setSession(null);
+          setUser(null);
           setIsLoading(false);
         }
       });
+
+    const unsubscribe = subscribeToAuthSession((nextSession) => {
+      void finishHydration(nextSession);
     });
 
     return () => {
       isMounted = false;
+      authTransitionRef.current += 1;
       unsubscribe();
     };
-  }, []);
+  }, [hydrateUser]);
 
   return (
     <AuthContext.Provider

@@ -3,7 +3,7 @@
 Purpose: architecture snapshot, product decisions, and implementation guardrails for contributors and agents
 Source of truth for: current auth architecture, platform decisions, naming rules, and high-level project constraints
 Update when: auth flow, platform ownership, schema strategy, CI expectations, or product naming decisions change
-Last reviewed: 2026-07-16
+Last reviewed: 2026-07-21
 
 ## Project Snapshot
 
@@ -20,10 +20,10 @@ Last reviewed: 2026-07-16
 - The maintained architecture guide lives in [docs/source-architecture.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/source-architecture.md:1).
 - Onzait uses a feature-first source architecture.
 - `app/` owns Expo Router route declarations and layouts only. Route files should delegate product UI to feature screens.
-- Product domains live under `features/<feature>/`. A feature may own its screens, components, hooks, services, repositories, schemas, types, utilities, and tests.
+- Product domains live under `features/<feature>/`. A feature may own its screens, components, hooks, services, repositories, schemas, types, utilities, errors, providers, constants, maps, and tests.
 - Feature roots contain responsibility directories only; place implementation files in the appropriate subdirectory instead of leaving loose modules at the feature root.
-- Active features and planned domain contracts use the same ownership rule; do not recreate global `screens`, `hooks`, `services`, `repositories`, `schemas`, or `types/models` layers.
-- Reusable product-agnostic UI, hooks, utilities, theme helpers, and splash behavior live under `shared/`.
+- Active features and planned domain contracts use the same ownership rule; do not recreate global `screens`, `hooks`, `services`, `repositories`, `schemas`, `lib`, or `types/models` layers.
+- Reusable product-agnostic UI, hooks, utilities, theme helpers, tests, and splash behavior live under `shared/`.
 - SDK clients and technical adapters live under `infrastructure/`. Product UI must not import infrastructure or repositories directly.
 - Supabase migrations, Edge Functions, and database tests remain under the root `supabase/` directory because they are independently verified and deployed.
 - Dependency direction is `app -> feature screen/component -> feature hook/service -> feature repository -> infrastructure`.
@@ -45,6 +45,8 @@ Last reviewed: 2026-07-16
 - Web is the first launch target because it can be deployed on Vercel without app-store distribution, but implementation choices must not block later iOS and Android releases.
 - Use the correct implementation for each environment when a feature needs platform-specific behavior. Prefer shared product logic with platform-specific UI or infrastructure adapters over a lowest-common-denominator workaround.
 - UI responsiveness and functional behavior must both be considered across phone, tablet, and desktop layouts before a feature is treated as complete.
+- Native builds support portrait and landscape rather than locking orientation. Tablet landscape and iPad multitasking layouts are required product surfaces, and installed web apps must not request a fixed orientation.
+- Compact-height landscape layouts must keep primary content and actions reachable. Screens that can overflow vertically must remain scrollable before, during, and after keyboard interaction.
 
 ## Auth Architecture
 
@@ -66,15 +68,20 @@ Last reviewed: 2026-07-16
 - Google/Apple identity linking from the profile screen
 - Password reset
 - Shared callback and redirect handling lives in [features/auth/services/auth.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth.service.ts:1)
-- Session/profile orchestration lives in [features/auth/services/auth-session.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth-session.service.ts:1)
+- Auth screens reach Supabase through `features/auth` hooks, services, and repositories; screen-level imports of the Supabase client or shared auth transport are prohibited by ESLint
+- The auth context owns React session/profile state only. Session transport, profile provisioning/backfill, sign-out, and welcome-email workflows live behind `features/auth` services and repositories; context-level Supabase and repository imports are prohibited by ESLint.
 
 ### Important Auth Files
 
+- [features/auth/hooks/use-auth-mutations.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/hooks/use-auth-mutations.ts:1)
+- [features/auth/hooks/use-auth.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/hooks/use-auth.ts:1)
 - [features/auth/services/auth.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth.service.ts:1)
-- [features/auth/services/auth-session.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth-session.service.ts:1)
 - [features/auth/repositories/auth.repository.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/repositories/auth.repository.ts:1)
-- [infrastructure/supabase/client.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/infrastructure/supabase/client.ts:1)
+- [features/auth/repositories/auth-transport.repository.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/repositories/auth-transport.repository.ts:1)
+- [features/auth/services/auth-session.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth-session.service.ts:1)
+- [features/auth/repositories/auth-profile.repository.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/repositories/auth-profile.repository.ts:1)
 - [features/auth/providers/auth-provider.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/providers/auth-provider.tsx:1)
+- [infrastructure/supabase/client.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/infrastructure/supabase/client.ts:1)
 - [app/\_layout.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/_layout.tsx:1)
 - [app/(auth)/callback.tsx](</Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/(auth)/callback.tsx:1>)
 - [app/(auth)/verify-email.tsx](</Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/(auth)/verify-email.tsx:1>)
@@ -92,6 +99,8 @@ Last reviewed: 2026-07-16
 - Native auth redirects use `onzait://` in development/production builds
 - Expo Go auth redirects use the current `exp://.../--/<path>` callback and must be allow-listed in Supabase while testing OAuth there
 - Identity-linking redirects return through the shared callback and may include a safe in-app `next` path such as `/profile`
+- Hosted Supabase Auth must keep **Allow manual linking** enabled for the Google/Apple profile actions; local/self-hosted testing uses `auth.enable_manual_linking`
+- Callback metadata identifies a linking attempt but is not proof of success; the profile must confirm the provider through `getUserIdentities()` before reporting it as linked
 - Email/password sign-in with an unverified email should route to `/verify-email` instead of showing a form error
 - Verification email rate limits should be represented as a disabled resend countdown, not as a blocking error message
 
@@ -141,6 +150,7 @@ Last reviewed: 2026-07-16
 - the current performance baseline lives in [docs/performance-baseline.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/performance-baseline.md:1)
 - the current SEO and accessibility baseline lives in [docs/seo-accessibility-baseline.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/seo-accessibility-baseline.md:1)
 - the current security baseline for MVP feature work lives in [docs/security-baseline.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/security-baseline.md:1)
+- the current user-facing error baseline lives in [docs/error-handling.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/error-handling.md:1)
 - pending launch setup for custom domain, auth branding, DNS, and branded email lives in [docs/pending-launch-setup.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/pending-launch-setup.md:1)
 
 ### Useful Commands
@@ -182,11 +192,13 @@ Last reviewed: 2026-07-16
 - Every feature must explicitly account for web, iOS, and Android behavior. If the correct implementation differs by platform, use platform-specific files or adapters while keeping the business logic shared.
 - When adding a new project rule or product constraint, scan existing features, docs, env config, and tests for places where the rule already applies. Refactor, document follow-up work, or clearly call out any existing gap instead of applying the rule only to future code.
 - Every async surface must handle loading explicitly with an appropriate spinner, skeleton, disabled state, optimistic state, or other clear indicator.
+- Every error visible to a user must use clear, actionable product language. Never render raw provider, database, HTTP, SDK, or exception messages. Branch on stable error codes or structured status fields, preserve the technical cause for trusted diagnostics, use an action-specific fallback for unknown failures, distinguish query failures from empty/not-found results, provide safe retry actions, and explain denied device permissions instead of stopping silently. Follow `docs/error-handling.md`.
+- Every request that lists or "gets all" records from an entity must be paginated at the repository/transport boundary. Unbounded collection reads are prohibited, including map, export, admin, and background workflows. Use a bounded default and maximum page size, deterministic ordering with a stable unique tie-breaker, summary-only columns for list screens, and virtualized or progressively rendered collection UI. Single-record lookups are exempt.
 - Every destructive action that deletes persistent project or account data must require an explicit confirmation modal before the mutation runs. The modal must identify what will be deleted, provide distinct Cancel and danger-styled Delete actions, prevent repeat submission while pending, and keep mutation errors visible without closing.
 - Production submit forms must use `react-hook-form` with a Zod schema resolver. Keep form values, validation errors, validity, submission state, and edit dirty-state in the form controller rather than duplicating them with local `useState`.
 - Local component state is only for transient UI-only behavior such as password visibility, picker/popover open state, autocomplete session state, and non-submit search/filter fields.
 - Form submit buttons must stay disabled until every required input is complete. When a form mixes required and optional fields, use one label convention only: optional fields show the shared discreet `(optional)` hint, and required fields are left unmarked.
-- Use the dependency direction `app -> feature screens/components -> feature hooks/services -> feature repositories -> infrastructure/Supabase Storage/Edge Functions`.
+- Use the dependency direction `screens/components -> hooks -> services -> repositories -> Supabase/Storage/Edge Functions`.
 - UI components should not call Supabase, Storage, Google, or other external services directly; use feature hooks.
 - Hooks should own React Query/cache behavior only and call feature services for workflows.
 - Services should own product/business workflows and orchestration.
@@ -196,6 +208,9 @@ Last reviewed: 2026-07-16
 - Paid external API boundaries must include durable hard caps before provider calls when provider-side quotas cannot be safely lowered.
 - Google Maps keys are expected to be restricted to only the APIs and platforms currently used. Project address lookup uses server-side Places API (New), selected-address preview functions use server-side Maps Static API, the web projects map uses the Maps JavaScript API, Android project maps use Maps SDK for Android through `react-native-maps`, and iOS project maps use the native default Apple Maps provider unless a future custom native build intentionally enables Google Maps on iOS. If a future feature needs a different Google Maps API or SDK, remind the project owner to update Google Cloud key restrictions before rollout.
 - Do not persistently cache third-party API content unless that provider's terms allow it; store only product data the user selected or created.
+- Storage replacements must use immutable unique object paths and service-owned compensation: delete a newly uploaded object if its database reference cannot be committed, and delete the previous object only after the new reference succeeds. Avatar and project-cover reference changes must compare the expected previous reference to prevent concurrent replacements from overwriting each other.
+- User avatars live in the private `user-avatars` bucket. Profile rows store stable avatar object paths (or external OAuth avatar URLs), UI hooks resolve short-lived signed URLs, authenticated users may read avatars without listing other users' objects, and only owners may upload or delete their avatar objects.
+- Storage cleanup must go through the Supabase Storage API under the applicable DELETE policy. A failed cleanup after a successful database update must not roll back the valid new reference; report it to monitoring for reconciliation.
 
 ## Web / Hosting Notes
 

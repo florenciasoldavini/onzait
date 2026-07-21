@@ -47,6 +47,8 @@ The main MVP security goal is preventing horizontal privilege escalation:
 - `public.users.id` must continue to match `auth.users.id`.
 - Global role must remain controlled by the database or trusted server path only.
 - The client must not be able to choose or escalate `role`.
+- Manual OAuth identity linking must start from an authenticated user action, and the UI must re-read Supabase identities before claiming the provider was linked.
+- Auth callback query parameters describe the expected workflow but must not be treated as proof that an account mutation succeeded.
 - If future admin-only flows are added, admin status must be checked in trusted policy or server-side logic, not by hiding UI controls.
 
 ## Authorization and RLS
@@ -116,6 +118,13 @@ Baseline rules:
 - enforce file size limits
 - reject files with missing or suspicious metadata
 - do not trust filenames provided by the client
+- upload replacements to immutable unique paths rather than overwriting the currently referenced object
+- remove a newly uploaded object when the following database reference update fails
+- remove the previous object only after the new database reference succeeds
+- use an expected-current-reference check when replacing avatars or project files so concurrent uploads cannot silently overwrite each other
+- report cleanup failures without rolling back a database reference that already points to a valid new object
+- keep user avatars in a private bucket, store stable object paths in profile rows, and resolve short-lived signed URLs at display time
+- allow authenticated users to view avatars without granting cross-user object listing; keep avatar writes and deletes owner-scoped
 
 Recommended path structure:
 
@@ -123,9 +132,9 @@ Recommended path structure:
 - `projects/{project_id}/photos/{generated_file_name}`
 - `projects/{project_id}/documents/{generated_file_name}`
 
-Before shipping uploads, decide:
+Before shipping other upload categories, decide:
 
-- whether buckets are private or signed-URL based
+- whether buckets are private and how signed or authenticated reads are authorized
 - who can upload
 - who can delete
 - how long signed URLs remain valid

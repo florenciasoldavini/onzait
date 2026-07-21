@@ -6,38 +6,62 @@ import {
   resolveProjectAddress
 } from "@/features/projects/services/address.service";
 import {
-  createProject,
+  createProjectWithOptionalCover,
   getProject,
   listProjects,
   softDeleteProject,
-  updateProject,
-  uploadProjectCover
+  updateProjectWithOptionalCover
 } from "@/features/projects/services/projects.service";
 import type {
   CreateProjectInput,
+  ProjectCoverAsset,
   ProjectFilters,
+  ProjectSummary,
   StaticMapPoint,
   StaticMapViewport,
   UpdateProjectInput
 } from "@/features/projects/types/project.types";
 import { normalizeProjectFilters } from "@/features/projects/schemas/project.schemas";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { DEFAULT_PAGE_SIZE, type PaginatedResult } from "@/shared/utils/pagination";
+import { UserFacingError } from "@/shared/utils/user-facing-errors";
+import {
+  type InfiniteData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient
+} from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
 const projectsKey = ["projects"] as const;
 
 export function useProjects(filters: ProjectFilters) {
   const { user } = useAuth();
+  const debouncedQuery = useDebouncedValue(filters.query ?? "", 350);
+  const requestFilters = useMemo(
+    () => ({ ...filters, query: debouncedQuery }),
+    [debouncedQuery, filters]
+  );
   const normalizedFilters = useMemo(
-    () => normalizeProjectFilters(filters),
-    [filters]
+    () => normalizeProjectFilters(requestFilters),
+    [requestFilters]
   );
 
-  return useQuery({
+  return useInfiniteQuery<
+    PaginatedResult<ProjectSummary>,
+    Error,
+    InfiniteData<PaginatedResult<ProjectSummary>>,
+    readonly unknown[],
+    number
+  >({
     enabled: Boolean(user),
-    queryFn: () =>
+    getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
       listProjects({
-        filters,
+        filters: requestFilters,
+        offset: pageParam,
+        pageSize: DEFAULT_PAGE_SIZE,
         userId: user!.id,
         userRole: user!.role
       }),
@@ -58,24 +82,30 @@ export function useCreateProject() {
   const { createUser, session, user } = useAuth();
 
   return useMutation({
-    mutationFn: async (input: CreateProjectInput) => {
+    mutationFn: async ({
+      coverAsset,
+      input
+    }: {
+      coverAsset?: ProjectCoverAsset | null;
+      input: CreateProjectInput;
+    }) => {
       if (!session) {
-        throw new Error("You must be signed in to save projects.");
+        throw new UserFacingError("You must be signed in to save projects.");
       }
 
       const currentUser = user ?? (await createUser(session));
 
       if (!currentUser) {
-        throw new Error(
+        throw new UserFacingError(
           "We could not finish setting up your account. Sign out and back in, then try again."
         );
       }
 
-      return createProject(input);
+      return createProjectWithOptionalCover({ coverAsset, input });
     },
-    onSuccess: async (project) => {
-      await queryClient.invalidateQueries({ queryKey: projectsKey });
+    onSuccess: async ({ project }) => {
       queryClient.setQueryData([...projectsKey, "detail", project.id], project);
+      await queryClient.invalidateQueries({ queryKey: projectsKey });
     }
   });
 }
@@ -84,10 +114,16 @@ export function useUpdateProject(projectId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: UpdateProjectInput) => updateProject(projectId, input),
-    onSuccess: async (project) => {
-      await queryClient.invalidateQueries({ queryKey: projectsKey });
+    mutationFn: ({
+      coverAsset,
+      input
+    }: {
+      coverAsset?: ProjectCoverAsset | null;
+      input: UpdateProjectInput;
+    }) => updateProjectWithOptionalCover({ coverAsset, input, projectId }),
+    onSuccess: async ({ project }) => {
       queryClient.setQueryData([...projectsKey, "detail", project.id], project);
+      await queryClient.invalidateQueries({ queryKey: projectsKey });
     }
   });
 }
@@ -99,43 +135,6 @@ export function useSoftDeleteProject() {
     mutationFn: (projectId: string) => softDeleteProject(projectId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: projectsKey });
-    }
-  });
-}
-
-export function useUploadProjectCover(defaultProjectId?: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      asset,
-      projectId
-    }: {
-      asset: {
-        fileName?: string | null;
-        mimeType?: string | null;
-        uri: string;
-      };
-      projectId?: string;
-    }) => {
-      const resolvedProjectId = projectId ?? defaultProjectId;
-
-      if (!resolvedProjectId) {
-        throw new Error("Missing project id for cover upload.");
-      }
-
-      return uploadProjectCover({ asset, projectId: resolvedProjectId });
-    },
-    onSuccess: async (_path, variables) => {
-      const resolvedProjectId = variables.projectId ?? defaultProjectId;
-
-      await queryClient.invalidateQueries({ queryKey: projectsKey });
-
-      if (resolvedProjectId) {
-        await queryClient.invalidateQueries({
-          queryKey: [...projectsKey, "detail", resolvedProjectId]
-        });
-      }
     }
   });
 }

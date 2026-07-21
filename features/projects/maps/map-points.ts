@@ -1,7 +1,10 @@
-import type { Project, StaticMapViewport } from "@/features/projects/types/project.types";
+import type {
+  ProjectSummary,
+  StaticMapViewport
+} from "@/features/projects/types/project.types";
 
 export interface ProjectMapPoint {
-  project: Project;
+  project: ProjectSummary;
   x: number;
   y: number;
 }
@@ -19,7 +22,7 @@ const TILE_SIZE = 256;
 type PanDirection = "down" | "left" | "right" | "up";
 
 export function getProjectsMapViewport(
-  projects: Project[]
+  projects: ProjectSummary[]
 ): StaticMapViewport | null {
   const locatedProjects = getLocatedProjects(projects);
 
@@ -37,7 +40,7 @@ export function getProjectsMapViewport(
 }
 
 export function getProjectMapPoints(
-  projects: Project[],
+  projects: ProjectSummary[],
   viewport?: StaticMapViewport | null
 ): ProjectMapPoint[] {
   const locatedProjects = getLocatedProjects(projects);
@@ -108,7 +111,7 @@ export function isProjectMapPointVisible(point: ProjectMapPoint) {
   return point.x >= 0 && point.x <= 100 && point.y >= 0 && point.y <= 100;
 }
 
-function getLocatedProjects(projects: Project[]) {
+function getLocatedProjects(projects: ProjectSummary[]) {
   return projects.filter(
     (project) =>
       Number.isFinite(project.latitude) && Number.isFinite(project.longitude)
@@ -116,7 +119,7 @@ function getLocatedProjects(projects: Project[]) {
 }
 
 function getProjectedMapPoint(
-  project: Project,
+  project: ProjectSummary,
   viewport: StaticMapViewport
 ): ProjectMapPoint {
   const center = projectLatLng(
@@ -141,7 +144,9 @@ function getProjectedMapPoint(
   };
 }
 
-function getNormalizedMapPoints(projects: Project[]): ProjectMapPoint[] {
+function getNormalizedMapPoints(
+  projects: ProjectSummary[]
+): ProjectMapPoint[] {
   const latitudes = projects.map((project) => project.latitude);
   const longitudes = projects.map((project) => project.longitude);
   const minLatitude = Math.min(...latitudes);
@@ -169,7 +174,7 @@ function getNormalizedMapPoints(projects: Project[]): ProjectMapPoint[] {
   });
 }
 
-function getAverageCenter(projects: Project[]) {
+function getAverageCenter(projects: ProjectSummary[]) {
   const total = projects.reduce(
     (sum, project) => ({
       latitude: sum.latitude + project.latitude,
@@ -184,7 +189,7 @@ function getAverageCenter(projects: Project[]) {
   };
 }
 
-function getInitialZoom(projects: Project[]) {
+function getInitialZoom(projects: ProjectSummary[]) {
   if (projects.length <= 1) {
     return 15;
   }

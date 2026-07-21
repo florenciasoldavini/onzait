@@ -196,10 +196,10 @@ describe("project filters and query planning", () => {
       userRole: "user"
     });
 
-    expect(plan.order).toEqual({
-      ascending: false,
-      column: "created_at"
-    });
+    expect(plan.orders).toEqual([
+      { ascending: false, column: "created_at" },
+      { ascending: true, column: "id" }
+    ]);
   });
 
   it("sorts alphabetically when requested", () => {
@@ -209,10 +209,10 @@ describe("project filters and query planning", () => {
       userRole: "user"
     });
 
-    expect(plan.order).toEqual({
-      ascending: true,
-      column: "name"
-    });
+    expect(plan.orders).toEqual([
+      { ascending: true, column: "name" },
+      { ascending: true, column: "id" }
+    ]);
   });
 
   it("sorts descending when requested", () => {
@@ -222,10 +222,10 @@ describe("project filters and query planning", () => {
       userRole: "user"
     });
 
-    expect(plan.order).toEqual({
-      ascending: false,
-      column: "name"
-    });
+    expect(plan.orders).toEqual([
+      { ascending: false, column: "name" },
+      { ascending: true, column: "id" }
+    ]);
   });
 
   it("sorts creation ascending when requested", () => {
@@ -235,10 +235,10 @@ describe("project filters and query planning", () => {
       userRole: "user"
     });
 
-    expect(plan.order).toEqual({
-      ascending: true,
-      column: "created_at"
-    });
+    expect(plan.orders).toEqual([
+      { ascending: true, column: "created_at" },
+      { ascending: true, column: "id" }
+    ]);
   });
 });
 
@@ -369,17 +369,31 @@ describe("live user location", () => {
 });
 
 describe("Google Maps repository errors", () => {
-  it("preserves Edge Function error payload messages", async () => {
+  it("does not expose Edge Function error payload messages", () => {
     const error = new Error(
       "Edge Function returned a non-2xx status code"
     ) as Error & { context: Response };
     error.context = new Response(
-      JSON.stringify({ error: "Google Maps is not configured." }),
+      JSON.stringify({ error: "private provider configuration detail" }),
       { status: 500 }
     );
 
-    await expect(getMapsFunctionErrorMessage(error)).resolves.toBe(
-      "Google Maps is not configured."
+    expect(
+      getMapsFunctionErrorMessage(
+        error,
+        "Map preview is unavailable right now."
+      )
+    ).toBe("Map preview is unavailable right now.");
+  });
+
+  it("maps rate limits from the stable HTTP status", () => {
+    const error = new Error("Function failed") as Error & {
+      context: Response;
+    };
+    error.context = new Response(null, { status: 429 });
+
+    expect(getMapsFunctionErrorMessage(error, "Fallback")).toBe(
+      "Too many map requests were made. Wait a moment and try again."
     );
   });
 });

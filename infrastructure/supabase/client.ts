@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
 import { createClient, processLock } from "@supabase/supabase-js";
 import { AppState, Platform } from "react-native";
 import "react-native-url-polyfill/auto";
@@ -32,14 +33,6 @@ if (supabase && Platform.OS !== "web") {
   });
 }
 
-function getSupabaseRawErrorMessage(error: unknown) {
-  return typeof error === "object" && error && "message" in error
-    ? String(error.message)
-    : typeof error === "string"
-      ? error
-      : "Unknown Supabase error.";
-}
-
 function getSupabaseRawErrorCode(error: unknown) {
   if (typeof error !== "object" || !error || !("code" in error)) {
     return null;
@@ -58,72 +51,52 @@ function getSupabaseRawErrorStatus(error: unknown) {
 
 export function isSupabaseEmailRateLimitError(error: unknown) {
   const code = getSupabaseRawErrorCode(error);
-  const message = getSupabaseRawErrorMessage(error).toLowerCase();
   const status = getSupabaseRawErrorStatus(error);
 
   return (
     status === 429 ||
     code === "over_email_send_rate_limit" ||
-    code === "over_request_rate_limit" ||
-    message.includes("email rate limit exceeded") ||
-    message.includes("rate limit") ||
-    message.includes("only request this after") ||
-    message.includes("security purposes")
+    code === "over_request_rate_limit"
   );
 }
 
 export function isSupabaseEmailSendQuotaError(error: unknown) {
   const code = getSupabaseRawErrorCode(error);
-  const message = getSupabaseRawErrorMessage(error).toLowerCase();
 
-  return (
-    code === "over_email_send_rate_limit" ||
-    message.includes("email rate limit exceeded")
-  );
+  return code === "over_email_send_rate_limit";
 }
 
 export function isSupabaseEmailCooldownError(error: unknown) {
   const code = getSupabaseRawErrorCode(error);
-  const message = getSupabaseRawErrorMessage(error).toLowerCase();
   const status = getSupabaseRawErrorStatus(error);
 
   return (
     !isSupabaseEmailSendQuotaError(error) &&
-    (status === 429 ||
-      code === "over_request_rate_limit" ||
-      message.includes("rate limit") ||
-      message.includes("only request this after") ||
-      message.includes("security purposes"))
+    (status === 429 || code === "over_request_rate_limit")
   );
 }
 
 export function isSupabaseEmailNotConfirmedError(error: unknown) {
   const code = getSupabaseRawErrorCode(error);
-  const message = getSupabaseRawErrorMessage(error).toLowerCase();
 
-  return (
-    code === "email_not_confirmed" || message.includes("email not confirmed")
-  );
+  return code === "email_not_confirmed";
 }
 
 export function getSupabaseErrorMessage(error: unknown) {
   if (!isSupabaseConfigured) {
-    return "Supabase is not configured yet. Add your new project URL and publishable key to .env.local and restart Expo.";
-  }
-
-  const message = getSupabaseRawErrorMessage(error);
-
-  if (message.toLowerCase().includes("fetch")) {
-    return "Supabase is currently unreachable. If your old project was paused, create the new project, update the Expo env vars, and restart the app.";
+    return "The app is not connected to its data service. Try again later.";
   }
 
   if (isSupabaseEmailSendQuotaError(error)) {
-    return "Supabase is temporarily limiting verification emails for this project. Try again later, or configure a custom SMTP provider before production.";
+    return "Verification emails are temporarily limited. Try again later.";
   }
 
   if (isSupabaseEmailCooldownError(error)) {
     return "Wait about a minute, then resend the verification link.";
   }
 
-  return message;
+  return getUserFacingErrorMessage(
+    error,
+    "We couldn't complete this request. Please try again."
+  );
 }

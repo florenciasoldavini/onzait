@@ -12,16 +12,21 @@ app/                         Expo Router routes and layouts
 features/                    Product domains
   <feature>/
     components/              Feature-only presentation
+    constants/               Feature-owned stable values and labels
+    errors/                  Feature-specific structured errors
     screens/                 Route-level product UI
     hooks/                   React state, React Query, and mutations
+    providers/               Feature-owned React context state
     services/                Product workflows and orchestration
     repositories/            Raw persistence and external transport
     schemas/                 Runtime validation
+    tests/                   Feature workflow and boundary tests
     types/                   Domain contracts
     utils/                   Pure feature-only helpers
 shared/                      Product-agnostic reusable code
   hooks/
   splash/
+  tests/
   theme/
   ui/
     components/              Onzait design-system components
@@ -56,6 +61,7 @@ app route
 - Hooks own React Query/cache behavior and call services.
 - Services own product workflows and may compose repositories.
 - Repositories own raw SDK, database, Storage, and external transport calls.
+- Providers own React context state and call hooks or services rather than repositories or infrastructure.
 - Shared code must not import a product feature.
 - Cross-feature code must use the owning feature's hook, service, provider, or exported type; repository internals are not a cross-feature API.
 

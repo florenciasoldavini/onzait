@@ -11,16 +11,12 @@ import {
   PROJECT_STATUS_LABELS,
   PROJECT_TYPE_LABELS
 } from "@/features/projects/constants/project.constants";
-import type { Project, ProjectStatus } from "@/features/projects/types/project.types";
+import type { ProjectStatus, ProjectSummary } from "@/features/projects/types/project.types";
+import { formatDateOnly } from "@/shared/utils/date-only";
 import { Image } from "expo-image";
 import { ImageOff, MapPinned } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import {
-  Platform,
-  Pressable,
-  View,
-  type ViewStyle
-} from "react-native";
+import { Platform, Pressable, View, type ViewStyle } from "react-native";
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -37,7 +33,7 @@ export function ProjectCard({
 }: {
   isDeleting?: boolean;
   onPress: () => void;
-  project: Project;
+  project: ProjectSummary;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const pressScale = useSharedValue(1);
@@ -174,9 +170,9 @@ export function ProjectCard({
                     )}`}
                   />
                   <ProjectMetaLabel
-                    value={`ETA_${formatEstimatedCompletion(
-                      project.estimated_end_date
-                    )}`}
+                    value={`ETA · ${formatDateOnly(project.estimated_end_date, {
+                      fallback: "TBD"
+                    })}`}
                   />
                 </View>
               </View>
@@ -277,10 +273,6 @@ function ProjectProgressBar({ progress }: { progress: number }) {
       />
     </View>
   );
-}
-
-function formatEstimatedCompletion(value: string | null) {
-  return value?.trim() || "TBD";
 }
 
 function formatMonoLabel(value: string) {

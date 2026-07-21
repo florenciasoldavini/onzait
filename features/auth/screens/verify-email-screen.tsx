@@ -7,12 +7,9 @@ import {
 } from "@/shared/ui/components";
 import { atomPalette, atomRadii, atomSpacing } from "@/shared/ui/components/theme";
 import { AuthShell, authFormControlSize } from "@/features/auth/components/auth-shell";
-import {
-  getAuthErrorMessage,
-  isAuthEmailCooldownError,
-  resendSignUpConfirmationEmail
-} from "@/features/auth/services/auth.service";
+import { useEmailVerificationResend } from "@/features/auth/hooks/use-auth-mutations";
 import { emailSchema } from "@/features/auth/schemas/field.schemas";
+import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
@@ -28,6 +25,7 @@ function getEmailParam(email: string | string[] | undefined) {
 }
 
 export default function VerifyEmailScreen() {
+  const verificationResend = useEmailVerificationResend();
   const { email: emailParam, notice: noticeParam } = useLocalSearchParams<{
     email?: string | string[];
     notice?: string | string[];
@@ -74,18 +72,21 @@ export default function VerifyEmailScreen() {
     setIsResending(true);
 
     try {
-      await resendSignUpConfirmationEmail(email);
+      const result = await verificationResend.mutateAsync(email);
+
       setSuccessMessage(
-        "Verification link sent. Check your inbox and spam folder."
+        result.status === "sent"
+          ? "Verification link sent. Check your inbox and spam folder."
+          : null
       );
       setCooldownSeconds(resendCooldownSeconds);
     } catch (error) {
-      if (isAuthEmailCooldownError(error)) {
-        setSuccessMessage(null);
-        setCooldownSeconds(resendCooldownSeconds);
-      } else {
-        setErrorMessage(getAuthErrorMessage(error));
-      }
+      setErrorMessage(
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't resend the verification email. Try again."
+        )
+      );
     } finally {
       setIsResending(false);
     }

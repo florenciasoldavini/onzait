@@ -21,6 +21,17 @@ Flow:
 The client does not send a recipient email address. The function chooses the recipient from the authenticated user's `public.users` row.
 The client also does not write the sent marker; that belongs to the Edge Function so repeated app launches cannot repeatedly send the same product email.
 
+## Failure Contract
+
+The function returns application-owned error codes and product wording. Public
+responses must never include environment-variable names, provider names, raw
+provider bodies, database details, or exception messages.
+
+Configuration, database, and delivery diagnostics stay in trusted Edge Function
+logs. If rendering or delivery fails after the function reserves
+`welcome_email_sent_at`, it conditionally clears that exact reservation so a
+later app session can retry without overwriting a newer successful delivery.
+
 ## Trigger Rule
 
 The welcome email should trigger after the user's email is verified and the app has created or loaded their `public.users` profile. In practice, `features/auth/providers/auth-provider.tsx` calls the email service when a signed-in user is hydrated and `welcome_email_sent_at` is empty.
@@ -30,6 +41,7 @@ The email is intentionally not sent at raw signup time because email/password us
 ## Function Files
 
 - `supabase/functions/welcome-to-onzait/index.ts`
+- `supabase/functions/welcome-to-onzait/errors.ts`
 - `supabase/functions/_shared/email/welcome-to-onzait.tsx`
 - `supabase/functions/_shared/cors.ts`
 

@@ -5,15 +5,12 @@ import {
   AuthStatusMessage,
   authFormControlSize
 } from "@/features/auth/components/auth-shell";
+import { useAuthCallbackCompletion } from "@/features/auth/hooks/use-auth-mutations";
 import {
-  clearWebAuthUrlArtifacts,
-  completeAuthSessionFromUrl,
-  getActiveAuthUrl,
-  getAuthErrorMessage,
-  getAuthParamsFromUrl,
-  getPostAuthRedirectPath,
-  urlHasAuthPayload
-} from "@/features/auth/services/auth.service";
+  getOAuthProviderLabel,
+  type AuthCallbackIntent
+} from "@/features/auth/utils/auth-callback";
+import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
 import * as Linking from "expo-linking";
 import { useRouter, type Href } from "expo-router";
 import { useEffect, useState } from "react";
@@ -22,41 +19,55 @@ import { View } from "react-native";
 export default function AuthCallbackScreen() {
   const router = useRouter();
   const linkingUrl = Linking.useURL();
+  const { mutateAsync: completeCallback } = useAuthCallbackCompletion();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [statusMessage, setStatusMessage] = useState("Finishing sign in...");
+  const [callbackIntent, setCallbackIntent] = useState<AuthCallbackIntent>({
+    kind: "sign-in"
+  });
+  const [statusMessage, setStatusMessage] = useState(
+    "Finishing secure access..."
+  );
 
   useEffect(() => {
-    const activeUrl = getActiveAuthUrl(linkingUrl);
-
-    if (!activeUrl || !urlHasAuthPayload(activeUrl)) {
-      setErrorMessage(
-        "This auth link is missing the session payload. Try signing in again."
-      );
-      return;
-    }
-
     let isMounted = true;
 
     const finishAuth = async () => {
       try {
-        const params = getAuthParamsFromUrl(activeUrl);
-        const { type } = await completeAuthSessionFromUrl(activeUrl);
+        const result = await completeCallback(linkingUrl);
 
         if (!isMounted) {
           return;
         }
 
-        clearWebAuthUrlArtifacts();
-        router.replace(
-          getPostAuthRedirectPath(type, params.get("next")) as Href
-        );
+        setCallbackIntent(result.intent);
+        router.replace(result.redirectPath as Href);
       } catch (error) {
         if (!isMounted) {
           return;
         }
 
-        setStatusMessage("We couldn't finish the sign-in redirect.");
-        setErrorMessage(getAuthErrorMessage(error));
+        const intent =
+          error instanceof Error &&
+          "intent" in error &&
+          typeof error.intent === "object" &&
+          error.intent !== null &&
+          "kind" in error.intent
+            ? (error.intent as AuthCallbackIntent)
+            : ({ kind: "sign-in" } as const);
+        setCallbackIntent(intent);
+        setStatusMessage(
+          intent.kind === "identity-link"
+            ? "We couldn't finish linking your account."
+            : "We couldn't finish the sign-in redirect."
+        );
+        setErrorMessage(
+          getUserFacingErrorMessage(
+            error,
+            intent.kind === "identity-link"
+              ? "We couldn't finish linking this sign-in method. Return to your profile and try again."
+              : "We couldn't finish signing you in. Return to sign in and try again."
+          )
+        );
       }
     };
 
@@ -65,11 +76,20 @@ export default function AuthCallbackScreen() {
     return () => {
       isMounted = false;
     };
-  }, [linkingUrl, router]);
+  }, [completeCallback, linkingUrl, router]);
+
+  const isIdentityLink = callbackIntent.kind === "identity-link";
+  const providerLabel = isIdentityLink
+    ? getOAuthProviderLabel(callbackIntent.provider)
+    : null;
 
   return (
     <AuthShell
-      description="The redirect handoff should still feel deliberate and structured while the session finalizes."
+      description={
+        isIdentityLink
+          ? "Return securely to your profile while the new sign-in method is confirmed."
+          : "The redirect handoff should still feel deliberate and structured while the session finalizes."
+      }
       eyebrow="Auth Callback / Redirect"
       panelTag="Auth / Callback"
       title="Completing Your Access"
@@ -79,7 +99,9 @@ export default function AuthCallbackScreen() {
           <AppText tone="muted" variant="eyebrow">
             Redirect / Session Resolution
           </AppText>
-          <AppHeading variant="title">Signing You In</AppHeading>
+          <AppHeading variant="title">
+            {isIdentityLink ? `Linking ${providerLabel}` : "Signing You In"}
+          </AppHeading>
           <AppText tone="muted">{statusMessage}</AppText>
         </View>
 
@@ -96,11 +118,11 @@ export default function AuthCallbackScreen() {
         {errorMessage ? (
           <AppButton
             onPress={() => {
-              router.replace("/sign-in");
+              router.replace(isIdentityLink ? "/profile" : "/sign-in");
             }}
             size={authFormControlSize}
           >
-            Back to Sign In
+            {isIdentityLink ? "Back to Profile" : "Back to Sign In"}
           </AppButton>
         ) : null}
       </View>

@@ -40,6 +40,23 @@ export interface Project {
   updated_at: string | null;
 }
 
+export type ProjectSummary = Pick<
+  Project,
+  | "address"
+  | "cover_image_path"
+  | "estimated_end_date"
+  | "id"
+  | "latitude"
+  | "longitude"
+  | "name"
+  | "phase"
+  | "progress_percentage"
+  | "project_type"
+  | "status"
+> & {
+  cover_image_url?: string | null;
+};
+
 export interface ProjectFilters {
   buildingType?: ProjectBuildingType | "all";
   buildingTypes?: ProjectBuildingType[];
@@ -60,14 +77,16 @@ export interface ResolvedProjectAddress {
   placeId: string;
 }
 
+export interface ProjectCoverAsset {
+  fileName?: string | null;
+  mimeType?: string | null;
+  uri: string;
+}
+
 export interface ProjectFormValues {
   address: ResolvedProjectAddress | null;
   building_type: ProjectBuildingType;
-  coverAsset?: {
-    fileName?: string | null;
-    mimeType?: string | null;
-    uri: string;
-  } | null;
+  coverAsset?: ProjectCoverAsset | null;
   description: string;
   end_date: string;
   estimated_end_date: string;
@@ -101,6 +120,11 @@ export interface CreateProjectInput {
 export type UpdateProjectInput = Partial<CreateProjectInput> & {
   cover_image_path?: string | null;
 };
+
+export interface ProjectSaveOutcome {
+  coverStatus: "failed" | "not-requested" | "saved";
+  project: Project;
+}
 
 export interface AddressSuggestion {
   placeId: string;

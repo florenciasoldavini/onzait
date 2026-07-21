@@ -14,16 +14,12 @@ import {
   TextField
 } from "@/shared/ui/components";
 import { atomSpacing } from "@/shared/ui/components/theme";
-import {
-  getAuthErrorMessage,
-  isAuthEmailCooldownError,
-  signUpWithEmailPassword,
-  startOAuthSignIn
-} from "@/features/auth/services/auth.service";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useEmailSignUp, useOAuthSignIn } from "@/features/auth/hooks/use-auth-mutations";
 import { emailSignupSchema, type EmailSignupInput } from "@/features/auth/schemas/auth.schemas";
 import { AtSignIcon, LockIcon } from "@/shared/ui/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -35,6 +31,8 @@ const appleLogo = require("@/assets/images/auth/apple-logo.png");
 export default function SignUpScreen() {
   const router = useRouter();
   const { authError } = useAuth();
+  const emailSignUp = useEmailSignUp();
+  const oauthSignIn = useOAuthSignIn();
   const [formError, setFormError] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loadingAction, setLoadingAction] = useState<
@@ -61,27 +59,28 @@ export default function SignUpScreen() {
   };
 
   const signUpWithEmail = handleSubmit(async ({ email, password }) => {
-    const signUpEmail = email.trim().toLowerCase();
-
     setLoadingAction("email");
     setFormError(null);
 
     try {
-      const { session } = await signUpWithEmailPassword(signUpEmail, password);
+      const result = await emailSignUp.mutateAsync({ email, password });
 
-      if (!session) {
+      if (result.status === "verification-rate-limited") {
         router.replace(
-          `/verify-email?email=${encodeURIComponent(signUpEmail)}&notice=sent`
+          `/verify-email?email=${encodeURIComponent(result.email)}&notice=rate-limited`
+        );
+      } else if (result.status === "verification-sent") {
+        router.replace(
+          `/verify-email?email=${encodeURIComponent(result.email)}&notice=sent`
         );
       }
     } catch (error) {
-      if (isAuthEmailCooldownError(error)) {
-        router.replace(
-          `/verify-email?email=${encodeURIComponent(signUpEmail)}&notice=rate-limited`
-        );
-      } else {
-        setFormError(getAuthErrorMessage(error));
-      }
+      setFormError(
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't create your account. Check your details and try again."
+        )
+      );
     } finally {
       setLoadingAction(null);
     }
@@ -91,10 +90,14 @@ export default function SignUpScreen() {
     try {
       setLoadingAction(provider);
       setFormError(null);
-      await startOAuthSignIn(provider);
+      await oauthSignIn.mutateAsync(provider);
     } catch (error) {
-      const message = getAuthErrorMessage(error);
-      setFormError(message);
+      setFormError(
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't start that sign-up method. Try again."
+        )
+      );
     } finally {
       setLoadingAction(null);
     }
