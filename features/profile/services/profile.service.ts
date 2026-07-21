@@ -16,10 +16,10 @@ import {
 import {
   getProfileAvatarStoragePath,
   isExternalProfileAvatarUrl
-} from "@/features/profile/avatar-storage";
-import { USER_AVATAR_BUCKET } from "@/features/profile/constants";
-import type { SupportedOAuthProvider } from "@/lib/auth-callback";
-import { Sentry } from "@/lib/sentry";
+} from "@/features/profile/utils/avatar-storage";
+import { USER_AVATAR_BUCKET } from "@/features/profile/constants/profile.constants";
+import type { SupportedOAuthProvider } from "@/features/auth/utils/auth-callback";
+import { Sentry } from "@/infrastructure/monitoring/sentry";
 
 export type { ProfileAvatarAsset } from "@/features/profile/repositories/profile-avatar.repository";
 

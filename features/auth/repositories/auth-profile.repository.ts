@@ -1,6 +1,6 @@
-import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
-import { UserFacingError } from "@/lib/user-facing-errors";
-import type { User } from "@/types/models/user";
+import { getSupabaseErrorMessage, supabase } from "@/infrastructure/supabase/client";
+import { UserFacingError } from "@/shared/utils/user-facing-errors";
+import type { User } from "@/features/auth/types/auth.types";
 
 export type AuthProfileInsert = Omit<
   User,

@@ -1,18 +1,18 @@
-import { AppCard, AppHeading, AppText } from "@/components/atoms";
-import { atomMotion } from "@/components/atoms/motion";
+import { AppCard, AppHeading, AppText } from "@/shared/ui/components";
+import { atomMotion } from "@/shared/ui/components/motion";
 import {
   atomCardRadius,
   atomPalette,
   atomRadii,
   atomSpacing
-} from "@/components/atoms/theme";
+} from "@/shared/ui/components/theme";
 import {
   PROJECT_PHASE_LABELS,
   PROJECT_STATUS_LABELS,
   PROJECT_TYPE_LABELS
-} from "@/features/projects/constants";
-import type { ProjectStatus, ProjectSummary } from "@/features/projects/types";
-import { formatDateOnly } from "@/lib/date-only";
+} from "@/features/projects/constants/project.constants";
+import type { ProjectStatus, ProjectSummary } from "@/features/projects/types/project.types";
+import { formatDateOnly } from "@/shared/utils/date-only";
 import { Image } from "expo-image";
 import { ImageOff, MapPinned } from "lucide-react-native";
 import { useEffect, useState } from "react";

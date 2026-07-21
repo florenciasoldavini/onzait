@@ -15,6 +15,20 @@ Last reviewed: 2026-07-21
   - introduce another backend only when a concrete product requirement cannot be served safely by this architecture
 - Main product goal: mobile-first construction / job-site management app that is also usable in a browser for client feedback
 
+## Source Architecture
+
+- The maintained architecture guide lives in [docs/source-architecture.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/source-architecture.md:1).
+- Onzait uses a feature-first source architecture.
+- `app/` owns Expo Router route declarations and layouts only. Route files should delegate product UI to feature screens.
+- Product domains live under `features/<feature>/`. A feature may own its screens, components, hooks, services, repositories, schemas, types, utilities, errors, providers, constants, maps, and tests.
+- Feature roots contain responsibility directories only; place implementation files in the appropriate subdirectory instead of leaving loose modules at the feature root.
+- Active features and planned domain contracts use the same ownership rule; do not recreate global `screens`, `hooks`, `services`, `repositories`, `schemas`, `lib`, or `types/models` layers.
+- Reusable product-agnostic UI, hooks, utilities, theme helpers, tests, and splash behavior live under `shared/`.
+- SDK clients and technical adapters live under `infrastructure/`. Product UI must not import infrastructure or repositories directly.
+- Supabase migrations, Edge Functions, and database tests remain under the root `supabase/` directory because they are independently verified and deployed.
+- Dependency direction is `app -> feature screen/component -> feature hook/service -> feature repository -> infrastructure`.
+- `shared/` must never import from `features/`. Cross-feature imports should use the owning feature's public hook, service, provider, or type rather than its repository internals.
+
 ## Current Platform Setup
 
 - Web is deployed on Vercel
@@ -53,28 +67,29 @@ Last reviewed: 2026-07-21
 - Account profile editing
 - Google/Apple identity linking from the profile screen
 - Password reset
-- Shared callback/session handling lives in [lib/auth.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/lib/auth.ts:1)
+- Shared callback and redirect handling lives in [features/auth/services/auth.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth.service.ts:1)
 - Auth screens reach Supabase through `features/auth` hooks, services, and repositories; screen-level imports of the Supabase client or shared auth transport are prohibited by ESLint
 - The auth context owns React session/profile state only. Session transport, profile provisioning/backfill, sign-out, and welcome-email workflows live behind `features/auth` services and repositories; context-level Supabase and repository imports are prohibited by ESLint.
 
 ### Important Auth Files
 
-- [lib/auth.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/lib/auth.ts:1)
-- [lib/supabase.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/lib/supabase.ts:1)
-- [features/auth/hooks.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/hooks.ts:1)
+- [features/auth/hooks/use-auth-mutations.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/hooks/use-auth-mutations.ts:1)
+- [features/auth/hooks/use-auth.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/hooks/use-auth.ts:1)
 - [features/auth/services/auth.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth.service.ts:1)
 - [features/auth/repositories/auth.repository.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/repositories/auth.repository.ts:1)
+- [features/auth/repositories/auth-transport.repository.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/repositories/auth-transport.repository.ts:1)
 - [features/auth/services/auth-session.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth-session.service.ts:1)
 - [features/auth/repositories/auth-profile.repository.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/repositories/auth-profile.repository.ts:1)
-- [contexts/auth.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/contexts/auth.tsx:1)
+- [features/auth/providers/auth-provider.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/providers/auth-provider.tsx:1)
+- [infrastructure/supabase/client.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/infrastructure/supabase/client.ts:1)
 - [app/\_layout.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/_layout.tsx:1)
 - [app/(auth)/callback.tsx](</Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/(auth)/callback.tsx:1>)
 - [app/(auth)/verify-email.tsx](</Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/(auth)/verify-email.tsx:1>)
-- [screens/auth/sign-in.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/screens/auth/sign-in.tsx:1)
-- [screens/auth/sign-up.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/screens/auth/sign-up.tsx:1)
-- [screens/auth/verify-email.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/screens/auth/verify-email.tsx:1)
-- [screens/auth/reset-password.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/screens/auth/reset-password.tsx:1)
-- [screens/profile.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/screens/profile.tsx:1)
+- [features/auth/screens/sign-in-screen.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/screens/sign-in-screen.tsx:1)
+- [features/auth/screens/sign-up-screen.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/screens/sign-up-screen.tsx:1)
+- [features/auth/screens/verify-email-screen.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/screens/verify-email-screen.tsx:1)
+- [features/auth/screens/reset-password-screen.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/screens/reset-password-screen.tsx:1)
+- [features/profile/screens/profile-screen.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/profile/screens/profile-screen.tsx:1)
 
 ### Auth Gotchas
 

@@ -1,21 +1,21 @@
-import { AppButton, AppCard, AppHeading, AppText } from "@/components/atoms";
+import { AppButton, AppCard, AppHeading, AppText } from "@/shared/ui/components";
 import {
   atomCardRadius,
   atomPalette,
   atomRadii,
   atomSpacing
-} from "@/components/atoms/theme";
+} from "@/shared/ui/components/theme";
 import {
   PROJECT_PHASE_LABELS,
   PROJECT_STATUS_LABELS,
   PROJECT_TYPE_LABELS
-} from "@/features/projects/constants";
-import { getProjectsMapViewport } from "@/features/projects/map-points";
+} from "@/features/projects/constants/project.constants";
+import { getProjectsMapViewport } from "@/features/projects/maps/map-points";
 import type {
   ProjectStatus,
   ProjectSummary
-} from "@/features/projects/types";
-import { useLiveUserLocation } from "@/features/projects/use-live-user-location";
+} from "@/features/projects/types/project.types";
+import { useLiveUserLocation } from "@/features/projects/hooks/use-live-user-location";
 import {
   Construction,
   FolderOpen,

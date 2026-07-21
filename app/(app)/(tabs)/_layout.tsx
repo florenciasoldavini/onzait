@@ -1,7 +1,7 @@
-import { HapticTab } from "@/components/HapticTab";
-import { ProfileIcon, ProjectsIcon, ToDoIcon } from "@/components/icons";
-import { getMonoFontStyle } from "@/theme/fonts";
-import { designTokens } from "@/theme/tokens";
+import { HapticTab } from "@/shared/ui/haptic-tab";
+import { ProfileIcon, ProjectsIcon, ToDoIcon } from "@/shared/ui/icons";
+import { getMonoFontStyle } from "@/shared/theme/fonts";
+import { designTokens } from "@/shared/theme/tokens";
 import { Tabs } from "expo-router";
 import { Platform } from "react-native";
 

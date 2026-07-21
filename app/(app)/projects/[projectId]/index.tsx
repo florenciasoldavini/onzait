@@ -1,10 +1,14 @@
-import { RouteLoadingScreen } from "@/components/route-loading-screen";
+import { RouteLoadingScreen } from "@/shared/route-loading-screen";
 import { useLocalSearchParams } from "expo-router";
 import { lazy, Suspense } from "react";
 
-const ProjectDetailScreen = lazy(() => import("@/screens/project-detail"));
+const ProjectDetailScreen = lazy(
+  () => import("@/features/projects/screens/project-detail-screen")
+);
 const ProjectFormScreen = lazy(async () => {
-  const module = await import("@/screens/project-form");
+  const module = await import(
+    "@/features/projects/screens/project-form-screen"
+  );
   return { default: module.ProjectFormScreen };
 });
 

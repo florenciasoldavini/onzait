@@ -1,7 +1,7 @@
-import { startOAuthIdentityLink, updatePassword } from "@/lib/auth";
-import type { SupportedOAuthProvider } from "@/lib/auth-callback";
-import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
-import { UserFacingError } from "@/lib/user-facing-errors";
+import { startOAuthIdentityLink, updatePassword } from "@/features/auth/repositories/auth-transport.repository";
+import type { SupportedOAuthProvider } from "@/features/auth/utils/auth-callback";
+import { getSupabaseErrorMessage, supabase } from "@/infrastructure/supabase/client";
+import { UserFacingError } from "@/shared/utils/user-facing-errors";
 
 function requireAuthClient() {
   if (!supabase) {

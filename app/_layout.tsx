@@ -1,15 +1,19 @@
 // app/_layout.tsx
-import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import { AnimatedSplash } from "@/components/splash/animated-splash";
-import { AuthContext, AuthProvider } from "@/contexts/auth";
-import { queryClient } from "@/lib/query-client";
-import { navigationIntegration, Sentry } from "@/lib/sentry";
+import { GluestackUIProvider } from "@/shared/ui/primitives/gluestack-ui-provider";
+import { AnimatedSplash } from "@/shared/splash/animated-splash";
+import { AuthProvider } from "@/features/auth/providers/auth-provider";
+import { useAuth } from "@/features/auth/hooks/use-auth";
+import { queryClient } from "@/infrastructure/query/client";
+import {
+  navigationIntegration,
+  Sentry
+} from "@/infrastructure/monitoring/sentry";
 import "@/global.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack, useNavigationContainerRef } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 if (process.env.EXPO_OS !== "web") {
@@ -55,7 +59,7 @@ function RootLayout() {
 }
 
 function RootNavigator() {
-  const { isLoading, session } = useContext(AuthContext);
+  const { isLoading, session } = useAuth();
   const navigationRef = useNavigationContainerRef();
   const [splashDone, setSplashDone] = useState(false);
 

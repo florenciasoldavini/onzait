@@ -2,17 +2,17 @@ import {
   mapAddressSuggestions,
   mapResolvedAddress,
   mapStaticMapPreview
-} from "@/features/projects/maps";
-import { getMapsFunctionErrorMessage } from "@/features/projects/maps-errors";
-import { requireSupabase } from "@/features/projects/repositories/supabase.repository";
+} from "@/features/projects/maps/map-payloads";
+import { getMapsFunctionErrorMessage } from "@/features/projects/maps/map-errors";
+import { requireSupabase } from "@/infrastructure/supabase/repository";
 import type {
   AddressSuggestion,
   ResolvedProjectAddress,
   StaticMapPoint,
   StaticMapPreview,
   StaticMapViewport
-} from "@/features/projects/types";
-import { UserFacingError } from "@/lib/user-facing-errors";
+} from "@/features/projects/types/project.types";
+import { UserFacingError } from "@/shared/utils/user-facing-errors";
 
 export async function autocompleteAddressSuggestions({
   input,

@@ -1,5 +1,5 @@
-import { AppCard, SkeletonBlock } from "@/components/atoms";
-import { atomSpacing } from "@/components/atoms/theme";
+import { AppCard, SkeletonBlock } from "@/shared/ui/components";
+import { atomSpacing } from "@/shared/ui/components/theme";
 import { View } from "react-native";
 
 export function ProjectCardSkeleton() {

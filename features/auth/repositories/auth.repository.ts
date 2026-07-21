@@ -1,4 +1,4 @@
-import { AuthRepositoryError } from "@/features/auth/errors";
+import { AuthRepositoryError } from "@/features/auth/errors/auth.errors";
 import {
   clearWebAuthUrlArtifacts,
   completeAuthSessionFromUrl,
@@ -10,14 +10,14 @@ import {
   startOAuthSignIn,
   updatePassword,
   urlHasAuthPayload
-} from "@/lib/auth";
-import type { SupportedOAuthProvider } from "@/lib/auth-callback";
+} from "@/features/auth/repositories/auth-transport.repository";
+import type { SupportedOAuthProvider } from "@/features/auth/utils/auth-callback";
 import {
   getSupabaseErrorMessage,
   isSupabaseEmailCooldownError,
   isSupabaseEmailNotConfirmedError,
   supabase
-} from "@/lib/supabase";
+} from "@/infrastructure/supabase/client";
 
 function requireAuthClient() {
   if (!supabase) {

@@ -1,9 +1,9 @@
 import {
   requireSupabase,
   toRepositoryError
-} from "@/features/projects/repositories/supabase.repository";
-import { UserFacingError } from "@/lib/user-facing-errors";
-import type { User } from "@/types/models/user";
+} from "@/infrastructure/supabase/repository";
+import { UserFacingError } from "@/shared/utils/user-facing-errors";
+import type { User } from "@/features/auth/types/auth.types";
 
 export type ProfileUpdateInput = Pick<
   User,

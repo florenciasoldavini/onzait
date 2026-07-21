@@ -1,8 +1,10 @@
-import { RouteLoadingScreen } from "@/components/route-loading-screen";
+import { RouteLoadingScreen } from "@/shared/route-loading-screen";
 import { lazy, Suspense } from "react";
 
 const ProjectFormScreen = lazy(async () => {
-  const module = await import("@/screens/project-form");
+  const module = await import(
+    "@/features/projects/screens/project-form-screen"
+  );
   return { default: module.ProjectFormScreen };
 });
 

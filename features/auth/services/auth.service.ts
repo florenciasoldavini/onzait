@@ -1,4 +1,4 @@
-import { AuthRepositoryError } from "@/features/auth/errors";
+import { AuthRepositoryError } from "@/features/auth/errors/auth.errors";
 import {
   beginOAuthSignIn,
   changePassword,
@@ -17,11 +17,11 @@ import {
   getPostAuthRedirectPath,
   type AuthCallbackIntent,
   type SupportedOAuthProvider
-} from "@/lib/auth-callback";
+} from "@/features/auth/utils/auth-callback";
 import {
   UserFacingError,
   getUserFacingErrorMessage
-} from "@/lib/user-facing-errors";
+} from "@/shared/utils/user-facing-errors";
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
