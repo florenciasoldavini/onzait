@@ -11,7 +11,10 @@ import {
   PROJECT_TYPE_LABELS
 } from "@/features/projects/constants";
 import { getProjectsMapViewport } from "@/features/projects/map-points";
-import type { Project, ProjectStatus } from "@/features/projects/types";
+import type {
+  ProjectStatus,
+  ProjectSummary
+} from "@/features/projects/types";
 import { useLiveUserLocation } from "@/features/projects/use-live-user-location";
 import {
   Construction,
@@ -46,8 +49,8 @@ export function ProjectsMapView({
   projects
 }: {
   fillAvailableSpace?: boolean;
-  onOpenProject: (project: Project) => void;
-  projects: Project[];
+  onOpenProject: (project: ProjectSummary) => void;
+  projects: ProjectSummary[];
 }) {
   const mapRef = useRef<MapView | null>(null);
   const hasCenteredOnUserRef = useRef(false);
@@ -291,7 +294,7 @@ function SelectedProjectCard({
 }: {
   onClose: () => void;
   onOpenProject: () => void;
-  project: Project;
+  project: ProjectSummary;
 }) {
   return (
     <AppCard padding="sm" style={styles.selectedCard}>
@@ -340,14 +343,14 @@ function SelectedProjectCard({
   );
 }
 
-function getProjectCoordinates(projects: Project[]): LatLng[] {
+function getProjectCoordinates(projects: ProjectSummary[]): LatLng[] {
   return projects.map((project) => ({
     latitude: project.latitude,
     longitude: project.longitude
   }));
 }
 
-function getInitialMapRegion(projects: Project[]): Region | null {
+function getInitialMapRegion(projects: ProjectSummary[]): Region | null {
   const viewport = getProjectsMapViewport(projects);
 
   if (!viewport) {
@@ -364,7 +367,7 @@ function getInitialMapRegion(projects: Project[]): Region | null {
   };
 }
 
-function getInitialRegionDeltas(projects: Project[]) {
+function getInitialRegionDeltas(projects: ProjectSummary[]) {
   if (projects.length <= 1) {
     return {
       latitudeDelta: 0.025,

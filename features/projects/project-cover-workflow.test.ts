@@ -91,7 +91,9 @@ describe("project cover replacement", () => {
 
     await expect(
       uploadProjectCover({ asset, projectId: "missing" })
-    ).rejects.toThrow("Project not found.");
+    ).rejects.toThrow(
+      "This project could not be found. Return to projects and try again."
+    );
     expect(mocks.uploadProjectCoverObject).not.toHaveBeenCalled();
   });
 });

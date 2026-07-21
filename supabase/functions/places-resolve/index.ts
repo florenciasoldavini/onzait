@@ -120,10 +120,15 @@ Deno.serve(async (request: Request) => {
     cache.set(placeId, resolvedPlace, CACHE_TTL_MS);
     return jsonResponse(resolvedPlace);
   } catch (error) {
-    const message = error instanceof Error
+    const isAuthenticationError = error instanceof AuthenticationError;
+    const message = isAuthenticationError
       ? error.message
-      : "Address lookup failed.";
-    const status = error instanceof AuthenticationError ? 401 : 500;
+      : "Address details are unavailable right now.";
+    const status = isAuthenticationError ? 401 : 500;
+
+    if (!isAuthenticationError) {
+      console.error("places-resolve failed", error);
+    }
 
     return jsonResponse({ error: message }, { status });
   }

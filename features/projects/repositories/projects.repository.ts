@@ -7,21 +7,45 @@ import type {
   CreateProjectInput,
   Project,
   ProjectFilters,
+  ProjectSummary,
   UpdateProjectInput
 } from "@/features/projects/types";
+import {
+  getOffsetPageRange,
+  toPaginatedResult,
+  type OffsetPageRequest
+} from "@/lib/pagination";
+import { UserFacingError } from "@/lib/user-facing-errors";
+
+const PROJECT_SUMMARY_COLUMNS = [
+  "address",
+  "cover_image_path",
+  "estimated_end_date",
+  "id",
+  "latitude",
+  "longitude",
+  "name",
+  "phase",
+  "progress_percentage",
+  "project_type",
+  "status"
+].join(",");
 
 export async function listProjectRows({
   filters,
+  offset,
+  pageSize,
   userId,
   userRole
 }: {
   filters?: ProjectFilters;
   userId: string;
   userRole: "admin" | "user";
-}) {
+} & OffsetPageRequest) {
   const client = requireSupabase();
   const plan = buildProjectListQueryPlan({ filters, userId, userRole });
-  let query = client.from("projects").select("*");
+  const range = getOffsetPageRange({ offset, pageSize });
+  let query = client.from("projects").select(PROJECT_SUMMARY_COLUMNS);
 
   for (const filter of plan.filters) {
     if (filter.operator === "eq") {
@@ -35,15 +59,20 @@ export async function listProjectRows({
     }
   }
 
-  const { data, error } = await query.order(plan.order.column, {
-    ascending: plan.order.ascending
-  });
+  for (const order of plan.orders) {
+    query = query.order(order.column, { ascending: order.ascending });
+  }
+
+  const { data, error } = await query.range(range.from, range.to);
 
   if (error) {
     throw toRepositoryError(error);
   }
 
-  return (data ?? []) as Project[];
+  return toPaginatedResult(
+    (data ?? []) as unknown as ProjectSummary[],
+    range
+  );
 }
 
 export async function getProjectRow(projectId: string) {
@@ -74,7 +103,7 @@ export async function insertProjectRow(input: CreateProjectInput) {
   }
 
   if (!user) {
-    throw new Error("You must be signed in to save projects.");
+    throw new UserFacingError("You must be signed in to save projects.");
   }
 
   const { data, error } = await client
@@ -140,7 +169,7 @@ export async function replaceProjectCoverPath({
   }
 
   if (!data) {
-    throw new Error(
+    throw new UserFacingError(
       "The project cover changed while this upload was in progress. Refresh and try again."
     );
   }

@@ -23,6 +23,7 @@ import {
 } from "@/schemas/auth";
 import { AtSignIcon, LockIcon } from "@/components/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { getUserFacingErrorMessage } from "@/lib/user-facing-errors";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -99,9 +100,10 @@ export default function ResetPasswordScreen() {
         }
 
         setFormError(
-          error instanceof Error
-            ? error.message
-            : "Unable to prepare password recovery."
+          getUserFacingErrorMessage(
+            error,
+            "We couldn't open this password recovery link. Request a new link and try again."
+          )
         );
       } finally {
         if (isMounted) {
@@ -126,9 +128,10 @@ export default function ResetPasswordScreen() {
       router.replace("/sign-in");
     } catch (error) {
       setFormError(
-        error instanceof Error
-          ? error.message
-          : "Unable to send the password reset email."
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't send the password reset email. Try again."
+        )
       );
     } finally {
       setIsLoading(false);
@@ -144,9 +147,10 @@ export default function ResetPasswordScreen() {
       router.replace("/");
     } catch (error) {
       setFormError(
-        error instanceof Error
-          ? error.message
-          : "Unable to update the password."
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't update your password. Try again."
+        )
       );
     } finally {
       setIsLoading(false);

@@ -19,6 +19,7 @@ import { useEmailSignUp, useOAuthSignIn } from "@/features/auth/hooks";
 import { emailSignupSchema, type EmailSignupInput } from "@/schemas/auth";
 import { AtSignIcon, LockIcon } from "@/components/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { getUserFacingErrorMessage } from "@/lib/user-facing-errors";
 import { useRouter } from "expo-router";
 import { useContext, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -75,7 +76,10 @@ export default function SignUpScreen() {
       }
     } catch (error) {
       setFormError(
-        error instanceof Error ? error.message : "Unable to create account."
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't create your account. Check your details and try again."
+        )
       );
     } finally {
       setLoadingAction(null);
@@ -89,7 +93,10 @@ export default function SignUpScreen() {
       await oauthSignIn.mutateAsync(provider);
     } catch (error) {
       setFormError(
-        error instanceof Error ? error.message : "Unable to start sign up."
+        getUserFacingErrorMessage(
+          error,
+          "We couldn't start that sign-up method. Try again."
+        )
       );
     } finally {
       setLoadingAction(null);

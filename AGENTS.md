@@ -3,7 +3,7 @@
 Purpose: architecture snapshot, product decisions, and implementation guardrails for contributors and agents
 Source of truth for: current auth architecture, platform decisions, naming rules, and high-level project constraints
 Update when: auth flow, platform ownership, schema strategy, CI expectations, or product naming decisions change
-Last reviewed: 2026-07-17
+Last reviewed: 2026-07-18
 
 ## Project Snapshot
 
@@ -132,6 +132,7 @@ Last reviewed: 2026-07-17
 - the current performance baseline lives in [docs/performance-baseline.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/performance-baseline.md:1)
 - the current SEO and accessibility baseline lives in [docs/seo-accessibility-baseline.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/seo-accessibility-baseline.md:1)
 - the current security baseline for MVP feature work lives in [docs/security-baseline.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/security-baseline.md:1)
+- the current user-facing error baseline lives in [docs/error-handling.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/error-handling.md:1)
 - pending launch setup for custom domain, auth branding, DNS, and branded email lives in [docs/pending-launch-setup.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/pending-launch-setup.md:1)
 
 ### Useful Commands
@@ -173,6 +174,8 @@ Last reviewed: 2026-07-17
 - Every feature must explicitly account for web, iOS, and Android behavior. If the correct implementation differs by platform, use platform-specific files or adapters while keeping the business logic shared.
 - When adding a new project rule or product constraint, scan existing features, docs, env config, and tests for places where the rule already applies. Refactor, document follow-up work, or clearly call out any existing gap instead of applying the rule only to future code.
 - Every async surface must handle loading explicitly with an appropriate spinner, skeleton, disabled state, optimistic state, or other clear indicator.
+- Every error visible to a user must use clear, actionable product language. Never render raw provider, database, HTTP, SDK, or exception messages. Branch on stable error codes or structured status fields, preserve the technical cause for trusted diagnostics, use an action-specific fallback for unknown failures, distinguish query failures from empty/not-found results, provide safe retry actions, and explain denied device permissions instead of stopping silently. Follow `docs/error-handling.md`.
+- Every request that lists or "gets all" records from an entity must be paginated at the repository/transport boundary. Unbounded collection reads are prohibited, including map, export, admin, and background workflows. Use a bounded default and maximum page size, deterministic ordering with a stable unique tie-breaker, summary-only columns for list screens, and virtualized or progressively rendered collection UI. Single-record lookups are exempt.
 - Every destructive action that deletes persistent project or account data must require an explicit confirmation modal before the mutation runs. The modal must identify what will be deleted, provide distinct Cancel and danger-styled Delete actions, prevent repeat submission while pending, and keep mutation errors visible without closing.
 - Production submit forms must use `react-hook-form` with a Zod schema resolver. Keep form values, validation errors, validity, submission state, and edit dirty-state in the form controller rather than duplicating them with local `useState`.
 - Local component state is only for transient UI-only behavior such as password visibility, picker/popover open state, autocomplete session state, and non-submit search/filter fields.

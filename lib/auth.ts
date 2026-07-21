@@ -4,6 +4,10 @@ import {
   type SupportedOAuthProvider
 } from "@/lib/auth-callback";
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
+import {
+  UserFacingError,
+  toUserFacingError
+} from "@/lib/user-facing-errors";
 import type { Session } from "@supabase/supabase-js";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as Linking from "expo-linking";
@@ -135,7 +139,10 @@ export async function completeAuthSessionFromUrl(
   const refreshToken = params.get("refresh_token");
 
   if (errorDescription) {
-    throw new Error(errorDescription);
+    throw toUserFacingError(
+      { code: params.get("error_code"), message: errorDescription },
+      "We couldn't complete the authentication request. Try again."
+    );
   }
 
   if (code) {
@@ -198,7 +205,7 @@ export async function startOAuthSignIn(provider: SupportedOAuthProvider) {
   }
 
   if (!data?.url) {
-    throw new Error(
+    throw new UserFacingError(
       `${providerLabel} sign-in could not start because Supabase did not return an OAuth URL.`
     );
   }
@@ -210,7 +217,7 @@ export async function startOAuthSignIn(provider: SupportedOAuthProvider) {
       ? `Add the current Expo Go redirect URL (${redirectTo}) to Supabase Auth redirect URLs, or test ${providerLabel} sign-in in a development build using onzait://callback.`
       : `Add ${redirectTo} to Supabase Auth redirect URLs.`;
 
-    throw new Error(
+    throw new UserFacingError(
       `${providerLabel} sign-in did not return to the app. ${redirectHelp}`
     );
   }
@@ -255,7 +262,7 @@ export async function startOAuthIdentityLink(provider: SupportedOAuthProvider) {
   }
 
   if (!data?.url) {
-    throw new Error(
+    throw new UserFacingError(
       `${providerLabel} linking could not start because Supabase did not return an OAuth URL.`
     );
   }
@@ -263,7 +270,7 @@ export async function startOAuthIdentityLink(provider: SupportedOAuthProvider) {
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
 
   if (result.type === "cancel" || result.type === "dismiss") {
-    throw new Error(`${providerLabel} account linking was canceled.`);
+    throw new UserFacingError(`${providerLabel} account linking was canceled.`);
   }
 
   if (result.type !== "success" || !("url" in result) || !result.url) {
@@ -271,7 +278,7 @@ export async function startOAuthIdentityLink(provider: SupportedOAuthProvider) {
       ? `Add the current Expo Go redirect URL (${redirectTo}) to Supabase Auth redirect URLs, or test ${providerLabel} linking in a development build using onzait://callback.`
       : `Add ${redirectTo} to Supabase Auth redirect URLs.`;
 
-    throw new Error(
+    throw new UserFacingError(
       `${providerLabel} linking did not return to the app. ${redirectHelp}`
     );
   }

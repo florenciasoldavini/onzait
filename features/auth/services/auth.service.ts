@@ -18,6 +18,10 @@ import {
   type AuthCallbackIntent,
   type SupportedOAuthProvider
 } from "@/lib/auth-callback";
+import {
+  UserFacingError,
+  getUserFacingErrorMessage
+} from "@/lib/user-facing-errors";
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -132,12 +136,13 @@ export async function preparePasswordRecovery(linkingUrl: string | null) {
   };
 }
 
-export class AuthCallbackError extends Error {
+export class AuthCallbackError extends UserFacingError {
   constructor(
     message: string,
-    readonly intent: AuthCallbackIntent
+    readonly intent: AuthCallbackIntent,
+    cause?: unknown
   ) {
-    super(message);
+    super(message, cause);
     this.name = "AuthCallbackError";
   }
 }
@@ -174,8 +179,14 @@ export async function finishAuthCallback(linkingUrl: string | null) {
     };
   } catch (error) {
     throw new AuthCallbackError(
-      error instanceof Error ? error.message : "Authentication failed.",
-      intent
+      getUserFacingErrorMessage(
+        error,
+        intent.kind === "identity-link"
+          ? "We couldn't finish linking this sign-in method. Try again."
+          : "We couldn't finish signing you in. Try again."
+      ),
+      intent,
+      error
     );
   }
 }

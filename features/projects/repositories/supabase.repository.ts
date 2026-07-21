@@ -1,4 +1,5 @@
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
+import { UserFacingError } from "@/lib/user-facing-errors";
 
 export function requireSupabase() {
   if (!supabase) {
@@ -9,5 +10,5 @@ export function requireSupabase() {
 }
 
 export function toRepositoryError(error: unknown) {
-  return new Error(getSupabaseErrorMessage(error));
+  return new UserFacingError(getSupabaseErrorMessage(error), error);
 }

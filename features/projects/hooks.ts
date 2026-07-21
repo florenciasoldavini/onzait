@@ -16,28 +16,55 @@ import {
 import type {
   CreateProjectInput,
   ProjectFilters,
+  ProjectSummary,
   StaticMapPoint,
   StaticMapViewport,
   UpdateProjectInput
 } from "@/features/projects/types";
 import { normalizeProjectFilters } from "@/features/projects/validation";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  DEFAULT_PAGE_SIZE,
+  type PaginatedResult
+} from "@/lib/pagination";
+import { UserFacingError } from "@/lib/user-facing-errors";
+import {
+  type InfiniteData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient
+} from "@tanstack/react-query";
 import { useContext, useEffect, useMemo, useState } from "react";
 
 const projectsKey = ["projects"] as const;
 
 export function useProjects(filters: ProjectFilters) {
   const { user } = useContext(AuthContext);
+  const debouncedQuery = useDebouncedValue(filters.query ?? "", 350);
+  const requestFilters = useMemo(
+    () => ({ ...filters, query: debouncedQuery }),
+    [debouncedQuery, filters]
+  );
   const normalizedFilters = useMemo(
-    () => normalizeProjectFilters(filters),
-    [filters]
+    () => normalizeProjectFilters(requestFilters),
+    [requestFilters]
   );
 
-  return useQuery({
+  return useInfiniteQuery<
+    PaginatedResult<ProjectSummary>,
+    Error,
+    InfiniteData<PaginatedResult<ProjectSummary>>,
+    readonly unknown[],
+    number
+  >({
     enabled: Boolean(user),
-    queryFn: () =>
+    getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
       listProjects({
-        filters,
+        filters: requestFilters,
+        offset: pageParam,
+        pageSize: DEFAULT_PAGE_SIZE,
         userId: user!.id,
         userRole: user!.role
       }),
@@ -60,13 +87,13 @@ export function useCreateProject() {
   return useMutation({
     mutationFn: async (input: CreateProjectInput) => {
       if (!session) {
-        throw new Error("You must be signed in to save projects.");
+        throw new UserFacingError("You must be signed in to save projects.");
       }
 
       const currentUser = user ?? (await createUser(session));
 
       if (!currentUser) {
-        throw new Error(
+        throw new UserFacingError(
           "We could not finish setting up your account. Sign out and back in, then try again."
         );
       }
@@ -121,7 +148,9 @@ export function useUploadProjectCover(defaultProjectId?: string) {
       const resolvedProjectId = projectId ?? defaultProjectId;
 
       if (!resolvedProjectId) {
-        throw new Error("Missing project id for cover upload.");
+        throw new UserFacingError(
+          "We couldn't identify the project for this cover. Return to the project and try again."
+        );
       }
 
       return uploadProjectCover({ asset, projectId: resolvedProjectId });

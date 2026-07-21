@@ -6,19 +6,14 @@ import {
   MultiSelectField,
   NavScreenHeader,
   Screen,
-  SelectMenu,
   SegmentedTabs,
+  SelectMenu,
   TextField
 } from "@/components/atoms";
 import { atomMotion } from "@/components/atoms/motion";
-import {
-  atomLayout,
-  atomPalette,
-  atomSpacing
-} from "@/components/atoms/theme";
+import { atomLayout, atomPalette, atomSpacing } from "@/components/atoms/theme";
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { ProjectCardSkeleton } from "@/features/projects/components/project-card-skeleton";
-import { ProjectsMapView } from "@/features/projects/components/projects-map-view";
 import {
   PROJECT_BUILDING_TYPES,
   PROJECT_BUILDING_TYPE_LABELS,
@@ -36,9 +31,11 @@ import type {
   ProjectPhase,
   ProjectSort,
   ProjectStatus,
+  ProjectSummary,
   ProjectType
 } from "@/features/projects/types";
 import { useRouter } from "expo-router";
+import { getUserFacingErrorMessage } from "@/lib/user-facing-errors";
 import {
   ArrowUpDown,
   FolderPlus,
@@ -46,14 +43,16 @@ import {
   Search,
   SlidersHorizontal
 } from "lucide-react-native";
-import { useState } from "react";
+import { Suspense, lazy, memo, useCallback, useMemo, useState } from "react";
 import {
+  FlatList,
   Modal,
   Pressable,
   ScrollView,
   StyleSheet,
-  useWindowDimensions,
   View,
+  useWindowDimensions,
+  type ListRenderItemInfo,
   type ViewStyle
 } from "react-native";
 import Animated, {
@@ -61,6 +60,14 @@ import Animated, {
   FadeOut,
   LinearTransition
 } from "react-native-reanimated";
+
+const ProjectsMapView = lazy(async () => {
+  const module = await import(
+    "@/features/projects/components/projects-map-view"
+  );
+
+  return { default: module.ProjectsMapView };
+});
 
 type ProjectFilterState = Required<
   Pick<ProjectFilters, "buildingTypes" | "phases" | "projectTypes" | "statuses">
@@ -117,11 +124,15 @@ export default function ProjectsScreen() {
     query,
     sort
   });
-  const hasProjects = Boolean(projectsQuery.data?.length);
+  const projects = useMemo(
+    () => projectsQuery.data?.pages.flatMap((page) => page.items) ?? [],
+    [projectsQuery.data]
+  );
+  const hasProjects = projects.length > 0;
   const activeFilterCount = getActiveFilterCount(filters);
   const hasSearchOrFilters =
     query.trim().length > 0 || activeFilterCount > 0 || sort !== "created_desc";
-  const projectGrid = getProjectGridMetrics(width);
+  const projectGrid = useMemo(() => getProjectGridMetrics(width), [width]);
   const isMapMode = viewMode === "map";
   const mapScreenBottomPadding =
     width >= atomLayout.breakpointDesktop
@@ -136,6 +147,30 @@ export default function ProjectsScreen() {
     setFilters(initialProjectFilters);
   };
 
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = projectsQuery;
+  const loadNextPage = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const openProject = useCallback(
+    (projectId: string) => {
+      router.push(`/projects/${projectId}` as never);
+    },
+    [router]
+  );
+  const renderProject = useCallback(
+    ({ index, item }: ListRenderItemInfo<ProjectSummary>) => (
+      <ProjectListItem
+        index={index}
+        onPress={openProject}
+        project={item}
+        style={projectGrid.itemStyle}
+      />
+    ),
+    [openProject, projectGrid.itemStyle]
+  );
+
   const updateFilter = <TKey extends keyof ProjectFilterState>(
     key: TKey,
     value: ProjectFilterState[TKey]
@@ -145,6 +180,108 @@ export default function ProjectsScreen() {
       [key]: value
     }));
   };
+
+  const projectsHeader = (
+    <View style={styles.listHeader}>
+      <NavScreenHeader title="Projects" />
+
+      <TextField
+        leftIcon={Search}
+        onChangeText={setQuery}
+        placeholder="Search projects"
+        value={query}
+      />
+
+      <View style={styles.controlsRow}>
+        <SelectMenu
+          accessibilityLabel="Sort projects"
+          icon={ArrowUpDown}
+          labelPrefix="Sort"
+          onChange={setSort}
+          options={projectSortOptions}
+          value={sort}
+        />
+        <View style={styles.filterControl}>
+          <AppButton
+            color="neutral"
+            fullWidth={false}
+            icon={SlidersHorizontal}
+            size="sm"
+            variant="bordered"
+            onPress={() => setFiltersVisible(true)}
+          >
+            {activeFilterCount > 0
+              ? `Filters (${activeFilterCount})`
+              : "Filters"}
+          </AppButton>
+        </View>
+      </View>
+
+      <SegmentedTabs
+        onChange={setViewMode}
+        options={projectViewOptions}
+        selectedTone="accent"
+        value={viewMode}
+      />
+    </View>
+  );
+
+  const emptyContent = projectsQuery.isLoading ? (
+    <View style={projectGrid.containerStyle}>
+      {[0, 1, 2, 3].map((item) => (
+        <View key={item} style={projectGrid.itemStyle}>
+          <ProjectCardSkeleton />
+        </View>
+      ))}
+    </View>
+  ) : projectsQuery.isError ? (
+    <EmptyState
+      action={{
+        icon: RefreshCw,
+        label: "Retry",
+        onPress: () => {
+          void projectsQuery.refetch();
+        }
+      }}
+      description={getUserFacingErrorMessage(
+        projectsQuery.error,
+        "We couldn't load your projects. Check your connection and try again."
+      )}
+      title="Projects unavailable"
+    />
+  ) : (
+    <EmptyState
+      action={
+        hasSearchOrFilters
+          ? {
+              icon: RefreshCw,
+              label: "Reset view",
+              onPress: resetProjectView
+            }
+          : {
+              icon: FolderPlus,
+              label: "New Project",
+              onPress: () => router.push("/projects/new" as never)
+            }
+      }
+      description={
+        hasSearchOrFilters
+          ? "Adjust the search, sort, or filters to widen the project list."
+          : "Create your first project to start organizing job-site work."
+      }
+      icon={hasSearchOrFilters ? SlidersHorizontal : FolderPlus}
+      title={hasSearchOrFilters ? "No matching projects" : "No projects yet"}
+    />
+  );
+
+  const paginationFooter = (
+    <ProjectsPaginationFooter
+      hasNextPage={Boolean(projectsQuery.hasNextPage)}
+      isError={projectsQuery.isFetchNextPageError}
+      isLoading={projectsQuery.isFetchingNextPage}
+      onLoadMore={loadNextPage}
+    />
+  );
 
   return (
     <Screen
@@ -156,7 +293,7 @@ export default function ProjectsScreen() {
             ]
           : undefined
       }
-      contentStyle={isMapMode ? styles.mapScreenContent : undefined}
+      contentStyle={styles.screenContent}
       floatingAction={
         hasProjects && !isMapMode ? (
           <AppButton
@@ -169,130 +306,57 @@ export default function ProjectsScreen() {
           />
         ) : null
       }
-      scrollable={!isMapMode}
+      scrollable={false}
     >
-      <View style={[styles.screenStack, isMapMode && styles.mapScreenStack]}>
-        <NavScreenHeader title="Projects" />
-
-        <TextField
-          leftIcon={Search}
-          onChangeText={setQuery}
-          placeholder="Search projects"
-          value={query}
-        />
-
-        <View style={styles.controlsRow}>
-          <SelectMenu
-            accessibilityLabel="Sort projects"
-            icon={ArrowUpDown}
-            labelPrefix="Sort"
-            onChange={setSort}
-            options={projectSortOptions}
-            value={sort}
-          />
-          <View style={styles.filterControl}>
-            <AppButton
-              color="neutral"
-              fullWidth={false}
-              icon={SlidersHorizontal}
-              size="sm"
-              variant="bordered"
-              onPress={() => setFiltersVisible(true)}
-            >
-              {activeFilterCount > 0
-                ? `Filters (${activeFilterCount})`
-                : "Filters"}
-            </AppButton>
-          </View>
-        </View>
-
-        <SegmentedTabs
-          onChange={setViewMode}
-          options={projectViewOptions}
-          selectedTone="accent"
-          value={viewMode}
-        />
-
-        {projectsQuery.isLoading ? (
-          <View style={projectGrid.containerStyle}>
-            {[0, 1, 2, 3].map((item) => (
-              <View key={item} style={projectGrid.itemStyle}>
-                <ProjectCardSkeleton />
-              </View>
-            ))}
-          </View>
-        ) : projectsQuery.isError ? (
-          <EmptyState
-            action={{
-              icon: RefreshCw,
-              label: "Retry",
-              onPress: () => {
-                void projectsQuery.refetch();
-              }
-            }}
-            description={
-              projectsQuery.error instanceof Error
-                ? projectsQuery.error.message
-                : "Projects could not be loaded."
-            }
-            title="Projects unavailable"
-          />
-        ) : projectsQuery.data && projectsQuery.data.length > 0 ? (
-          viewMode === "map" ? (
-            <ProjectsMapView
-              fillAvailableSpace
-              onOpenProject={(project) =>
-                router.push(`/projects/${project.id}` as never)
-              }
-              projects={projectsQuery.data}
-            />
-          ) : (
-            <View style={projectGrid.containerStyle}>
-              {projectsQuery.data.map((project, index) => (
-                <Animated.View
-                  entering={FadeIn.duration(atomMotion.duration.enter).delay(
-                    Math.min(index, 6) * 36
-                  )}
-                  exiting={FadeOut.duration(atomMotion.duration.exit)}
-                  key={project.id}
-                  layout={LinearTransition.duration(atomMotion.duration.layout)}
-                  style={projectGrid.itemStyle}
-                >
-                  <ProjectCard
-                    onPress={() =>
-                      router.push(`/projects/${project.id}` as never)
-                    }
-                    project={project}
-                  />
-                </Animated.View>
-              ))}
+      {isMapMode ? (
+        <View style={styles.mapScreenStack}>
+          {projectsHeader}
+          {hasProjects ? (
+            <View style={styles.mapBody}>
+              <Suspense
+                fallback={
+                  <View style={projectGrid.containerStyle}>
+                    <View style={projectGrid.itemStyle}>
+                      <ProjectCardSkeleton />
+                    </View>
+                  </View>
+                }
+              >
+                <ProjectsMapView
+                  fillAvailableSpace
+                  onOpenProject={(project) => openProject(project.id)}
+                  projects={projects}
+                />
+              </Suspense>
+              {paginationFooter}
             </View>
-          )
-        ) : (
-          <EmptyState
-            action={
-              hasSearchOrFilters
-                ? {
-                    icon: RefreshCw,
-                    label: "Reset view",
-                    onPress: resetProjectView
-                  }
-                : {
-                    icon: FolderPlus,
-                    label: "New Project",
-                    onPress: () => router.push("/projects/new" as never)
-                  }
-            }
-            description={
-              hasSearchOrFilters
-                ? "Adjust the search, sort, or filters to widen the project list."
-                : "Create your first project to start organizing job-site work."
-            }
-            icon={hasSearchOrFilters ? SlidersHorizontal : FolderPlus}
-            title={hasSearchOrFilters ? "No matching projects" : "No projects yet"}
-          />
-        )}
-      </View>
+          ) : (
+            emptyContent
+          )}
+        </View>
+      ) : (
+        <FlatList
+          columnWrapperStyle={
+            projectGrid.columns > 1 ? styles.projectRow : undefined
+          }
+          contentContainerStyle={styles.projectListContent}
+          data={projects}
+          initialNumToRender={8}
+          ItemSeparatorComponent={ProjectRowSeparator}
+          key={`projects-${projectGrid.columns}`}
+          keyExtractor={(project) => project.id}
+          ListEmptyComponent={emptyContent}
+          ListFooterComponent={hasProjects ? paginationFooter : null}
+          ListHeaderComponent={projectsHeader}
+          maxToRenderPerBatch={8}
+          numColumns={projectGrid.columns}
+          onEndReached={loadNextPage}
+          onEndReachedThreshold={0.5}
+          renderItem={renderProject}
+          showsVerticalScrollIndicator={false}
+          windowSize={7}
+        />
+      )}
       <ProjectFiltersModal
         filters={filters}
         onChangeFilter={updateFilter}
@@ -302,6 +366,65 @@ export default function ProjectsScreen() {
       />
     </Screen>
   );
+}
+
+const ProjectListItem = memo(function ProjectListItem({
+  index,
+  onPress,
+  project,
+  style
+}: {
+  index: number;
+  onPress: (projectId: string) => void;
+  project: ProjectSummary;
+  style: ViewStyle;
+}) {
+  return (
+    <Animated.View
+      entering={FadeIn.duration(atomMotion.duration.enter).delay(
+        Math.min(index, 6) * 36
+      )}
+      exiting={FadeOut.duration(atomMotion.duration.exit)}
+      layout={LinearTransition.duration(atomMotion.duration.layout)}
+      style={style}
+    >
+      <ProjectCard onPress={() => onPress(project.id)} project={project} />
+    </Animated.View>
+  );
+});
+
+function ProjectsPaginationFooter({
+  hasNextPage,
+  isError,
+  isLoading,
+  onLoadMore
+}: {
+  hasNextPage: boolean;
+  isError: boolean;
+  isLoading: boolean;
+  onLoadMore: () => void;
+}) {
+  if (!hasNextPage && !isError) {
+    return null;
+  }
+
+  return (
+    <View style={styles.paginationFooter}>
+      <AppButton
+        color="neutral"
+        loading={isLoading}
+        onPress={onLoadMore}
+        size="sm"
+        variant="bordered"
+      >
+        {isError ? "Retry loading projects" : "Load more projects"}
+      </AppButton>
+    </View>
+  );
+}
+
+function ProjectRowSeparator() {
+  return <View style={styles.projectRowSeparator} />;
 }
 
 function ProjectFiltersModal({
@@ -413,16 +536,17 @@ function getProjectGridMetrics(screenWidth: number) {
     availableWidth >= 1080
       ? 4
       : availableWidth >= 900
-      ? 3
-      : availableWidth >= atomLayout.breakpointTablet
-        ? 2
-        : 1;
+        ? 3
+        : availableWidth >= atomLayout.breakpointTablet
+          ? 2
+          : 1;
   const itemWidth =
     columns === 1
       ? ("100%" as const)
       : (availableWidth - gap * (columns - 1)) / columns;
 
   return {
+    columns,
     containerStyle: {
       alignItems: "stretch" as const,
       flexDirection: columns === 1 ? ("column" as const) : ("row" as const),
@@ -462,6 +586,15 @@ const styles = StyleSheet.create({
   },
   filterControl: {
     flexShrink: 0
+  },
+  listHeader: {
+    gap: atomSpacing[6],
+    marginBottom: atomSpacing[6]
+  },
+  mapBody: {
+    flex: 1,
+    gap: atomSpacing[4],
+    minHeight: 0
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -503,17 +636,25 @@ const styles = StyleSheet.create({
   mapScreenContainer: {
     paddingBottom: atomSpacing[5]
   },
-  mapScreenContent: {
-    flex: 1
-  },
   mapScreenStack: {
     flex: 1,
     minHeight: 0
   },
-  screenStack: {
-    gap: atomSpacing[6]
+  paginationFooter: {
+    alignItems: "center",
+    paddingVertical: atomSpacing[5]
   },
-  sortControl: {
+  projectListContent: {
+    flexGrow: 1,
+    paddingBottom: atomSpacing[6]
+  },
+  projectRow: {
+    gap: atomSpacing[4]
+  },
+  projectRowSeparator: {
+    height: atomSpacing[4]
+  },
+  screenContent: {
     flex: 1,
     minWidth: 0
   }

@@ -36,6 +36,9 @@ jobs:
       - name: Documentation drift check (.env.example)
         run: npm run env:check
 
+      - name: Expo dependency compatibility
+        run: npm run doctor
+
       - name: TypeScript check
         run: npx tsc --noEmit
 
@@ -83,6 +86,9 @@ jobs:
 
       - name: Build production web app
         run: npm run build
+
+      - name: Check web bundle budgets
+        run: npm run bundle:check
 
   edge_functions:
     name: Edge Functions

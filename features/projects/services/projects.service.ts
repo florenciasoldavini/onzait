@@ -15,21 +15,36 @@ import type {
   CreateProjectInput,
   Project,
   ProjectFilters,
+  ProjectSummary,
   UpdateProjectInput
 } from "@/features/projects/types";
+import type { OffsetPageRequest, PaginatedResult } from "@/lib/pagination";
 import { Sentry } from "@/lib/sentry";
+import { UserFacingError } from "@/lib/user-facing-errors";
 
 export async function listProjects({
   filters,
+  offset,
+  pageSize,
   userId,
   userRole
 }: {
   filters?: ProjectFilters;
   userId: string;
   userRole: "admin" | "user";
-}) {
-  const projects = await listProjectRows({ filters, userId, userRole });
-  return addCoverUrls(projects);
+} & OffsetPageRequest): Promise<PaginatedResult<ProjectSummary>> {
+  const page = await listProjectRows({
+    filters,
+    offset,
+    pageSize,
+    userId,
+    userRole
+  });
+
+  return {
+    ...page,
+    items: await addCoverUrls<ProjectSummary>(page.items)
+  };
 }
 
 export async function getProject(projectId: string) {
@@ -68,7 +83,9 @@ export async function uploadProjectCover({
   const project = await getProjectRow(projectId);
 
   if (!project) {
-    throw new Error("Project not found.");
+    throw new UserFacingError(
+      "This project could not be found. Return to projects and try again."
+    );
   }
 
   const coverPath = await uploadProjectCoverObject({ asset, projectId });
@@ -88,10 +105,7 @@ export async function uploadProjectCover({
     throw error;
   }
 
-  if (
-    project.cover_image_path &&
-    project.cover_image_path !== coverPath
-  ) {
+  if (project.cover_image_path && project.cover_image_path !== coverPath) {
     await removeProjectCoverSafely({
       cleanupReason: "replacement",
       path: project.cover_image_path,
@@ -122,7 +136,9 @@ async function removeProjectCoverSafely({
   }
 }
 
-async function addCoverUrls(projects: Project[]) {
+async function addCoverUrls<TProject extends Pick<Project, "cover_image_path">>(
+  projects: TProject[]
+) {
   return Promise.all(
     projects.map(async (project) => {
       if (!project.cover_image_path) {

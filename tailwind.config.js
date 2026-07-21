@@ -4,14 +4,18 @@ const { designTokens, tailwindColorScaleRefs } = require("./theme/tokens");
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: "media",
-  content: ["app/**/*.{tsx,jsx,ts,js}", "components/**/*.{tsx,jsx,ts,js}"],
-  presets: [require("nativewind/preset")],
-  safelist: [
-    {
-      pattern:
-        /(bg|border|text|stroke|fill)-(primary|secondary|tertiary|error|success|warning|info|typography|outline|background|indicator)-(0|50|100|200|300|400|500|600|700|800|900|950|white|gray|black|error|warning|muted|success|info|light|dark|primary)/
-    }
+  // Keep generated UI paths limited to primitives imported by product code.
+  // Add a primitive here when introducing a new components/ui dependency.
+  content: [
+    "app/**/*.{tsx,jsx,ts,js}",
+    "screens/**/*.{tsx,jsx,ts,js}",
+    "features/**/*.{tsx,jsx,ts,js}",
+    "components/atoms/**/*.{tsx,jsx,ts,js}",
+    "components/auth/**/*.{tsx,jsx,ts,js}",
+    "components/splash/**/*.{tsx,jsx,ts,js}",
+    "components/ui/{button,card,gluestack-ui-provider,hstack,input,spinner,textarea,toast}/**/*.{tsx,jsx,ts,js}"
   ],
+  presets: [require("nativewind/preset")],
   theme: {
     extend: {
       colors: {
