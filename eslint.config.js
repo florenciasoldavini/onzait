@@ -49,6 +49,30 @@ module.exports = defineConfig([
     }
   },
   {
+    files: ["contexts/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/lib/supabase",
+              message:
+                "Contexts own React state only. Access Supabase through feature services and repositories."
+            }
+          ],
+          patterns: [
+            {
+              group: ["@/features/**/repositories/**"],
+              message:
+                "Contexts must call feature services instead of repositories directly."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
     rules: {
       "react/no-unescaped-entities": "off",
       "@typescript-eslint/no-unused-vars": [

@@ -4,10 +4,7 @@ import {
   type SupportedOAuthProvider
 } from "@/lib/auth-callback";
 import { getSupabaseErrorMessage, supabase } from "@/lib/supabase";
-import {
-  UserFacingError,
-  toUserFacingError
-} from "@/lib/user-facing-errors";
+import { UserFacingError, toUserFacingError } from "@/lib/user-facing-errors";
 import type { Session } from "@supabase/supabase-js";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as Linking from "expo-linking";
@@ -80,8 +77,11 @@ export function getAuthRedirectUrl(
     const siteUrl = getBrowserOrigin() ?? getConfiguredSiteUrl();
 
     if (!siteUrl) {
-      throw new Error(
-        "Missing EXPO_PUBLIC_SITE_URL. Add it to your env vars before using hosted auth redirects."
+      throw new UserFacingError(
+        "Authentication is temporarily unavailable. Try again later.",
+        new Error(
+          "Missing EXPO_PUBLIC_SITE_URL for a hosted authentication redirect."
+        )
       );
     }
 
@@ -206,19 +206,23 @@ export async function startOAuthSignIn(provider: SupportedOAuthProvider) {
 
   if (!data?.url) {
     throw new UserFacingError(
-      `${providerLabel} sign-in could not start because Supabase did not return an OAuth URL.`
+      `We couldn't start ${providerLabel} sign-in. Try again.`,
+      new Error("Supabase did not return an OAuth URL for native sign-in.")
     );
   }
 
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
 
-  if (result.type !== "success" || !("url" in result) || !result.url) {
-    const redirectHelp = isExpoGo()
-      ? `Add the current Expo Go redirect URL (${redirectTo}) to Supabase Auth redirect URLs, or test ${providerLabel} sign-in in a development build using onzait://callback.`
-      : `Add ${redirectTo} to Supabase Auth redirect URLs.`;
+  if (result.type === "cancel" || result.type === "dismiss") {
+    throw new UserFacingError(`${providerLabel} sign-in was canceled.`);
+  }
 
+  if (result.type !== "success" || !("url" in result) || !result.url) {
     throw new UserFacingError(
-      `${providerLabel} sign-in did not return to the app. ${redirectHelp}`
+      `We couldn't finish ${providerLabel} sign-in. Try again.`,
+      new Error(
+        `Native OAuth sign-in did not return a success URL. Redirect: ${redirectTo}; Expo Go: ${isExpoGo()}.`
+      )
     );
   }
 
@@ -263,7 +267,10 @@ export async function startOAuthIdentityLink(provider: SupportedOAuthProvider) {
 
   if (!data?.url) {
     throw new UserFacingError(
-      `${providerLabel} linking could not start because Supabase did not return an OAuth URL.`
+      `We couldn't start linking your ${providerLabel} account. Try again.`,
+      new Error(
+        "Supabase did not return an OAuth URL for native identity linking."
+      )
     );
   }
 
@@ -274,12 +281,11 @@ export async function startOAuthIdentityLink(provider: SupportedOAuthProvider) {
   }
 
   if (result.type !== "success" || !("url" in result) || !result.url) {
-    const redirectHelp = isExpoGo()
-      ? `Add the current Expo Go redirect URL (${redirectTo}) to Supabase Auth redirect URLs, or test ${providerLabel} linking in a development build using onzait://callback.`
-      : `Add ${redirectTo} to Supabase Auth redirect URLs.`;
-
     throw new UserFacingError(
-      `${providerLabel} linking did not return to the app. ${redirectHelp}`
+      `We couldn't finish linking your ${providerLabel} account. Try again.`,
+      new Error(
+        `Native identity linking did not return a success URL. Redirect: ${redirectTo}; Expo Go: ${isExpoGo()}.`
+      )
     );
   }
 

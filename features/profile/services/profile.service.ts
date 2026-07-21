@@ -21,6 +21,8 @@ import { USER_AVATAR_BUCKET } from "@/features/profile/constants";
 import type { SupportedOAuthProvider } from "@/lib/auth-callback";
 import { Sentry } from "@/lib/sentry";
 
+export type { ProfileAvatarAsset } from "@/features/profile/repositories/profile-avatar.repository";
+
 async function removeAvatarObjectSafely({
   cleanupReason,
   path,

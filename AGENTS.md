@@ -3,7 +3,7 @@
 Purpose: architecture snapshot, product decisions, and implementation guardrails for contributors and agents
 Source of truth for: current auth architecture, platform decisions, naming rules, and high-level project constraints
 Update when: auth flow, platform ownership, schema strategy, CI expectations, or product naming decisions change
-Last reviewed: 2026-07-18
+Last reviewed: 2026-07-21
 
 ## Project Snapshot
 
@@ -55,6 +55,7 @@ Last reviewed: 2026-07-18
 - Password reset
 - Shared callback/session handling lives in [lib/auth.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/lib/auth.ts:1)
 - Auth screens reach Supabase through `features/auth` hooks, services, and repositories; screen-level imports of the Supabase client or shared auth transport are prohibited by ESLint
+- The auth context owns React session/profile state only. Session transport, profile provisioning/backfill, sign-out, and welcome-email workflows live behind `features/auth` services and repositories; context-level Supabase and repository imports are prohibited by ESLint.
 
 ### Important Auth Files
 
@@ -63,6 +64,8 @@ Last reviewed: 2026-07-18
 - [features/auth/hooks.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/hooks.ts:1)
 - [features/auth/services/auth.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth.service.ts:1)
 - [features/auth/repositories/auth.repository.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/repositories/auth.repository.ts:1)
+- [features/auth/services/auth-session.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth-session.service.ts:1)
+- [features/auth/repositories/auth-profile.repository.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/repositories/auth-profile.repository.ts:1)
 - [contexts/auth.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/contexts/auth.tsx:1)
 - [app/\_layout.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/_layout.tsx:1)
 - [app/(auth)/callback.tsx](</Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/(auth)/callback.tsx:1>)

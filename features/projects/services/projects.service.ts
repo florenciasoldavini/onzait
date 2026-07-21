@@ -14,7 +14,9 @@ import {
 import type {
   CreateProjectInput,
   Project,
+  ProjectCoverAsset,
   ProjectFilters,
+  ProjectSaveOutcome,
   ProjectSummary,
   UpdateProjectInput
 } from "@/features/projects/types";
@@ -62,11 +64,37 @@ export async function createProject(input: CreateProjectInput) {
   return insertProjectRow(input);
 }
 
+export async function createProjectWithOptionalCover({
+  coverAsset,
+  input
+}: {
+  coverAsset?: ProjectCoverAsset | null;
+  input: CreateProjectInput;
+}): Promise<ProjectSaveOutcome> {
+  const project = await createProject(input);
+
+  return saveOptionalProjectCover({ coverAsset, project });
+}
+
 export async function updateProject(
   projectId: string,
   input: UpdateProjectInput
 ) {
   return updateProjectRow(projectId, input);
+}
+
+export async function updateProjectWithOptionalCover({
+  coverAsset,
+  input,
+  projectId
+}: {
+  coverAsset?: ProjectCoverAsset | null;
+  input: UpdateProjectInput;
+  projectId: string;
+}): Promise<ProjectSaveOutcome> {
+  const project = await updateProject(projectId, input);
+
+  return saveOptionalProjectCover({ coverAsset, project });
 }
 
 export async function softDeleteProject(projectId: string) {
@@ -114,6 +142,36 @@ export async function uploadProjectCover({
   }
 
   return coverPath;
+}
+
+async function saveOptionalProjectCover({
+  coverAsset,
+  project
+}: {
+  coverAsset?: ProjectCoverAsset | null;
+  project: Project;
+}): Promise<ProjectSaveOutcome> {
+  if (!coverAsset) {
+    return { coverStatus: "not-requested", project };
+  }
+
+  try {
+    const coverPath = await uploadProjectCover({
+      asset: coverAsset,
+      projectId: project.id
+    });
+
+    return {
+      coverStatus: "saved",
+      project: { ...project, cover_image_path: coverPath }
+    };
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { project_save: "cover-after-project-commit" }
+    });
+
+    return { coverStatus: "failed", project };
+  }
 }
 
 async function removeProjectCoverSafely({
