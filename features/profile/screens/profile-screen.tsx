@@ -11,15 +11,15 @@ import {
 } from "@/shared/ui/components";
 import { atomPalette, atomRadii, atomSpacing } from "@/shared/ui/components/theme";
 import { authCardMaxWidth } from "@/features/auth/components/auth-shell";
-import { useAuth } from "@/features/auth/use-auth";
-import { useUploadProfileAvatar } from "@/features/profile/hooks";
-import type { ProfileAvatarAsset } from "@/features/profile/types";
+import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useUploadProfileAvatar } from "@/features/profile/hooks/use-profile-avatar";
+import type { ProfileAvatarAsset } from "@/features/profile/types/profile.types";
 import {
   profileInfoSchema,
   profilePasswordSchema,
   type ProfileInfoInput,
   type ProfilePasswordInput
-} from "@/features/profile/validation";
+} from "@/features/profile/schemas/profile.schemas";
 import {
   getAuthErrorMessage,
   getLinkedAuthIdentities,

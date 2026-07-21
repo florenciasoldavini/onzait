@@ -10,8 +10,8 @@ import {
   PROJECT_PHASE_LABELS,
   PROJECT_STATUS_LABELS,
   PROJECT_TYPE_LABELS
-} from "@/features/projects/constants";
-import type { Project, ProjectStatus } from "@/features/projects/types";
+} from "@/features/projects/constants/project.constants";
+import type { Project, ProjectStatus } from "@/features/projects/types/project.types";
 import { Image } from "expo-image";
 import { ImageOff, MapPinned } from "lucide-react-native";
 import { useEffect, useState } from "react";

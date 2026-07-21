@@ -9,10 +9,10 @@ import {
   PROJECT_PHASE_LABELS,
   PROJECT_STATUS_LABELS,
   PROJECT_TYPE_LABELS
-} from "@/features/projects/constants";
-import { getProjectsMapViewport } from "@/features/projects/map-points";
-import type { Project, ProjectStatus } from "@/features/projects/types";
-import { useLiveUserLocation } from "@/features/projects/use-live-user-location";
+} from "@/features/projects/constants/project.constants";
+import { getProjectsMapViewport } from "@/features/projects/maps/map-points";
+import type { Project, ProjectStatus } from "@/features/projects/types/project.types";
+import { useLiveUserLocation } from "@/features/projects/hooks/use-live-user-location";
 import {
   FolderOpen,
   LocateFixed,

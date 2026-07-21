@@ -1,7 +1,7 @@
 import {
   uploadProfileAvatar
 } from "@/features/profile/services/profile.service";
-import type { ProfileAvatarAsset } from "@/features/profile/types";
+import type { ProfileAvatarAsset } from "@/features/profile/types/profile.types";
 import { useMutation } from "@tanstack/react-query";
 
 export function useUploadProfileAvatar() {

@@ -2,21 +2,21 @@ import {
   mapAddressSuggestions,
   mapResolvedAddress,
   mapStaticMapPreview
-} from "@/features/projects/maps";
+} from "@/features/projects/maps/map-payloads";
 import {
   getDraggedProjectsMapViewport,
   getProjectMapPoints,
   getProjectsMapViewport
-} from "@/features/projects/map-points";
-import { toLiveUserLocation } from "@/features/projects/live-user-location-values";
-import { getMapsFunctionErrorMessage } from "@/features/projects/maps-errors";
-import { buildProjectListQueryPlan } from "@/features/projects/query-builders";
-import type { Project, ProjectFormValues } from "@/features/projects/types";
+} from "@/features/projects/maps/map-points";
+import { toLiveUserLocation } from "@/features/projects/maps/live-user-location-values";
+import { getMapsFunctionErrorMessage } from "@/features/projects/maps/map-errors";
+import { buildProjectListQueryPlan } from "@/features/projects/repositories/project-list-query";
+import type { Project, ProjectFormValues } from "@/features/projects/types/project.types";
 import {
   normalizeProjectFilters,
   toCreateProjectInput,
   validateProjectForm
-} from "@/features/projects/validation";
+} from "@/features/projects/schemas/project.schemas";
 import { consumeFixedWindowRateLimit } from "@/shared/utils/rate-limit";
 import { describe, expect, it } from "vitest";
 

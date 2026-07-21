@@ -1,5 +1,5 @@
-import type { ProjectFilters } from "@/features/projects/types";
-import { normalizeProjectFilters } from "@/features/projects/validation";
+import type { ProjectFilters } from "@/features/projects/types/project.types";
+import { normalizeProjectFilters } from "@/features/projects/schemas/project.schemas";
 
 export interface ProjectListQueryPlan {
   filters: {

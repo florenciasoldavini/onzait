@@ -2,7 +2,7 @@ import type {
   AddressSuggestion,
   ResolvedProjectAddress,
   StaticMapPreview
-} from "@/features/projects/types";
+} from "@/features/projects/types/project.types";
 
 export function mapAddressSuggestions(payload: unknown): AddressSuggestion[] {
   if (!payload || typeof payload !== "object" || !("suggestions" in payload)) {

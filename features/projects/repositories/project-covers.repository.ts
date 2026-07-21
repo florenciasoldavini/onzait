@@ -1,4 +1,4 @@
-import { PROJECT_COVER_BUCKET } from "@/features/projects/constants";
+import { PROJECT_COVER_BUCKET } from "@/features/projects/constants/project.constants";
 import {
   requireSupabase,
   toRepositoryError

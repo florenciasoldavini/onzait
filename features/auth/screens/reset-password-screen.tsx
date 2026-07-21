@@ -24,7 +24,7 @@ import {
   resetPasswordSchema,
   type ForgotPasswordInput,
   type ResetPasswordInput
-} from "@/features/auth/auth.schemas";
+} from "@/features/auth/schemas/auth.schemas";
 import { AtSignIcon, LockIcon } from "@/shared/ui/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as Linking from "expo-linking";

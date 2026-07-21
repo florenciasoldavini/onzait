@@ -7,7 +7,7 @@ import {
   subscribeToAuthState,
   updateUserProfileRecord
 } from "@/features/auth/repositories/auth.repository";
-import type { User } from "@/features/auth/types";
+import type { User } from "@/features/auth/types/auth.types";
 import {
   getSupabaseErrorMessage,
   isSupabaseConfigured

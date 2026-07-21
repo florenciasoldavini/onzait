@@ -1,4 +1,4 @@
-import { useAuth } from "@/features/auth/use-auth";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 import HomeScreen from "@/features/home/screens/home-screen";
 import { Redirect } from "expo-router";
 

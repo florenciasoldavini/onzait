@@ -21,8 +21,8 @@ import {
   signInWithEmailPassword,
   startOAuthSignIn
 } from "@/features/auth/services/auth.service";
-import { useAuth } from "@/features/auth/use-auth";
-import { loginSchema, type LoginInput } from "@/features/auth/auth.schemas";
+import { useAuth } from "@/features/auth/hooks/use-auth";
+import { loginSchema, type LoginInput } from "@/features/auth/schemas/auth.schemas";
 import { AtSignIcon, LockIcon } from "@/shared/ui/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";

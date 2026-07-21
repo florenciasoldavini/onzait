@@ -4,8 +4,8 @@ import {
   PROJECT_PHASES,
   PROJECT_STATUSES,
   PROJECT_TYPES
-} from "@/features/projects/constants";
-import type { Project } from "@/features/projects/types";
+} from "@/features/projects/constants/project.constants";
+import type { Project } from "@/features/projects/types/project.types";
 
 export const ProjectSchema: z.ZodType<Project> = z.object({
   id: z.string(),

@@ -1,4 +1,4 @@
-import { useAuth } from "@/features/auth/use-auth";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 import {
   autocompleteProjectAddress,
   getProjectAddressMapPreview,
@@ -19,8 +19,8 @@ import type {
   StaticMapPoint,
   StaticMapViewport,
   UpdateProjectInput
-} from "@/features/projects/types";
-import { normalizeProjectFilters } from "@/features/projects/validation";
+} from "@/features/projects/types/project.types";
+import { normalizeProjectFilters } from "@/features/projects/schemas/project.schemas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 

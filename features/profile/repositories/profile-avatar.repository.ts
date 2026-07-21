@@ -1,13 +1,13 @@
-import { USER_AVATAR_BUCKET } from "@/features/profile/constants";
+import { USER_AVATAR_BUCKET } from "@/features/profile/constants/profile.constants";
 import {
   buildProfileAvatarPath,
   getMimeTypeFromExtension
-} from "@/features/profile/avatar-storage";
+} from "@/features/profile/utils/avatar-storage";
 import {
   requireSupabase,
   toRepositoryError
 } from "@/infrastructure/supabase/repository";
-import type { ProfileAvatarAsset } from "@/features/profile/types";
+import type { ProfileAvatarAsset } from "@/features/profile/types/profile.types";
 
 export async function uploadProfileAvatarObject({
   asset,

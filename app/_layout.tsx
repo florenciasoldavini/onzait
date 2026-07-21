@@ -1,8 +1,8 @@
 // app/_layout.tsx
 import { GluestackUIProvider } from "@/shared/ui/primitives/gluestack-ui-provider";
 import { AnimatedSplash } from "@/shared/splash/animated-splash";
-import { AuthProvider } from "@/features/auth/provider";
-import { useAuth } from "@/features/auth/use-auth";
+import { AuthProvider } from "@/features/auth/providers/auth-provider";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 import { queryClient } from "@/infrastructure/query/client";
 import {
   navigationIntegration,

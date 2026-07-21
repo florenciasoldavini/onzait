@@ -1,4 +1,4 @@
-import { resetPasswordSchema } from "@/features/auth/auth.schemas";
+import { resetPasswordSchema } from "@/features/auth/schemas/auth.schemas";
 import { z } from "zod";
 
 export const profileInfoSchema = z.object({

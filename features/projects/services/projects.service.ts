@@ -14,7 +14,7 @@ import type {
   Project,
   ProjectFilters,
   UpdateProjectInput
-} from "@/features/projects/types";
+} from "@/features/projects/types/project.types";
 
 export async function listProjects({
   filters,

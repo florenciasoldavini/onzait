@@ -3,7 +3,7 @@ import type {
   PROJECT_PHASES,
   PROJECT_STATUSES,
   PROJECT_TYPES
-} from "@/features/projects/constants";
+} from "@/features/projects/constants/project.constants";
 
 export type ProjectBuildingType = (typeof PROJECT_BUILDING_TYPES)[number];
 export type ProjectType = (typeof PROJECT_TYPES)[number];

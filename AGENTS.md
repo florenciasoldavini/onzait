@@ -21,6 +21,7 @@ Last reviewed: 2026-07-16
 - Onzait uses a feature-first source architecture.
 - `app/` owns Expo Router route declarations and layouts only. Route files should delegate product UI to feature screens.
 - Product domains live under `features/<feature>/`. A feature may own its screens, components, hooks, services, repositories, schemas, types, utilities, and tests.
+- Feature roots contain responsibility directories only; place implementation files in the appropriate subdirectory instead of leaving loose modules at the feature root.
 - Active features and planned domain contracts use the same ownership rule; do not recreate global `screens`, `hooks`, `services`, `repositories`, `schemas`, or `types/models` layers.
 - Reusable product-agnostic UI, hooks, utilities, theme helpers, and splash behavior live under `shared/`.
 - SDK clients and technical adapters live under `infrastructure/`. Product UI must not import infrastructure or repositories directly.
@@ -73,7 +74,7 @@ Last reviewed: 2026-07-16
 - [features/auth/services/auth-session.service.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/services/auth-session.service.ts:1)
 - [features/auth/repositories/auth.repository.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/repositories/auth.repository.ts:1)
 - [infrastructure/supabase/client.ts](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/infrastructure/supabase/client.ts:1)
-- [features/auth/provider.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/provider.tsx:1)
+- [features/auth/providers/auth-provider.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/features/auth/providers/auth-provider.tsx:1)
 - [app/\_layout.tsx](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/_layout.tsx:1)
 - [app/(auth)/callback.tsx](</Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/(auth)/callback.tsx:1>)
 - [app/(auth)/verify-email.tsx](</Users/florenciasoldavini/Documents/Projects/OnSite/on-site/app/(auth)/verify-email.tsx:1>)

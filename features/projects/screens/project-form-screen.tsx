@@ -14,7 +14,7 @@ import {
   TextField,
   useAppToast
 } from "@/shared/ui/components";
-import { useAuth } from "@/features/auth/use-auth";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 import { FormField } from "@/shared/ui/forms";
 import {
   atomControlHeights,
@@ -32,7 +32,7 @@ import {
   PROJECT_STATUSES,
   PROJECT_TYPE_LABELS,
   PROJECT_TYPES
-} from "@/features/projects/constants";
+} from "@/features/projects/constants/project.constants";
 import {
   useAddressAutocomplete,
   useAddressMapPreview,
@@ -41,17 +41,17 @@ import {
   useResolveAddress,
   useUpdateProject,
   useUploadProjectCover
-} from "@/features/projects/hooks";
+} from "@/features/projects/hooks/use-projects";
 import type {
   Project,
   ProjectFormValues,
   ResolvedProjectAddress
-} from "@/features/projects/types";
+} from "@/features/projects/types/project.types";
 import {
   projectFormSchema,
   toCreateProjectInput,
   toUpdateProjectInput
-} from "@/features/projects/validation";
+} from "@/features/projects/schemas/project.schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";

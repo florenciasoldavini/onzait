@@ -6,7 +6,7 @@ import {
 import type {
   StaticMapPoint,
   StaticMapViewport
-} from "@/features/projects/types";
+} from "@/features/projects/types/project.types";
 
 export async function autocompleteProjectAddress({
   input,

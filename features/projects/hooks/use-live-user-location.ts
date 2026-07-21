@@ -1,7 +1,7 @@
 import {
   toLiveUserLocation,
   type LiveUserLocation
-} from "@/features/projects/live-user-location-values";
+} from "@/features/projects/maps/live-user-location-values";
 import * as Location from "expo-location";
 import { useCallback, useEffect, useRef, useState } from "react";
 

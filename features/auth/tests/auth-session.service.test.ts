@@ -1,4 +1,4 @@
-import type { User } from "@/features/auth/types";
+import type { User } from "@/features/auth/types/auth.types";
 import type { Session } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

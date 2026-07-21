@@ -28,8 +28,8 @@ import {
   PROJECT_STATUS_LABELS,
   PROJECT_TYPES,
   PROJECT_TYPE_LABELS
-} from "@/features/projects/constants";
-import { useProjects } from "@/features/projects/hooks";
+} from "@/features/projects/constants/project.constants";
+import { useProjects } from "@/features/projects/hooks/use-projects";
 import type {
   ProjectBuildingType,
   ProjectFilters,
@@ -37,7 +37,7 @@ import type {
   ProjectSort,
   ProjectStatus,
   ProjectType
-} from "@/features/projects/types";
+} from "@/features/projects/types/project.types";
 import { useRouter } from "expo-router";
 import {
   ArrowUpDown,

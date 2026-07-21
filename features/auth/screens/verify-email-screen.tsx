@@ -12,7 +12,7 @@ import {
   isAuthEmailCooldownError,
   resendSignUpConfirmationEmail
 } from "@/features/auth/services/auth.service";
-import { emailSchema } from "@/features/auth/field.schemas";
+import { emailSchema } from "@/features/auth/schemas/field.schemas";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";

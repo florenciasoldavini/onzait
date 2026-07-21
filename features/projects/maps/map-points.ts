@@ -1,4 +1,4 @@
-import type { Project, StaticMapViewport } from "@/features/projects/types";
+import type { Project, StaticMapViewport } from "@/features/projects/types/project.types";
 
 export interface ProjectMapPoint {
   project: Project;

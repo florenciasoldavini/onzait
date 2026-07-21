@@ -1,4 +1,4 @@
-import { buildProjectListQueryPlan } from "@/features/projects/query-builders";
+import { buildProjectListQueryPlan } from "@/features/projects/repositories/project-list-query";
 import {
   requireSupabase,
   toRepositoryError
@@ -8,7 +8,7 @@ import type {
   Project,
   ProjectFilters,
   UpdateProjectInput
-} from "@/features/projects/types";
+} from "@/features/projects/types/project.types";
 
 export async function listProjectRows({
   filters,

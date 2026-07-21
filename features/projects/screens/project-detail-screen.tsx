@@ -13,9 +13,9 @@ import {
   PROJECT_PHASE_LABELS,
   PROJECT_PHASES,
   PROJECT_STATUS_LABELS
-} from "@/features/projects/constants";
-import { useProject, useSoftDeleteProject } from "@/features/projects/hooks";
-import type { Project } from "@/features/projects/types";
+} from "@/features/projects/constants/project.constants";
+import { useProject, useSoftDeleteProject } from "@/features/projects/hooks/use-projects";
+import type { Project } from "@/features/projects/types/project.types";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Camera,

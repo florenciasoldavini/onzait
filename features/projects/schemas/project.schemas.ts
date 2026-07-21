@@ -3,14 +3,14 @@ import {
   PROJECT_PHASES,
   PROJECT_STATUSES,
   PROJECT_TYPES
-} from "@/features/projects/constants";
+} from "@/features/projects/constants/project.constants";
 import type {
   CreateProjectInput,
   ProjectFilters,
   ProjectFormValues,
   ResolvedProjectAddress,
   UpdateProjectInput
-} from "@/features/projects/types";
+} from "@/features/projects/types/project.types";
 import { z } from "zod";
 
 const optionalDateSchema = z

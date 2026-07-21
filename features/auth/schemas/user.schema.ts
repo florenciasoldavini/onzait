@@ -1,4 +1,4 @@
-import { User } from "@/features/auth/types";
+import { User } from "@/features/auth/types/auth.types";
 import { z } from "zod";
 
 export const UserSchema: z.ZodType<User> = z.object({

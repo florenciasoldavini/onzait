@@ -17,7 +17,7 @@ features/                    Product domains
     services/                Product workflows and orchestration
     repositories/            Raw persistence and external transport
     schemas/                 Runtime validation
-    types/ or types.ts       Domain contracts
+    types/                   Domain contracts
     utils/                   Pure feature-only helpers
 shared/                      Product-agnostic reusable code
   hooks/
@@ -39,7 +39,7 @@ scripts/                     Repository automation
 supabase/                    Migrations, database tests, and Edge Functions
 ```
 
-Feature directories may omit layers they do not need. Do not create empty folders merely to complete the template.
+Feature directories may omit layers they do not need. Do not create empty folders merely to complete the template. Feature roots contain responsibility directories only; implementation modules should not be left loose at the feature root.
 
 ## Dependency Direction
 

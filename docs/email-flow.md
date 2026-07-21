@@ -23,7 +23,7 @@ The client also does not write the sent marker; that belongs to the Edge Functio
 
 ## Trigger Rule
 
-The welcome email should trigger after the user's email is verified and the app has created or loaded their `public.users` profile. In practice, `features/auth/provider.tsx` calls the email service when a signed-in user is hydrated and `welcome_email_sent_at` is empty.
+The welcome email should trigger after the user's email is verified and the app has created or loaded their `public.users` profile. In practice, `features/auth/providers/auth-provider.tsx` calls the email service when a signed-in user is hydrated and `welcome_email_sent_at` is empty.
 
 The email is intentionally not sent at raw signup time because email/password users may still be unverified. The marker keeps the email once-per-user across future logins, page refreshes, and app launches.
 

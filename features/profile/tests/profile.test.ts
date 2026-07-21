@@ -1,4 +1,4 @@
-import { buildProfileAvatarPath } from "@/features/profile/avatar-storage";
+import { buildProfileAvatarPath } from "@/features/profile/utils/avatar-storage";
 import { describe, expect, it } from "vitest";
 
 describe("profile avatar storage paths", () => {

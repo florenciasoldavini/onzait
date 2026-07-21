@@ -10,7 +10,7 @@ import {
   updateAuthUserProfile,
   type EditableUserProfile
 } from "@/features/auth/services/auth-session.service";
-import type { User } from "@/features/auth/types";
+import type { User } from "@/features/auth/types/auth.types";
 import { Sentry } from "@/infrastructure/monitoring/sentry";
 import type { Session } from "@supabase/supabase-js";
 import { createContext, useEffect, useRef, useState } from "react";
