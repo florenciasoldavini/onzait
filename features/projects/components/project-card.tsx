@@ -11,19 +11,12 @@ import {
   PROJECT_STATUS_LABELS,
   PROJECT_TYPE_LABELS
 } from "@/features/projects/constants";
-import type {
-  ProjectStatus,
-  ProjectSummary
-} from "@/features/projects/types";
+import { formatProjectDate } from "@/features/projects/date";
+import type { ProjectStatus, ProjectSummary } from "@/features/projects/types";
 import { Image } from "expo-image";
 import { ImageOff, MapPinned } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import {
-  Platform,
-  Pressable,
-  View,
-  type ViewStyle
-} from "react-native";
+import { Platform, Pressable, View, type ViewStyle } from "react-native";
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -177,7 +170,7 @@ export function ProjectCard({
                     )}`}
                   />
                   <ProjectMetaLabel
-                    value={`ETA_${formatEstimatedCompletion(
+                    value={`ETA · ${formatProjectDate(
                       project.estimated_end_date
                     )}`}
                   />
@@ -280,10 +273,6 @@ function ProjectProgressBar({ progress }: { progress: number }) {
       />
     </View>
   );
-}
-
-function formatEstimatedCompletion(value: string | null) {
-  return value?.trim() || "TBD";
 }
 
 function formatMonoLabel(value: string) {

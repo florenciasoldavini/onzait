@@ -15,6 +15,7 @@ import {
   PROJECT_PHASES,
   PROJECT_STATUS_LABELS
 } from "@/features/projects/constants";
+import { formatProjectDate } from "@/features/projects/date";
 import { useProject, useSoftDeleteProject } from "@/features/projects/hooks";
 import type { Project } from "@/features/projects/types";
 import { getUserFacingErrorMessage } from "@/lib/user-facing-errors";
@@ -484,7 +485,7 @@ function ProjectProgressCard({
               selectable
               style={styles.progressMetricValue}
             >
-              {project.estimated_end_date ?? "TBD"}
+              {formatProjectDate(project.estimated_end_date)}
             </AppText>
           </View>
         </View>
