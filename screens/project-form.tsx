@@ -39,12 +39,12 @@ import {
   useCreateProject,
   useProject,
   useResolveAddress,
-  useUpdateProject,
-  useUploadProjectCover
+  useUpdateProject
 } from "@/features/projects/hooks";
 import type {
   Project,
   ProjectFormValues,
+  ProjectSaveOutcome,
   ResolvedProjectAddress
 } from "@/features/projects/types";
 import {
@@ -52,6 +52,7 @@ import {
   toCreateProjectInput,
   toUpdateProjectInput
 } from "@/features/projects/validation";
+import { formatDateOnly } from "@/lib/date-only";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -97,6 +98,33 @@ const defaultValues: ProjectFormValues = {
 
 const mapMarkerImage = require("@/assets/images/map-marker.png");
 
+function showProjectSaveToast({
+  appToast,
+  mode,
+  outcome
+}: {
+  appToast: ReturnType<typeof useAppToast>;
+  mode: "create" | "edit";
+  outcome: ProjectSaveOutcome;
+}) {
+  const action = mode === "create" ? "created" : "updated";
+
+  if (outcome.coverStatus === "failed") {
+    appToast.show({
+      description: `${outcome.project.name} was ${action}, but its cover couldn't be uploaded. You can add it later by editing the project.`,
+      title: `Project ${action}`,
+      tone: "warning"
+    });
+    return;
+  }
+
+  appToast.show({
+    description: `${outcome.project.name} was ${action} successfully.`,
+    title: `Project ${action}`,
+    tone: "success"
+  });
+}
+
 function areProjectRequiredFieldsComplete(values: ProjectFormValues) {
   return Boolean(
     values.name.trim().length >= 2 &&
@@ -125,7 +153,6 @@ export function ProjectFormScreen({
   const projectQuery = useProject(mode === "edit" ? projectId : undefined);
   const createMutation = useCreateProject();
   const updateMutation = useUpdateProject(projectId ?? "");
-  const uploadMutation = useUploadProjectCover(projectId);
   const form = useForm<ProjectFormValues>({
     defaultValues,
     mode: "onChange",
@@ -141,10 +168,7 @@ export function ProjectFormScreen({
     watch
   } = form;
   const values = watch();
-  const isSubmitting =
-    createMutation.isPending ||
-    updateMutation.isPending ||
-    uploadMutation.isPending;
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
   const areRequiredFieldsComplete = areProjectRequiredFieldsComplete(values);
   const hasProjectChanges = mode === "create" || isDirty;
 
@@ -176,20 +200,15 @@ export function ProjectFormScreen({
       };
 
       if (mode === "create") {
-        const project = await createMutation.mutateAsync(
-          toCreateProjectInput({
+        const outcome = await createMutation.mutateAsync({
+          coverAsset: formValues.coverAsset,
+          input: toCreateProjectInput({
             values: projectValues
           })
-        );
+        });
 
-        if (formValues.coverAsset) {
-          await uploadMutation.mutateAsync({
-            asset: formValues.coverAsset,
-            projectId: project.id
-          });
-        }
-
-        router.replace(`/projects/${project.id}` as never);
+        showProjectSaveToast({ appToast, mode, outcome });
+        router.replace(`/projects/${outcome.project.id}` as never);
         return;
       }
 
@@ -197,17 +216,12 @@ export function ProjectFormScreen({
         throw new Error("Missing project id.");
       }
 
-      await updateMutation.mutateAsync(toUpdateProjectInput(projectValues));
-
-      if (formValues.coverAsset) {
-        await uploadMutation.mutateAsync({ asset: formValues.coverAsset });
-      }
-
-      appToast.show({
-        description: `${projectValues.name} was updated successfully.`,
-        title: "Project updated",
-        tone: "success"
+      const outcome = await updateMutation.mutateAsync({
+        coverAsset: formValues.coverAsset,
+        input: toUpdateProjectInput(projectValues)
       });
+
+      showProjectSaveToast({ appToast, mode, outcome });
       router.replace(`/projects/${projectId}` as never);
     } catch (error) {
       setFormError(
@@ -857,7 +871,7 @@ function CalendarDateField({
           size={18}
         />
         <AppText tone={value ? "default" : "subtle"} variant="body">
-          {value || "Select date"}
+          {formatDateOnly(value, { fallback: "Select date" })}
         </AppText>
       </Pressable>
 
@@ -912,8 +926,8 @@ function CalendarDateField({
 
                 return (
                   <Pressable
-                    accessibilityLabel={`Select ${toCalendarDateValue(
-                      day.date
+                    accessibilityLabel={`Select ${formatDateOnly(
+                      toCalendarDateValue(day.date)
                     )}`}
                     accessibilityRole="button"
                     key={day.key}

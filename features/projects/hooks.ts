@@ -6,15 +6,15 @@ import {
   resolveProjectAddress
 } from "@/features/projects/services/address.service";
 import {
-  createProject,
+  createProjectWithOptionalCover,
   getProject,
   listProjects,
   softDeleteProject,
-  updateProject,
-  uploadProjectCover
+  updateProjectWithOptionalCover
 } from "@/features/projects/services/projects.service";
 import type {
   CreateProjectInput,
+  ProjectCoverAsset,
   ProjectFilters,
   ProjectSummary,
   StaticMapPoint,
@@ -22,10 +22,7 @@ import type {
   UpdateProjectInput
 } from "@/features/projects/types";
 import { normalizeProjectFilters } from "@/features/projects/validation";
-import {
-  DEFAULT_PAGE_SIZE,
-  type PaginatedResult
-} from "@/lib/pagination";
+import { DEFAULT_PAGE_SIZE, type PaginatedResult } from "@/lib/pagination";
 import { UserFacingError } from "@/lib/user-facing-errors";
 import {
   type InfiniteData,
@@ -85,7 +82,13 @@ export function useCreateProject() {
   const { createUser, session, user } = useContext(AuthContext);
 
   return useMutation({
-    mutationFn: async (input: CreateProjectInput) => {
+    mutationFn: async ({
+      coverAsset,
+      input
+    }: {
+      coverAsset?: ProjectCoverAsset | null;
+      input: CreateProjectInput;
+    }) => {
       if (!session) {
         throw new UserFacingError("You must be signed in to save projects.");
       }
@@ -98,11 +101,11 @@ export function useCreateProject() {
         );
       }
 
-      return createProject(input);
+      return createProjectWithOptionalCover({ coverAsset, input });
     },
-    onSuccess: async (project) => {
-      await queryClient.invalidateQueries({ queryKey: projectsKey });
+    onSuccess: async ({ project }) => {
       queryClient.setQueryData([...projectsKey, "detail", project.id], project);
+      await queryClient.invalidateQueries({ queryKey: projectsKey });
     }
   });
 }
@@ -111,10 +114,16 @@ export function useUpdateProject(projectId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: UpdateProjectInput) => updateProject(projectId, input),
-    onSuccess: async (project) => {
-      await queryClient.invalidateQueries({ queryKey: projectsKey });
+    mutationFn: ({
+      coverAsset,
+      input
+    }: {
+      coverAsset?: ProjectCoverAsset | null;
+      input: UpdateProjectInput;
+    }) => updateProjectWithOptionalCover({ coverAsset, input, projectId }),
+    onSuccess: async ({ project }) => {
       queryClient.setQueryData([...projectsKey, "detail", project.id], project);
+      await queryClient.invalidateQueries({ queryKey: projectsKey });
     }
   });
 }
@@ -126,45 +135,6 @@ export function useSoftDeleteProject() {
     mutationFn: (projectId: string) => softDeleteProject(projectId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: projectsKey });
-    }
-  });
-}
-
-export function useUploadProjectCover(defaultProjectId?: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      asset,
-      projectId
-    }: {
-      asset: {
-        fileName?: string | null;
-        mimeType?: string | null;
-        uri: string;
-      };
-      projectId?: string;
-    }) => {
-      const resolvedProjectId = projectId ?? defaultProjectId;
-
-      if (!resolvedProjectId) {
-        throw new UserFacingError(
-          "We couldn't identify the project for this cover. Return to the project and try again."
-        );
-      }
-
-      return uploadProjectCover({ asset, projectId: resolvedProjectId });
-    },
-    onSuccess: async (_path, variables) => {
-      const resolvedProjectId = variables.projectId ?? defaultProjectId;
-
-      await queryClient.invalidateQueries({ queryKey: projectsKey });
-
-      if (resolvedProjectId) {
-        await queryClient.invalidateQueries({
-          queryKey: [...projectsKey, "detail", resolvedProjectId]
-        });
-      }
     }
   });
 }

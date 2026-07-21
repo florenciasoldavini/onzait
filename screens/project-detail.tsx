@@ -17,6 +17,7 @@ import {
 } from "@/features/projects/constants";
 import { useProject, useSoftDeleteProject } from "@/features/projects/hooks";
 import type { Project } from "@/features/projects/types";
+import { formatDateOnly } from "@/lib/date-only";
 import { getUserFacingErrorMessage } from "@/lib/user-facing-errors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -484,7 +485,7 @@ function ProjectProgressCard({
               selectable
               style={styles.progressMetricValue}
             >
-              {project.estimated_end_date ?? "TBD"}
+              {formatDateOnly(project.estimated_end_date, { fallback: "TBD" })}
             </AppText>
           </View>
         </View>
