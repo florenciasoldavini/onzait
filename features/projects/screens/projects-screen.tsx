@@ -15,6 +15,11 @@ import { atomLayout, atomPalette, atomSpacing } from "@/shared/ui/components/the
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { ProjectCardSkeleton } from "@/features/projects/components/project-card-skeleton";
 import {
+  ProjectsTable,
+  ProjectsTableSkeleton
+} from "@/features/projects/components/projects-table";
+import { useLayoutMode } from "@/shared/hooks/use-layout-mode";
+import {
   PROJECT_BUILDING_TYPES,
   PROJECT_BUILDING_TYPE_LABELS,
   PROJECT_PHASES,
@@ -112,6 +117,7 @@ const buildingTypeFilterOptions = createFilterOptions<ProjectBuildingType>(
 export default function ProjectsScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const { isCompact, isExpanded } = useLayoutMode();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<ProjectSort>("created_desc");
   const [viewMode, setViewMode] = useState<ProjectsViewMode>("list");
@@ -183,46 +189,67 @@ export default function ProjectsScreen() {
 
   const projectsHeader = (
     <View style={styles.listHeader}>
-      <NavScreenHeader title="Projects" />
-
-      <TextField
-        leftIcon={Search}
-        onChangeText={setQuery}
-        placeholder="Search projects"
-        value={query}
+      <NavScreenHeader
+        action={
+          !isCompact ? (
+            <AppButton
+              fullWidth={false}
+              icon={FolderPlus}
+              iconAfter={false}
+              onPress={() => router.push("/projects/new" as never)}
+              size="sm"
+            >
+              New project
+            </AppButton>
+          ) : null
+        }
+        title="Projects"
       />
 
-      <View style={styles.controlsRow}>
-        <SelectMenu
-          accessibilityLabel="Sort projects"
-          icon={ArrowUpDown}
-          labelPrefix="Sort"
-          onChange={setSort}
-          options={projectSortOptions}
-          value={sort}
-        />
-        <View style={styles.filterControl}>
-          <AppButton
-            color="neutral"
-            fullWidth={false}
-            icon={SlidersHorizontal}
-            size="sm"
-            variant="bordered"
-            onPress={() => setFiltersVisible(true)}
-          >
-            {activeFilterCount > 0
-              ? `Filters (${activeFilterCount})`
-              : "Filters"}
-          </AppButton>
+      <View style={[styles.toolbar, isExpanded ? styles.toolbarExpanded : null]}>
+        <View style={isExpanded ? styles.searchExpanded : styles.searchFluid}>
+          <TextField
+            leftIcon={Search}
+            onChangeText={setQuery}
+            placeholder="Search projects"
+            value={query}
+          />
+        </View>
+
+        <View style={styles.controlsRow}>
+          <SelectMenu
+            accessibilityLabel="Sort projects"
+            icon={ArrowUpDown}
+            labelPrefix="Sort"
+            onChange={setSort}
+            options={projectSortOptions}
+            value={sort}
+          />
+          <View style={styles.filterControl}>
+            <AppButton
+              color="neutral"
+              fullWidth={false}
+              icon={SlidersHorizontal}
+              size="sm"
+              variant="bordered"
+              onPress={() => setFiltersVisible(true)}
+            >
+              {activeFilterCount > 0
+                ? `Filters (${activeFilterCount})`
+                : "Filters"}
+            </AppButton>
+          </View>
+        </View>
+
+        <View style={isExpanded ? styles.viewTabsExpanded : undefined}>
+          <SegmentedTabs
+            onChange={setViewMode}
+            options={projectViewOptions}
+            selectedTone="accent"
+            value={viewMode}
+          />
         </View>
       </View>
-
-      <SegmentedTabs
-        onChange={setViewMode}
-        options={projectViewOptions}
-        selectedTone="accent"
-        value={viewMode}
-      />
     </View>
   );
 
@@ -295,7 +322,7 @@ export default function ProjectsScreen() {
       }
       contentStyle={styles.screenContent}
       floatingAction={
-        hasProjects && !isMapMode ? (
+        hasProjects && !isMapMode && isCompact ? (
           <AppButton
             accessibilityLabel="New project"
             icon={FolderPlus}
@@ -332,6 +359,23 @@ export default function ProjectsScreen() {
             </View>
           ) : (
             emptyContent
+          )}
+        </View>
+      ) : isExpanded ? (
+        <View style={styles.expandedList}>
+          {projectsHeader}
+          {projectsQuery.isLoading ? (
+            <ProjectsTableSkeleton />
+          ) : projectsQuery.isError || !hasProjects ? (
+            emptyContent
+          ) : (
+            <>
+              <ProjectsTable
+                onOpenProject={(project) => openProject(project.id)}
+                projects={projects}
+              />
+              {paginationFooter}
+            </>
           )}
         </View>
       ) : (
@@ -640,6 +684,11 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0
   },
+  expandedList: {
+    flex: 1,
+    gap: atomSpacing[4],
+    minHeight: 0
+  },
   paginationFooter: {
     alignItems: "center",
     paddingVertical: atomSpacing[5]
@@ -657,5 +706,24 @@ const styles = StyleSheet.create({
   screenContent: {
     flex: 1,
     minWidth: 0
+  },
+  searchExpanded: {
+    flex: 1,
+    maxWidth: 420,
+    minWidth: 280
+  },
+  searchFluid: {
+    width: "100%"
+  },
+  toolbar: {
+    gap: atomSpacing[3]
+  },
+  toolbarExpanded: {
+    alignItems: "center",
+    flexDirection: "row"
+  },
+  viewTabsExpanded: {
+    marginLeft: "auto",
+    width: 220
   }
 });

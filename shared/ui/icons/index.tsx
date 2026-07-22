@@ -4,6 +4,7 @@ import {
   Bell,
   Camera,
   CheckCircle2,
+  ChevronRight,
   CircleUserRound,
   Eye,
   EyeOff,
@@ -60,6 +61,7 @@ export const AtSignIcon = createIcon(AtSign);
 export const BellIcon = createIcon(Bell);
 export const CameraIcon = createIcon(Camera);
 export const CheckCircleIcon = createIcon(CheckCircle2);
+export const ChevronRightIcon = createIcon(ChevronRight);
 export const ClosedEyeIcon = createIcon(EyeOff);
 export const FolderPlusIcon = createIcon(FolderPlus);
 export const HardHatIcon = createIcon(HardHat);

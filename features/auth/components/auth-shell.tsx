@@ -63,7 +63,7 @@ export function AuthStatusMessage({
         borderColor: authPalette.outlineVariant
       }}
     >
-      <AppText tone={tone === "danger" ? "danger" : "default"} variant="meta">
+      <AppText tone={tone === "danger" ? "danger" : "default"} variant="bodySm">
         {children}
       </AppText>
     </AppCard>

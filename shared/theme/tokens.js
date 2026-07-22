@@ -253,7 +253,8 @@ const typeScale = {
     fontFamily: fontFamilies.web.mono,
     fontSize: 12,
     lineHeight: 18,
-    fontWeight: "500"
+    fontWeight: "500",
+    textTransform: "uppercase"
   },
   eyebrow: {
     fontFamily: fontFamilies.web.mono,
@@ -384,7 +385,9 @@ const layout = {
   marginDesktop: 64,
   marginTablet: 40,
   marginMobile: 20,
-  gutterDefault: 24
+  gutterDefault: 24,
+  navigationRailWidth: 88,
+  navigationSidebarWidth: 248
 };
 
 const border = {

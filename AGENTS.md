@@ -47,6 +47,7 @@ Last reviewed: 2026-07-21
 - UI responsiveness and functional behavior must both be considered across phone, tablet, and desktop layouts before a feature is treated as complete.
 - Native builds support portrait and landscape rather than locking orientation. Tablet landscape and iPad multitasking layouts are required product surfaces, and installed web apps must not request a fixed orientation.
 - Compact-height landscape layouts must keep primary content and actions reachable. Screens that can overflow vertically must remain scrollable before, during, and after keyboard interaction.
+- The approved responsive-to-adaptive UI direction, including compact, medium, and expanded layout classes, lives in [docs/adaptive-layout-strategy.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/adaptive-layout-strategy.md:1).
 
 ## Auth Architecture
 

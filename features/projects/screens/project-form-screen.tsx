@@ -15,6 +15,7 @@ import {
   useAppToast
 } from "@/shared/ui/components";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useLayoutMode } from "@/shared/hooks/use-layout-mode";
 import { FormField } from "@/shared/ui/forms";
 import {
   atomControlHeights,
@@ -149,6 +150,7 @@ export function ProjectFormScreen({
   const router = useRouter();
   const appToast = useAppToast();
   const { session } = useAuth();
+  const { isCompact, isExpanded } = useLayoutMode();
   const [formError, setFormError] = useState<string | null>(null);
   const projectQuery = useProject(mode === "edit" ? projectId : undefined);
   const createMutation = useCreateProject();
@@ -300,7 +302,12 @@ export function ProjectFormScreen({
 
   return (
     <Screen>
-      <View style={{ gap: atomSpacing[6] }}>
+      <View
+        style={[
+          projectFormStyles.page,
+          isExpanded ? projectFormStyles.pageExpanded : null
+        ]}
+      >
         <View style={{ gap: atomSpacing[3] }}>
           <Breadcrumb
             items={[
@@ -333,7 +340,10 @@ export function ProjectFormScreen({
           </AppText>
         </View>
 
-        <AppCard padding="lg">
+        <AppCard
+          padding="lg"
+          style={isExpanded ? projectFormStyles.formCardExpanded : undefined}
+        >
           <View style={{ gap: atomSpacing[5] }}>
             <CoverPicker
               currentUrl={projectQuery.data?.cover_image_url ?? null}
@@ -403,85 +413,115 @@ export function ProjectFormScreen({
               )}
             />
 
-            <Controller
-              control={control}
-              name="status"
-              render={({ field }) => (
-                <SelectField
-                  label="Status"
-                  onChange={(value) => {
-                    field.onChange(value);
-                    setFormError(null);
-                  }}
-                  options={PROJECT_STATUSES.map((value) => ({
-                    label: PROJECT_STATUS_LABELS[value],
-                    value
-                  }))}
-                  required
-                  value={field.value}
+            <View
+              style={[
+                projectFormStyles.fieldGroup,
+                !isCompact ? projectFormStyles.fieldGroupWide : null
+              ]}
+            >
+              <View
+                style={!isCompact ? projectFormStyles.fieldHalf : undefined}
+              >
+                <Controller
+                  control={control}
+                  name="status"
+                  render={({ field }) => (
+                    <SelectField
+                      label="Status"
+                      onChange={(value) => {
+                        field.onChange(value);
+                        setFormError(null);
+                      }}
+                      options={PROJECT_STATUSES.map((value) => ({
+                        label: PROJECT_STATUS_LABELS[value],
+                        value
+                      }))}
+                      required
+                      value={field.value}
+                    />
+                  )}
                 />
-              )}
-            />
+              </View>
 
-            <Controller
-              control={control}
-              name="phase"
-              render={({ field }) => (
-                <SelectField
-                  label="Phase"
-                  onChange={(value) => {
-                    field.onChange(value);
-                    setFormError(null);
-                  }}
-                  options={PROJECT_PHASES.map((value) => ({
-                    label: PROJECT_PHASE_LABELS[value],
-                    value
-                  }))}
-                  required
-                  value={field.value}
+              <View
+                style={!isCompact ? projectFormStyles.fieldHalf : undefined}
+              >
+                <Controller
+                  control={control}
+                  name="phase"
+                  render={({ field }) => (
+                    <SelectField
+                      label="Phase"
+                      onChange={(value) => {
+                        field.onChange(value);
+                        setFormError(null);
+                      }}
+                      options={PROJECT_PHASES.map((value) => ({
+                        label: PROJECT_PHASE_LABELS[value],
+                        value
+                      }))}
+                      required
+                      value={field.value}
+                    />
+                  )}
                 />
-              )}
-            />
+              </View>
+            </View>
 
-            <Controller
-              control={control}
-              name="project_type"
-              render={({ field }) => (
-                <SelectField
-                  label="Project Type"
-                  onChange={(value) => {
-                    field.onChange(value);
-                    setFormError(null);
-                  }}
-                  options={PROJECT_TYPES.map((value) => ({
-                    label: PROJECT_TYPE_LABELS[value],
-                    value
-                  }))}
-                  required
-                  value={field.value}
+            <View
+              style={[
+                projectFormStyles.fieldGroup,
+                !isCompact ? projectFormStyles.fieldGroupWide : null
+              ]}
+            >
+              <View
+                style={!isCompact ? projectFormStyles.fieldHalf : undefined}
+              >
+                <Controller
+                  control={control}
+                  name="project_type"
+                  render={({ field }) => (
+                    <SelectField
+                      label="Project Type"
+                      onChange={(value) => {
+                        field.onChange(value);
+                        setFormError(null);
+                      }}
+                      options={PROJECT_TYPES.map((value) => ({
+                        label: PROJECT_TYPE_LABELS[value],
+                        value
+                      }))}
+                      required
+                      value={field.value}
+                    />
+                  )}
                 />
-              )}
-            />
+              </View>
 
-            <Controller
-              control={control}
-              name="building_type"
-              render={({ field }) => (
-                <SelectField
-                  label="Building Type"
-                  onChange={(value) => {
-                    field.onChange(value);
-                    setFormError(null);
-                  }}
-                  options={PROJECT_BUILDING_TYPES.map((value) => ({
-                    label: PROJECT_BUILDING_TYPE_LABELS[value],
-                    value
-                  }))}
-                  required
-                  value={field.value}
+              <View
+                style={!isCompact ? projectFormStyles.fieldHalf : undefined}
+              >
+                <Controller
+                  control={control}
+                  name="building_type"
+                  render={({ field }) => (
+                    <SelectField
+                      label="Building Type"
+                      onChange={(value) => {
+                        field.onChange(value);
+                        setFormError(null);
+                      }}
+                      options={PROJECT_BUILDING_TYPES.map((value) => ({
+                        label: PROJECT_BUILDING_TYPE_LABELS[value],
+                        value
+                      }))}
+                      required
+                      value={field.value}
+                    />
+                  )}
                 />
-              )}
-            />
+              </View>
+            </View>
 
             <Controller
               control={control}
@@ -504,67 +544,88 @@ export function ProjectFormScreen({
               )}
             />
 
-            <View style={{ gap: atomSpacing[4] }}>
-              <Controller
-                control={control}
-                name="estimated_start_date"
-                render={({ field, fieldState }) => (
-                  <CalendarDateField
-                    errorText={fieldState.error?.message}
-                    label="Estimated Start"
-                    onChange={(date) => {
-                      field.onChange(date);
-                      setFormError(null);
-                    }}
-                    value={field.value}
-                  />
-                )}
-              />
-              <Controller
-                control={control}
-                name="estimated_end_date"
-                render={({ field, fieldState }) => (
-                  <CalendarDateField
-                    errorText={fieldState.error?.message}
-                    label="Estimated End"
-                    onChange={(date) => {
-                      field.onChange(date);
-                      setFormError(null);
-                    }}
-                    value={field.value}
-                  />
-                )}
-              />
-              <Controller
-                control={control}
-                name="start_date"
-                render={({ field, fieldState }) => (
-                  <CalendarDateField
-                    errorText={fieldState.error?.message}
-                    label="Actual Start"
-                    onChange={(date) => {
-                      field.onChange(date);
-                      setFormError(null);
-                    }}
-                    value={field.value}
-                  />
-                )}
-              />
-              <Controller
-                control={control}
-                name="end_date"
-                render={({ field, fieldState }) => (
-                  <CalendarDateField
-                    errorText={fieldState.error?.message}
-                    label="Actual End"
-                    onChange={(date) => {
-                      field.onChange(date);
-                      setFormError(null);
-                    }}
-                    value={field.value}
-                  />
-                )}
-              />
+            <View
+              style={[
+                projectFormStyles.dateGrid,
+                !isCompact ? projectFormStyles.dateGridWide : null
+              ]}
+            >
+              <View
+                style={!isCompact ? projectFormStyles.fieldHalf : undefined}
+              >
+                <Controller
+                  control={control}
+                  name="estimated_start_date"
+                  render={({ field, fieldState }) => (
+                    <CalendarDateField
+                      errorText={fieldState.error?.message}
+                      label="Estimated Start"
+                      onChange={(date) => {
+                        field.onChange(date);
+                        setFormError(null);
+                      }}
+                      value={field.value}
+                    />
+                  )}
+                />
+              </View>
+              <View
+                style={!isCompact ? projectFormStyles.fieldHalf : undefined}
+              >
+                <Controller
+                  control={control}
+                  name="estimated_end_date"
+                  render={({ field, fieldState }) => (
+                    <CalendarDateField
+                      errorText={fieldState.error?.message}
+                      label="Estimated End"
+                      onChange={(date) => {
+                        field.onChange(date);
+                        setFormError(null);
+                      }}
+                      value={field.value}
+                    />
+                  )}
+                />
+              </View>
+              <View
+                style={!isCompact ? projectFormStyles.fieldHalf : undefined}
+              >
+                <Controller
+                  control={control}
+                  name="start_date"
+                  render={({ field, fieldState }) => (
+                    <CalendarDateField
+                      errorText={fieldState.error?.message}
+                      label="Actual Start"
+                      onChange={(date) => {
+                        field.onChange(date);
+                        setFormError(null);
+                      }}
+                      value={field.value}
+                    />
+                  )}
+                />
+              </View>
+              <View
+                style={!isCompact ? projectFormStyles.fieldHalf : undefined}
+              >
+                <Controller
+                  control={control}
+                  name="end_date"
+                  render={({ field, fieldState }) => (
+                    <CalendarDateField
+                      errorText={fieldState.error?.message}
+                      label="Actual End"
+                      onChange={(date) => {
+                        field.onChange(date);
+                        setFormError(null);
+                      }}
+                      value={field.value}
+                    />
+                  )}
+                />
+              </View>
             </View>
 
             {formError ? (
@@ -573,8 +634,13 @@ export function ProjectFormScreen({
               </AppText>
             ) : null}
 
-            <View style={{ flexDirection: "row", gap: atomSpacing[3] }}>
-              <View style={{ flex: 1 }}>
+            <View
+              style={[
+                projectFormStyles.formActions,
+                !isCompact ? projectFormStyles.formActionsWide : null
+              ]}
+            >
+              <View style={projectFormStyles.formAction}>
                 <AppButton
                   isDisabled={isSubmitting}
                   onPress={() => router.back()}
@@ -584,7 +650,7 @@ export function ProjectFormScreen({
                   Cancel
                 </AppButton>
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={projectFormStyles.formAction}>
                 <AppButton
                   icon={Save}
                   isDisabled={
@@ -1307,6 +1373,47 @@ const projectFormStyles = StyleSheet.create({
   },
   datePickerButtonError: {
     borderColor: atomPalette.error
+  },
+  dateGrid: {
+    gap: atomSpacing[4]
+  },
+  dateGridWide: {
+    flexDirection: "row",
+    flexWrap: "wrap"
+  },
+  fieldGroup: {
+    gap: atomSpacing[5]
+  },
+  fieldGroupWide: {
+    flexDirection: "row"
+  },
+  fieldHalf: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 260
+  },
+  formAction: {
+    flex: 1,
+    maxWidth: 220
+  },
+  formActions: {
+    flexDirection: "row",
+    gap: atomSpacing[3]
+  },
+  formActionsWide: {
+    justifyContent: "flex-end"
+  },
+  formCardExpanded: {
+    alignSelf: "center",
+    width: "100%"
+  },
+  page: {
+    gap: atomSpacing[6],
+    width: "100%"
+  },
+  pageExpanded: {
+    alignSelf: "center",
+    maxWidth: 1120
   },
   webCursor: {
     cursor: "pointer"
