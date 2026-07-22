@@ -1,21 +1,21 @@
-import { buildProjectListQueryPlan } from "@/features/projects/query-builders";
+import { buildProjectListQueryPlan } from "@/features/projects/repositories/project-list-query";
 import {
   requireSupabase,
   toRepositoryError
-} from "@/features/projects/repositories/supabase.repository";
+} from "@/infrastructure/supabase/repository";
 import type {
   CreateProjectInput,
   Project,
   ProjectFilters,
   ProjectSummary,
   UpdateProjectInput
-} from "@/features/projects/types";
+} from "@/features/projects/types/project.types";
 import {
   getOffsetPageRange,
   toPaginatedResult,
   type OffsetPageRequest
-} from "@/lib/pagination";
-import { UserFacingError } from "@/lib/user-facing-errors";
+} from "@/shared/utils/pagination";
+import { UserFacingError } from "@/shared/utils/user-facing-errors";
 
 const PROJECT_SUMMARY_COLUMNS = [
   "address",

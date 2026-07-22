@@ -14,10 +14,10 @@ import {
 } from "@/features/auth/repositories/auth.repository";
 import type { ProfileAvatarAsset } from "@/features/profile/repositories/profile-avatar.repository";
 import { saveProfile } from "@/features/profile/services/profile.service";
-import { Sentry } from "@/lib/sentry";
-import { UserFacingError } from "@/lib/user-facing-errors";
-import { sendWelcomeToOnzaitEmail } from "@/services/email.service";
-import type { User } from "@/types/models/user";
+import { Sentry } from "@/infrastructure/monitoring/sentry";
+import { UserFacingError } from "@/shared/utils/user-facing-errors";
+import { sendWelcomeToOnzaitEmail } from "@/features/auth/services/welcome-email.service";
+import type { User } from "@/features/auth/types/auth.types";
 import type { Session } from "@supabase/supabase-js";
 
 export type EditableUserProfile = Pick<

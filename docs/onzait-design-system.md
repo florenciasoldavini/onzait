@@ -3,17 +3,17 @@
 Purpose: active design-system source of truth for reusable UI decisions, component rules, and interaction behavior
 Source of truth for: design rules, token usage, component state expectations, and reusable UI patterns
 Update when: a reusable visual rule is decided, a token changes meaning, a component gains a new standard state, or a screen teaches us a pattern that should be reused
-Last reviewed: 2026-07-07
+Last reviewed: 2026-07-21
 
 ## Active Sources
 
 - Strategic foundation: `docs/onzait-step-1-foundation.md`
 - Visual foundation: `docs/onzait-step-2-foundations.md`
-- Token source: `theme/tokens.js`
-- App token facade: `components/atoms/theme.ts`
-- Motion token facade: `components/atoms/motion.ts`
-- Reusable app primitives: `components/atoms/`
-- Auth layout primitives: `components/auth/AuthShell.tsx`
+- Token source: `shared/theme/tokens.js`
+- App token facade: `shared/ui/components/theme.ts`
+- Motion token facade: `shared/ui/components/motion.ts`
+- Reusable app primitives: `shared/ui/components/`
+- Auth layout primitives: `features/auth/components/auth-shell.tsx`
 
 The older `docs/onzait-design-guide.md` has been removed because it no longer matched the active token and component direction.
 
@@ -29,13 +29,14 @@ The interface should prioritize clarity, structure, and operational confidence o
 - The primary accent is cobalt blue.
 - Surfaces use warm editorial neutrals rather than stark white everywhere.
 - Typography uses Geist for primary UI text and JetBrains Mono for labels, metadata, and technical accents.
+- JetBrains Mono is always rendered in uppercase and is reserved for short labels, compact metadata, codes, and restrained technical accents. User-authored names, addresses, descriptions, and ordinary reading text use Geist.
 - Shape language is moderately rounded: controls use the shared control radius, cards use the shared card radius, and true pills are reserved for patterns that need them.
 - Most hierarchy should come from typography, spacing, borders, and surface contrast before extra color.
 
 ## Token Usage Rules
 
 - Prefer semantic tokens over raw primitive values in UI code.
-- Use `atomPalette`, `atomSpacing`, `atomTypeScale`, `atomControlHeights`, `atomRadii`, and related exports from `components/atoms/theme.ts` in app components.
+- Use `atomPalette`, `atomSpacing`, `atomTypeScale`, `atomControlHeights`, `atomRadii`, and related exports from `shared/ui/components/theme.ts` in app components.
 - Use cobalt only for primary actions, active states, focus states, links, progress, and key system emphasis.
 - Do not introduce one-off saturated colors into normal product UI.
 - Keep borders subtle by default and rely on stronger borders only for hover, focus, validation, or selected states.
@@ -89,7 +90,7 @@ Feature screens should not silently block while data loads. Lists, cards, forms,
 
 Motion should reinforce the same technical architectural blueprint feeling as the visual system: precise, subtle, intentional, and operational. It should feel like interface instrumentation and live data resolving into place, not playful decoration.
 
-Use `components/atoms/motion.ts` as the source of truth for reusable animation durations, easing, and scale values. Future reusable motion should add or reuse `atomMotion` tokens instead of introducing one-off timing values in screens.
+Use `shared/ui/components/motion.ts` as the source of truth for reusable animation durations, easing, and scale values. Future reusable motion should add or reuse `atomMotion` tokens instead of introducing one-off timing values in screens.
 
 Default motion behavior:
 
@@ -148,8 +149,8 @@ No clickable item should keep the normal/default cursor. The cursor must make it
 
 Product UI should not import icon libraries directly inside screens or components.
 
-- All app icons should be exported from the central icon registry in `components/icons/index.tsx`.
-- Screens and reusable components should import named app icons from `@/components/icons`, not from `lucide-react-native`.
+- All app icons should be exported from the central icon registry in `shared/ui/icons/index.tsx`.
+- Screens and reusable components should import named app icons from `@/shared/ui/icons`, not from `lucide-react-native`.
 - Every app icon should follow the shared icon contract: `color` plus a tokenized `size`.
 - Icon sizes should use the standard scale `xs`, `sm`, `md`, and `lg` instead of raw pixel values in product UI.
 - If the underlying icon library changes later, the swap should happen in the central icon registry instead of across product screens.

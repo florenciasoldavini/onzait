@@ -1,19 +1,20 @@
 import gluestackPlugin from "@gluestack-ui/nativewind-utils/tailwind-plugin";
-const { designTokens, tailwindColorScaleRefs } = require("./theme/tokens");
+const {
+  designTokens,
+  tailwindColorScaleRefs
+} = require("./shared/theme/tokens");
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: "media",
   // Keep generated UI paths limited to primitives imported by product code.
-  // Add a primitive here when introducing a new components/ui dependency.
+  // Add a primitive here when introducing a new shared UI dependency.
   content: [
     "app/**/*.{tsx,jsx,ts,js}",
-    "screens/**/*.{tsx,jsx,ts,js}",
     "features/**/*.{tsx,jsx,ts,js}",
-    "components/atoms/**/*.{tsx,jsx,ts,js}",
-    "components/auth/**/*.{tsx,jsx,ts,js}",
-    "components/splash/**/*.{tsx,jsx,ts,js}",
-    "components/ui/{button,card,gluestack-ui-provider,hstack,input,spinner,textarea,toast}/**/*.{tsx,jsx,ts,js}"
+    "shared/ui/components/**/*.{tsx,jsx,ts,js}",
+    "shared/splash/**/*.{tsx,jsx,ts,js}",
+    "shared/ui/primitives/{button,card,gluestack-ui-provider,hstack,input,spinner,textarea,toast}/**/*.{tsx,jsx,ts,js}"
   ],
   presets: [require("nativewind/preset")],
   theme: {

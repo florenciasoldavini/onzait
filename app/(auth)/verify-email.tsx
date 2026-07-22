@@ -1,4 +1,4 @@
-import VerifyEmailScreen from "@/screens/auth/verify-email";
+import VerifyEmailScreen from "@/features/auth/screens/verify-email-screen";
 
 export default function VerifyEmail() {
   return <VerifyEmailScreen />;

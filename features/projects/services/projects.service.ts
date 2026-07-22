@@ -19,10 +19,10 @@ import type {
   ProjectSaveOutcome,
   ProjectSummary,
   UpdateProjectInput
-} from "@/features/projects/types";
-import type { OffsetPageRequest, PaginatedResult } from "@/lib/pagination";
-import { Sentry } from "@/lib/sentry";
-import { UserFacingError } from "@/lib/user-facing-errors";
+} from "@/features/projects/types/project.types";
+import type { OffsetPageRequest, PaginatedResult } from "@/shared/utils/pagination";
+import { Sentry } from "@/infrastructure/monitoring/sentry";
+import { UserFacingError } from "@/shared/utils/user-facing-errors";
 
 export async function listProjects({
   filters,

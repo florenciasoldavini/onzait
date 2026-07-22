@@ -1,20 +1,23 @@
-import { HapticTab } from "@/components/HapticTab";
-import { ProfileIcon, ProjectsIcon, ToDoIcon } from "@/components/icons";
-import { getMonoFontStyle } from "@/theme/fonts";
-import { designTokens } from "@/theme/tokens";
+import { HapticTab } from "@/shared/ui/haptic-tab";
+import { useLayoutMode } from "@/shared/hooks/use-layout-mode";
+import { ProfileIcon, ProjectsIcon, ToDoIcon } from "@/shared/ui/icons";
+import { getMonoFontStyle } from "@/shared/theme/fonts";
+import { designTokens } from "@/shared/theme/tokens";
+import { BottomTabBar } from "@react-navigation/bottom-tabs";
 import { Tabs } from "expo-router";
-import { Platform } from "react-native";
 
 export default function TabsLayout() {
+  const { isCompact } = useLayoutMode();
   const tabLabelToken = designTokens.typeScale.tabLabelMono;
   const tabIconSize = "md" as const;
   const nativeLabelSize = 10;
   const nativeLetterSpacing = 0.35;
   const nativeTabBarHeight = 78;
-  const isWeb = Platform.OS === "web";
+  const isWeb = process.env.EXPO_OS === "web";
 
   return (
     <Tabs
+      tabBar={(props) => (isCompact ? <BottomTabBar {...props} /> : null)}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: designTokens.colors.semantic.text.accent,
@@ -27,6 +30,7 @@ export default function TabsLayout() {
           paddingBottom: isWeb ? 8 : 14,
           paddingTop: 6
         },
+        tabBarPosition: isCompact ? "bottom" : "left",
         tabBarItemStyle: {
           gap: 2,
           minWidth: 0,

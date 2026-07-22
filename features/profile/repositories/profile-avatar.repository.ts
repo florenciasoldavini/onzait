@@ -1,15 +1,15 @@
 import {
   PROFILE_AVATAR_SIGNED_URL_TTL_SECONDS,
   USER_AVATAR_BUCKET
-} from "@/features/profile/constants";
+} from "@/features/profile/constants/profile.constants";
 import {
   buildProfileAvatarPath,
   getMimeTypeFromExtension
-} from "@/features/profile/avatar-storage";
+} from "@/features/profile/utils/avatar-storage";
 import {
   requireSupabase,
   toRepositoryError
-} from "@/features/projects/repositories/supabase.repository";
+} from "@/infrastructure/supabase/repository";
 
 export type ProfileAvatarAsset = {
   fileName?: string | null;

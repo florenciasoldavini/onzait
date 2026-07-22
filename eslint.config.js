@@ -10,7 +10,7 @@ module.exports = defineConfig([
     ignores: ["dist/*", "supabase/functions/**"]
   },
   {
-    files: ["components/ui/**/*"],
+    files: ["shared/ui/primitives/**/*"],
     rules: {
       "prettier/prettier": "off"
     }
@@ -22,19 +22,19 @@ module.exports = defineConfig([
     }
   },
   {
-    files: ["screens/auth/**/*.{ts,tsx}"],
+    files: ["features/auth/screens/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
         "error",
         {
           paths: [
             {
-              name: "@/lib/auth",
+              name: "@/features/auth/repositories/auth-transport.repository",
               message:
                 "Auth screens must use feature hooks instead of auth transport helpers."
             },
             {
-              name: "@/lib/supabase",
+              name: "@/infrastructure/supabase/client",
               message:
                 "Auth screens must use feature hooks instead of the Supabase client."
             },
@@ -49,14 +49,14 @@ module.exports = defineConfig([
     }
   },
   {
-    files: ["contexts/**/*.{ts,tsx}"],
+    files: ["features/auth/providers/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
         "error",
         {
           paths: [
             {
-              name: "@/lib/supabase",
+              name: "@/infrastructure/supabase/client",
               message:
                 "Contexts own React state only. Access Supabase through feature services and repositories."
             }
@@ -74,6 +74,29 @@ module.exports = defineConfig([
   },
   {
     rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "@/components/**",
+                "@/contexts/**",
+                "@/hooks/**",
+                "@/lib/**",
+                "@/repositories/**",
+                "@/schemas/**",
+                "@/screens/**",
+                "@/services/**",
+                "@/theme/**",
+                "@/types/**"
+              ],
+              message:
+                "Import from the owning feature, shared, or infrastructure boundary instead of a retired top-level layer."
+            }
+          ]
+        }
+      ],
       "react/no-unescaped-entities": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",
@@ -85,6 +108,56 @@ module.exports = defineConfig([
           ignoreRestSiblings: true,
           vars: "all",
           varsIgnorePattern: "^_"
+        }
+      ]
+    }
+  },
+  {
+    files: ["features/*/screens/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/features/*/repositories/**", "@/infrastructure/**"],
+              message:
+                "Screens must use feature hooks or services instead of repositories or infrastructure directly."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    files: ["features/*/components/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/features/*/repositories/**", "@/infrastructure/**"],
+              message:
+                "Feature components must use feature hooks or services instead of repositories or infrastructure directly."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    files: ["shared/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/features/**"],
+              message: "Shared code cannot depend on a product feature."
+            }
+          ]
         }
       ]
     }
