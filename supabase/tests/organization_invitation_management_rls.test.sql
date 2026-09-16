@@ -63,6 +63,14 @@ select is(
   'the pending invitation list is scoped to the organization'
 );
 
+select
+  public.list_pending_organization_invitations(
+    (select id from public.organizations where name = 'Invitation Studio'),
+    20,
+    0
+  ) -> 'items' -> 0 ->> 'id' as invitation_id
+\gset
+
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000453', true);
 select set_config(
   'request.jwt.claims',
@@ -89,7 +97,7 @@ select is(
 select throws_ok(
   format(
     $$ select public.revoke_organization_invitation(%L) $$,
-    (select id from public.organization_invitations where invited_email = 'invitation-target@example.com')
+    :'invitation_id'
   ),
   '42501',
   null,
@@ -101,7 +109,7 @@ select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000451
 select is(
   (
     public.revoke_organization_invitation(
-      (select id from public.organization_invitations where invited_email = 'invitation-target@example.com')
+      :'invitation_id'::uuid
     ) ->> 'status'
   ),
   'revoked',

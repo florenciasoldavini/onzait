@@ -1,12 +1,17 @@
 import { useLayoutMode } from "@/shared/hooks/use-layout-mode";
+import { RouteLoadingScreen } from "@/shared/route-loading-screen";
 import { AdaptiveSideNavigation } from "@/features/workspaces/components/adaptive-app-navigation";
-import OrganizationOnboardingScreen from "@/features/workspaces/screens/organization-onboarding-screen";
 import { useWorkspace } from "@/features/workspaces/hooks/use-workspace";
 import { Stack, usePathname } from "expo-router";
+import { lazy, Suspense } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { WorkspaceContextBar } from "@/features/workspaces/components/workspace-context-bar";
 import { DesktopAppTopBar } from "@/shared/ui/components/desktop-app-topbar";
 import { AppTopBarProvider } from "@/shared/ui/providers/app-topbar-provider";
+
+const OrganizationOnboardingScreen = lazy(
+  () => import("@/features/workspaces/screens/organization-onboarding-screen")
+);
 
 export default function AppLayout() {
   const { isCompact, isExpanded } = useLayoutMode();
@@ -26,7 +31,11 @@ export default function AppLayout() {
   }
 
   if (!hasWorkspaces && !canRenderWithoutWorkspace) {
-    return <OrganizationOnboardingScreen />;
+    return (
+      <Suspense fallback={<RouteLoadingScreen />}>
+        <OrganizationOnboardingScreen />
+      </Suspense>
+    );
   }
 
   return (
