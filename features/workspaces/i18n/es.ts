@@ -35,15 +35,26 @@ export default {
   },
   members: {
     alreadyMember: "Esta persona ya pertenece a la organización.",
+    changeRole: "Cambiar el rol de {{name}}",
+    closeInvite: "Cerrar invitación de miembro",
     current: "Miembros",
     email: "Correo electrónico",
     emailInvalid: "Ingresá un correo electrónico válido.",
     emailRequired: "Ingresá un correo electrónico.",
     emailTooLong: "El correo electrónico es demasiado largo.",
     invite: "Enviar invitación",
+    inviteAction: "Invitar miembro",
+    inviteDescription:
+      "Recibirá una invitación para unirse a la organización y acceder a sus espacios de trabajo.",
     inviteError: "No pudimos crear esta invitación a la organización.",
     inviteTitle: "Invitar a un colega",
+    joined: "Se unió",
     loadError: "No pudimos cargar los miembros de la organización.",
+    loadMore: "Cargar más",
+    name: "Nombre",
+    noMembers: "Todavía no hay miembros en la organización.",
+    noSearchResults:
+      "No hay miembros ni invitaciones que coincidan con tu búsqueda.",
     remove: "Quitar",
     removeDescription:
       "{{name}} perderá de inmediato el acceso a los espacios de trabajo y datos de esta organización.",
@@ -52,22 +63,30 @@ export default {
     removeTitle: "¿Quitar miembro de la organización?",
     role: "Rol en la organización",
     roleError: "No pudimos cambiar el rol de esta persona. Intentá de nuevo.",
+    roleShort: "Rol",
+    search: "Buscar miembros",
+    summary: "{{active}} activos · {{pending}} pendientes",
     title: "Miembros de la organización",
-    unavailable: "Los miembros no están disponibles"
+    unavailable: "Los miembros no están disponibles",
+    you: "Tú"
   },
   pendingInvitations: {
     description: "Invitaciones que todavía no fueron aceptadas.",
     details: "{{role}} · Vence el {{date}}",
     empty: "No hay invitaciones pendientes.",
+    expires: "Vence el {{date}}",
     invitedBy: "Invitación de {{name}}",
     loadError:
       "No pudimos cargar las invitaciones pendientes. Intentá de nuevo.",
     loadMore: "Cargar más invitaciones",
+    pending: "Pendiente",
     revoke: "Revocar",
     revokeDescription:
       "{{email}} ya no podrá unirse a esta organización con la invitación actual.",
     revokeError: "No pudimos revocar esta invitación. Intentá de nuevo.",
+    revokeLabel: "Revocar la invitación para {{email}}",
     revokeTitle: "¿Revocar invitación?",
+    sentLabel: "Invitación enviada",
     title: "Invitaciones pendientes",
     unavailable: "Las invitaciones no están disponibles"
   },
