@@ -15,11 +15,11 @@ import { useTranslation } from "react-i18next";
 export function WorkerFormFields({
   control,
   onChange,
-  ownerId
+  workspaceId
 }: {
   control: Control<WorkerFormValues>;
   onChange?: () => void;
-  ownerId?: string;
+  workspaceId?: string;
 }) {
   const { t } = useTranslation("features/workers");
   const { language } = useLocalization();
@@ -114,7 +114,7 @@ export function WorkerFormFields({
               field.onChange(value);
               onChange?.();
             }}
-            ownerId={ownerId}
+            workspaceId={workspaceId}
             value={field.value}
           />
         )}
@@ -146,12 +146,8 @@ export function WorkerFormFields({
             <View style={{ gap: atomSpacing[2] }}>
               <MultiSelectField
                 errorText={fieldState.error?.message}
-                helperText={t(
-                  ($) => $["features/workers"].fields.tradeHelper
-                )}
-                label={t(
-                  ($) => $["features/workers"].fields.tradeCategories
-                )}
+                helperText={t(($) => $["features/workers"].fields.tradeHelper)}
+                label={t(($) => $["features/workers"].fields.tradeCategories)}
                 onChange={(value) => {
                   field.onChange(value);
                   onChange?.();

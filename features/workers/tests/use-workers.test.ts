@@ -50,8 +50,7 @@ describe("useWorkers", () => {
       },
       offset: 0,
       pageSize: 24,
-      userId: "owner-1",
-      userRole: "admin"
+      workspaceId: "workspace-1"
     });
     await hook.unmount();
     queryClient.clear();
@@ -61,10 +60,9 @@ describe("useWorkers", () => {
     jest.mocked(softDeleteWorker).mockResolvedValue(undefined);
     const queryClient = createTestQueryClient();
     const invalidate = jest.spyOn(queryClient, "invalidateQueries");
-    const hook = await renderHookWithAppProviders(
-      () => useSoftDeleteWorker(),
-      { queryClient }
-    );
+    const hook = await renderHookWithAppProviders(() => useSoftDeleteWorker(), {
+      queryClient
+    });
 
     await act(async () => {
       await hook.result.current.mutateAsync("worker-1");

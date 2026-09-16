@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import { normalizeClientFilters } from "@/features/clients/schemas/client.schema";
 import type {
   ClientFilters,
@@ -16,24 +15,21 @@ export interface ClientListQueryPlan {
 
 export function buildClientListQueryPlan({
   filters,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: ClientFilters;
-  userId: string;
-  userRole: UserRole;
+  workspaceId: string;
 }): ClientListQueryPlan {
   const normalized = normalizeClientFilters(filters);
-  const ownerId = userRole === "admin" ? normalized.ownerId : userId;
   const queryFilters: ClientListQueryPlan["filters"] = [
     { column: "deleted_at", operator: "is", value: null }
   ];
 
-  if (ownerId) {
+  if (workspaceId) {
     queryFilters.push({
-      column: "owner_id",
+      column: "workspace_id",
       operator: "eq",
-      value: ownerId
+      value: workspaceId
     });
   }
 

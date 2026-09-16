@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import type {
   CreateProjectPhotoInput,
   ProjectPhoto,
@@ -31,7 +30,6 @@ const PROJECT_PHOTO_COLUMNS = [
   "location_source",
   "longitude",
   "mime_type",
-  "owner_id",
   "project_id",
   "thumbnail_path",
   "updated_at",
@@ -43,14 +41,10 @@ export async function listProjectPhotoRows({
   filters,
   offset,
   pageSize,
-  projectId,
-  userId: _userId,
-  userRole: _userRole
+  projectId
 }: {
   filters?: ProjectPhotoFilters;
   projectId: string;
-  userId: string;
-  userRole: UserRole;
 } & OffsetPageRequest) {
   const client = requireSupabase();
   const range = getOffsetPageRange({ offset, pageSize });

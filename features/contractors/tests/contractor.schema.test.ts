@@ -56,18 +56,18 @@ describe("contractor schema", () => {
 
   it("normalizes filters", () => {
     expect(normalizeContractorFilters()).toEqual({
-      ownerId: null,
+      workspaceId: null,
       query: null,
       sort: "created_desc"
     });
     expect(
       normalizeContractorFilters({
-        ownerId: " owner-1 ",
+        workspaceId: " owner-1 ",
         query: "  mason ",
         sort: "name_asc"
       })
     ).toEqual({
-      ownerId: "owner-1",
+      workspaceId: "owner-1",
       query: "mason",
       sort: "name_asc"
     });

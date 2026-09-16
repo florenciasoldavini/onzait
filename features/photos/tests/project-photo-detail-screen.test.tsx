@@ -55,7 +55,6 @@ const photo: ProjectPhoto = {
   location_source: null,
   longitude: null,
   mime_type: "image/jpeg",
-  owner_id: "owner-1",
   project_id: mockProjectId,
   thumbnail_path: "owner/project/thumb.jpg",
   updated_at: null,

@@ -1,4 +1,5 @@
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useWorkspace } from "@/features/workspaces/hooks/use-workspace";
 import { getProjectsMapPreview } from "@/features/projects/services/projects-map.service";
 import {
   createProjectWithOptionalCover,
@@ -17,7 +18,10 @@ import type {
   UpdateProjectInput
 } from "@/features/projects/types/project.types";
 import { normalizeProjectFilters } from "@/features/projects/schemas/project.schema";
-import { DEFAULT_PAGE_SIZE, type PaginatedResult } from "@/shared/utils/pagination";
+import {
+  DEFAULT_PAGE_SIZE,
+  type PaginatedResult
+} from "@/shared/utils/pagination";
 import { UserFacingError } from "@/shared/utils/user-facing-errors";
 import {
   type InfiniteData,
@@ -32,6 +36,7 @@ const projectsKey = ["projects"] as const;
 
 export function useProjects(filters: ProjectFilters) {
   const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
   const debouncedQuery = useDebouncedValue(filters.query ?? "", 350);
   const requestFilters = useMemo(
     () => ({ ...filters, query: debouncedQuery }),
@@ -49,7 +54,7 @@ export function useProjects(filters: ProjectFilters) {
     readonly unknown[],
     number
   >({
-    enabled: Boolean(user),
+    enabled: Boolean(user && activeWorkspaceId),
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
@@ -57,10 +62,9 @@ export function useProjects(filters: ProjectFilters) {
         filters: requestFilters,
         offset: pageParam,
         pageSize: DEFAULT_PAGE_SIZE,
-        userId: user!.id,
-        userRole: user!.role
+        workspaceId: activeWorkspaceId!
       }),
-    queryKey: [...projectsKey, user?.id, user?.role, normalizedFilters]
+    queryKey: [...projectsKey, activeWorkspaceId, normalizedFilters]
   });
 }
 
@@ -75,6 +79,7 @@ export function useProject(projectId?: string) {
 export function useCreateProject() {
   const queryClient = useQueryClient();
   const { createUser, session, user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
 
   return useMutation({
     mutationFn: async ({
@@ -96,7 +101,15 @@ export function useCreateProject() {
         );
       }
 
-      return createProjectWithOptionalCover({ coverAsset, input });
+      if (!activeWorkspaceId) {
+        throw new UserFacingError("Select a workspace before saving projects.");
+      }
+
+      return createProjectWithOptionalCover({
+        coverAsset,
+        input,
+        workspaceId: activeWorkspaceId
+      });
     },
     onSuccess: async ({ project }) => {
       queryClient.setQueryData([...projectsKey, "detail", project.id], project);

@@ -18,10 +18,11 @@ export interface Supplier {
   longitude: number | null;
   name: string;
   notes: string | null;
-  owner_id: string;
+  created_by: string;
   phone_number: string | null;
   updated_at: string | null;
   website_url: string | null;
+  workspace_id: string;
 }
 
 export type SupplierSummary = Pick<
@@ -31,13 +32,14 @@ export type SupplierSummary = Pick<
   | "email"
   | "id"
   | "name"
-  | "owner_id"
+  | "created_by"
   | "phone_number"
   | "website_url"
+  | "workspace_id"
 >;
 
 export interface SupplierFilters {
-  ownerId?: string;
+  workspaceId?: string;
   query?: string;
   sort?: SupplierSort;
 }

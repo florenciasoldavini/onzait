@@ -54,7 +54,6 @@ const photo: ProjectPhoto = {
   location_source: null,
   longitude: null,
   mime_type: "image/jpeg",
-  owner_id: user.id,
   project_id: "project-1",
   thumbnail_path: "owner-1/project-1/photo-1/thumb.jpg",
   updated_at: null,
@@ -63,10 +62,10 @@ const photo: ProjectPhoto = {
 };
 
 describe("useProjectPhotos", () => {
-  it("waits for both project and authentication context", async () => {
+  it("waits for a project identifier", async () => {
     const queryClient = createTestQueryClient();
     const { result, unmount } = await renderHookWithAppProviders(
-      () => useProjectPhotos("project-1", {}),
+      () => useProjectPhotos(undefined, {}),
       { queryClient }
     );
 
@@ -98,9 +97,7 @@ describe("useProjectPhotos", () => {
       filters: { kind: "progress", marketing: "marketing" },
       offset: 0,
       pageSize: 24,
-      projectId: "project-1",
-      userId: user.id,
-      userRole: "user"
+      projectId: "project-1"
     });
     await unmount();
     queryClient.clear();
@@ -143,10 +140,7 @@ describe("useSoftDeleteProjectPhoto", () => {
   it("removes the detail cache and invalidates gallery queries", async () => {
     jest.mocked(softDeleteProjectPhoto).mockResolvedValue(undefined);
     const queryClient = createTestQueryClient();
-    queryClient.setQueryData(
-      ["project-photos", "detail", photo.id],
-      photo
-    );
+    queryClient.setQueryData(["project-photos", "detail", photo.id], photo);
     const invalidateQueries = jest.spyOn(queryClient, "invalidateQueries");
     const { result, unmount } = await renderHookWithAppProviders(
       () => useSoftDeleteProjectPhoto(),

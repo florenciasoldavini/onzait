@@ -96,9 +96,17 @@ values
   ('00000000-0000-4000-8000-000000000206', 'Project', 'Outsider', 'documents-outsider@example.com', 'user'),
   ('00000000-0000-4000-8000-000000000207', 'Global', 'Admin', 'documents-admin@example.com', 'admin');
 
+insert into public.organizations (id, owner_user_id, name, created_by)
+values ('80000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000201', 'Documents Organization', '00000000-0000-4000-8000-000000000201');
+insert into public.organization_memberships (organization_id, user_id, role_code, invited_by)
+values ('80000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000201', 'admin', '00000000-0000-4000-8000-000000000201');
+insert into public.workspaces (id, organization_id, created_by)
+values ('90000000-0000-4000-8000-000000000201', '80000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000201');
+
 insert into public.projects (
   id,
-  owner_id,
+  workspace_id,
+  created_by,
   name,
   address,
   google_place_id,
@@ -109,6 +117,7 @@ insert into public.projects (
 values
   (
     '10000000-0000-4000-8000-000000000201',
+    '90000000-0000-4000-8000-000000000201',
     '00000000-0000-4000-8000-000000000201',
     'Document Project',
     '201 Document Street',
@@ -119,6 +128,7 @@ values
   ),
   (
     '10000000-0000-4000-8000-000000000202',
+    '90000000-0000-4000-8000-000000000201',
     '00000000-0000-4000-8000-000000000201',
     'Archived Document Project',
     '202 Document Street',
@@ -196,7 +206,7 @@ select lives_ok(
       file_size_bytes,
       object_path
     )
-    values (
+  values (
       '20000000-0000-4000-8000-000000000201',
       '10000000-0000-4000-8000-000000000201',
       'Site plan',

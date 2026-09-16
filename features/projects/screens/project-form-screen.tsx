@@ -42,6 +42,7 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useWorkspace } from "@/features/workspaces/hooks/use-workspace";
 import { View } from "react-native";
 
 const defaultValues: ProjectFormValues = {
@@ -73,6 +74,7 @@ export function ProjectFormScreen({
   const { t: tShared } = useTranslation("shared");
   const appToast = useAppToast();
   const { session } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
   const { isCompact, isExpanded } = useLayoutMode();
   const [formError, setFormError] = useState<string | null>(null);
   const projectQuery = useProject(mode === "edit" ? projectId : undefined);
@@ -173,9 +175,7 @@ export function ProjectFormScreen({
                 onPress: () => router.replace(`/projects/${projectId}` as never)
               }
             : undefined,
-          description: t(
-            ($) => $["features/projects"].errors.editForbidden
-          ),
+          description: t(($) => $["features/projects"].errors.editForbidden),
           title: t(($) => $["features/projects"].errors.editUnavailable)
         },
         invalidParams: { action: backToProjects },
@@ -228,7 +228,11 @@ export function ProjectFormScreen({
                 canChangeClient={canChangeClient}
                 control={control}
                 onInteraction={clearFormError}
-                ownerId={projectQuery.data?.owner_id}
+                workspaceId={
+                  projectQuery.data?.workspace_id ??
+                  activeWorkspaceId ??
+                  undefined
+                }
               />
               <ProjectClassificationSection
                 control={control}

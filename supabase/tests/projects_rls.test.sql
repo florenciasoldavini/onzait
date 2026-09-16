@@ -44,6 +44,19 @@ set
   role = excluded.role,
   deleted_at = null;
 
+insert into public.organizations (id, owner_user_id, name, created_by)
+values
+  ('80000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001', 'Owner Organization', '00000000-0000-4000-8000-000000000001'),
+  ('80000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000002', 'Other Organization', '00000000-0000-4000-8000-000000000002');
+insert into public.organization_memberships (organization_id, user_id, role_code, invited_by)
+values
+  ('80000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001', 'admin', '00000000-0000-4000-8000-000000000001'),
+  ('80000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000002', 'admin', '00000000-0000-4000-8000-000000000002');
+insert into public.workspaces (id, organization_id, created_by)
+values
+  ('90000000-0000-4000-8000-000000000001', '80000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001'),
+  ('90000000-0000-4000-8000-000000000002', '80000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000002');
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000001', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
@@ -52,7 +65,7 @@ select lives_ok(
   $$
     insert into public.projects (
       id,
-      owner_id,
+      workspace_id,
       name,
       address,
       google_place_id,
@@ -61,7 +74,7 @@ select lives_ok(
     )
     values (
       '10000000-0000-4000-8000-000000000001',
-      '00000000-0000-4000-8000-000000000001',
+      '90000000-0000-4000-8000-000000000001',
       'Owner Project',
       '1 Owner Street',
       'owner-place',
@@ -76,7 +89,7 @@ select throws_ok(
   $$
     insert into public.projects (
       id,
-      owner_id,
+      workspace_id,
       name,
       address,
       google_place_id,
@@ -85,7 +98,7 @@ select throws_ok(
     )
     values (
       '10000000-0000-4000-8000-000000000002',
-      '00000000-0000-4000-8000-000000000002',
+      '90000000-0000-4000-8000-000000000002',
       'Other Owned Project',
       '2 Other Street',
       'other-place',
@@ -185,7 +198,8 @@ reset role;
 
 insert into public.projects (
   id,
-  owner_id,
+  workspace_id,
+  created_by,
   name,
   address,
   google_place_id,
@@ -194,6 +208,7 @@ insert into public.projects (
 )
 values (
   '10000000-0000-4000-8000-000000000003',
+  '90000000-0000-4000-8000-000000000001',
   '00000000-0000-4000-8000-000000000001',
   'Storage Project',
   '3 Cover Street',

@@ -18,6 +18,11 @@ jest.mock("@/features/projects/hooks/use-project-collaboration", () => ({
   useRespondProjectInvitation: jest.fn()
 }));
 
+jest.mock(
+  "@/features/workspaces/components/organization-invitation-list",
+  () => ({ OrganizationInvitationList: () => null })
+);
+
 describe("ProjectInvitationsScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();

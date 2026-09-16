@@ -1,4 +1,5 @@
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useWorkspace } from "@/features/workspaces/hooks/use-workspace";
 import { normalizeClientFilters } from "@/features/clients/schemas/client.schema";
 import {
   countClientProjects,
@@ -32,6 +33,7 @@ export const clientsKey = ["clients"] as const;
 
 export function useClients(filters: ClientFilters = {}) {
   const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
   const debouncedQuery = useDebouncedValue(filters.query ?? "", 350);
   const requestFilters = useMemo(
     () => ({ ...filters, query: debouncedQuery }),
@@ -49,7 +51,7 @@ export function useClients(filters: ClientFilters = {}) {
     readonly unknown[],
     number
   >({
-    enabled: Boolean(user),
+    enabled: Boolean(user && activeWorkspaceId),
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
@@ -57,10 +59,9 @@ export function useClients(filters: ClientFilters = {}) {
         filters: requestFilters,
         offset: pageParam,
         pageSize: DEFAULT_PAGE_SIZE,
-        userId: user!.id,
-        userRole: user!.role
+        workspaceId: activeWorkspaceId!
       }),
-    queryKey: [...clientsKey, user?.id, user?.role, normalizedFilters]
+    queryKey: [...clientsKey, activeWorkspaceId, normalizedFilters]
   });
 }
 
@@ -83,6 +84,7 @@ export function useClientProjectCount(clientId?: string) {
 export function useCreateClient() {
   const { createUser, session, user } = useAuth();
   const queryClient = useQueryClient();
+  const { activeWorkspaceId } = useWorkspace();
 
   return useMutation({
     mutationFn: async (input: CreateClientInput) => {
@@ -98,7 +100,11 @@ export function useCreateClient() {
         );
       }
 
-      return createClient(input);
+      if (!activeWorkspaceId) {
+        throw new UserFacingError("Select a workspace before saving clients.");
+      }
+
+      return createClient(input, activeWorkspaceId);
     },
     onSuccess: async (client) => {
       queryClient.setQueryData([...clientsKey, "detail", client.id], client);

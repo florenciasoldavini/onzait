@@ -23,7 +23,7 @@ export const getClientInitials = getPersonInitials;
 
 export function normalizeClientFilters(filters: ClientFilters = {}) {
   return {
-    ownerId: normalizeNullableText(filters.ownerId ?? ""),
+    workspaceId: normalizeNullableText(filters.workspaceId ?? ""),
     query: normalizeNullableText(filters.query ?? ""),
     sort: normalizeClientSort(filters.sort)
   };

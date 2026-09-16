@@ -20,7 +20,6 @@ export interface ProjectPhoto {
   location_source: ProjectPhotoLocationSource | null;
   longitude: number | null;
   mime_type: "image/jpeg";
-  owner_id: string;
   project_id: string;
   thumbnail_path: string;
   thumbnail_url?: string | null;

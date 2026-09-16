@@ -86,11 +86,6 @@ export const projectsScreenStyles = StyleSheet.create({
     flex: 1,
     minWidth: 0
   },
-  searchExpanded: {
-    flex: 1,
-    maxWidth: 420,
-    minWidth: 280
-  },
   searchFluid: {
     width: "100%"
   },

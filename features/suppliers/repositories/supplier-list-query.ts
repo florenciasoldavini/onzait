@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import { normalizeSupplierFilters } from "@/features/suppliers/schemas/supplier.schema";
 import type {
   SupplierFilters,
@@ -16,24 +15,21 @@ export interface SupplierListQueryPlan {
 
 export function buildSupplierListQueryPlan({
   filters,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: SupplierFilters;
-  userId: string;
-  userRole: UserRole;
+  workspaceId: string;
 }): SupplierListQueryPlan {
   const normalized = normalizeSupplierFilters(filters);
-  const ownerId = userRole === "admin" ? normalized.ownerId : userId;
   const queryFilters: SupplierListQueryPlan["filters"] = [
     { column: "deleted_at", operator: "is", value: null }
   ];
 
-  if (ownerId) {
+  if (workspaceId) {
     queryFilters.push({
-      column: "owner_id",
+      column: "workspace_id",
       operator: "eq",
-      value: ownerId
+      value: workspaceId
     });
   }
 

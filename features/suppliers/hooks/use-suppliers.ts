@@ -1,4 +1,5 @@
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useWorkspace } from "@/features/workspaces/hooks/use-workspace";
 import { normalizeSupplierFilters } from "@/features/suppliers/schemas/supplier.schema";
 import {
   createSupplier,
@@ -31,6 +32,7 @@ export const suppliersKey = ["suppliers"] as const;
 
 export function useSuppliers(filters: SupplierFilters = {}) {
   const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
   const debouncedQuery = useDebouncedValue(filters.query ?? "", 350);
   const requestFilters = useMemo(
     () => ({ ...filters, query: debouncedQuery }),
@@ -48,7 +50,7 @@ export function useSuppliers(filters: SupplierFilters = {}) {
     readonly unknown[],
     number
   >({
-    enabled: Boolean(user),
+    enabled: Boolean(user && activeWorkspaceId),
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
@@ -56,10 +58,9 @@ export function useSuppliers(filters: SupplierFilters = {}) {
         filters: requestFilters,
         offset: pageParam,
         pageSize: DEFAULT_PAGE_SIZE,
-        userId: user!.id,
-        userRole: user!.role
+        workspaceId: activeWorkspaceId!
       }),
-    queryKey: [...suppliersKey, user?.id, user?.role, normalizedFilters]
+    queryKey: [...suppliersKey, activeWorkspaceId, normalizedFilters]
   });
 }
 
@@ -74,6 +75,7 @@ export function useSupplier(supplierId?: string) {
 export function useCreateSupplier() {
   const { createUser, session, user } = useAuth();
   const queryClient = useQueryClient();
+  const { activeWorkspaceId } = useWorkspace();
 
   return useMutation({
     mutationFn: async (input: CreateSupplierInput) => {
@@ -88,7 +90,12 @@ export function useCreateSupplier() {
         );
       }
 
-      return createSupplier(input);
+      if (!activeWorkspaceId) {
+        throw new UserFacingError(
+          "Select a workspace before saving suppliers."
+        );
+      }
+      return createSupplier(input, activeWorkspaceId);
     },
     onSuccess: async (supplier) => {
       queryClient.setQueryData(

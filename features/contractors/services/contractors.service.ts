@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import {
   getContractorRow,
   insertContractorRow,
@@ -17,19 +16,16 @@ export function listContractors({
   filters,
   offset,
   pageSize,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: ContractorFilters;
-  userId: string;
-  userRole: UserRole;
+  workspaceId: string;
 } & OffsetPageRequest) {
   return listContractorRows({
     filters,
     offset,
     pageSize,
-    userId,
-    userRole
+    workspaceId
   });
 }
 
@@ -37,8 +33,11 @@ export function getContractor(contractorId: string) {
   return getContractorRow(contractorId);
 }
 
-export function createContractor(input: CreateContractorInput) {
-  return insertContractorRow(input);
+export function createContractor(
+  input: CreateContractorInput,
+  workspaceId: string
+) {
+  return insertContractorRow(input, workspaceId);
 }
 
 export function updateContractor(

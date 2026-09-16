@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import {
   countClientProjectRows,
   getClientRow,
@@ -18,19 +17,16 @@ export function listClients({
   filters,
   offset,
   pageSize,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: ClientFilters;
-  userId: string;
-  userRole: UserRole;
+  workspaceId: string;
 } & OffsetPageRequest) {
   return listClientRows({
     filters,
     offset,
     pageSize,
-    userId,
-    userRole
+    workspaceId
   });
 }
 
@@ -38,8 +34,8 @@ export function getClient(clientId: string) {
   return getClientRow(clientId);
 }
 
-export function createClient(input: CreateClientInput) {
-  return insertClientRow(input);
+export function createClient(input: CreateClientInput, workspaceId: string) {
+  return insertClientRow(input, workspaceId);
 }
 
 export function updateClient(clientId: string, input: UpdateClientInput) {

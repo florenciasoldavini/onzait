@@ -198,6 +198,9 @@ describe("ProjectsScreen", () => {
     const view = await renderWithAppProviders(<ProjectsScreen />);
 
     expect(view.getByText("projects-table")).toBeOnTheScreen();
+    expect(
+      view.queryByPlaceholderText("Search projects")
+    ).not.toBeOnTheScreen();
     await user.press(
       view.getByRole("button", { name: "Open table River House" })
     );

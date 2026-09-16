@@ -40,8 +40,7 @@ describe("useSuppliers", () => {
       filters: { query: "", sort: "created_asc" },
       offset: 0,
       pageSize: 24,
-      userId: "owner-1",
-      userRole: "user"
+      workspaceId: "workspace-1"
     });
     await hook.unmount();
     queryClient.clear();

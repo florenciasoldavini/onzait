@@ -41,7 +41,8 @@ const client: Client = {
   first_name: "Ada",
   id: "client-1",
   last_name: "Lovelace",
-  owner_id: "owner-1",
+  created_by: "owner-1",
+  workspace_id: "workspace-1",
   phone_number: "+54 11 5555 0101",
   updated_at: null
 };
@@ -203,7 +204,15 @@ describe("ClientFormScreen", () => {
 
     await renderWithAppProviders(
       <ClientFormScreen clientId="client-1" mode="edit" />,
-      { auth: { user: projectParticipant } }
+      {
+        auth: { user: projectParticipant },
+        workspace: {
+          activeWorkspace: null,
+          activeWorkspaceId: null,
+          hasWorkspaces: false,
+          workspaces: []
+        }
+      }
     );
 
     expect(screen.getByText("Client editing unavailable")).toBeOnTheScreen();

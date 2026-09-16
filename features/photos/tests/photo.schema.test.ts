@@ -28,7 +28,6 @@ describe("project photo schema", () => {
       location_source: "photo_exif",
       longitude: -58.3816,
       mime_type: "image/jpeg",
-      owner_id: userId,
       project_id: projectId,
       thumbnail_path: `projects/${projectId}/photos/${photoId}/thumbnail.jpg`,
       updated_at: null,

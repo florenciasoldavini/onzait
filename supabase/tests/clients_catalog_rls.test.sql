@@ -10,9 +10,23 @@ values
   ('00000000-0000-4000-8000-000000000012', 'Other Owner', 'client-other@example.com', 'user'),
   ('00000000-0000-4000-8000-000000000013', 'Client Admin', 'client-admin@example.com', 'admin');
 
+insert into public.organizations (id, owner_user_id, name, created_by)
+values
+  ('80000000-0000-4000-8000-000000000011', '00000000-0000-4000-8000-000000000011', 'Client Owner Organization', '00000000-0000-4000-8000-000000000011'),
+  ('80000000-0000-4000-8000-000000000012', '00000000-0000-4000-8000-000000000012', 'Other Client Organization', '00000000-0000-4000-8000-000000000012');
+insert into public.organization_memberships (organization_id, user_id, role_code, invited_by)
+values
+  ('80000000-0000-4000-8000-000000000011', '00000000-0000-4000-8000-000000000011', 'admin', '00000000-0000-4000-8000-000000000011'),
+  ('80000000-0000-4000-8000-000000000012', '00000000-0000-4000-8000-000000000012', 'admin', '00000000-0000-4000-8000-000000000012');
+insert into public.workspaces (id, organization_id, created_by)
+values
+  ('90000000-0000-4000-8000-000000000011', '80000000-0000-4000-8000-000000000011', '00000000-0000-4000-8000-000000000011'),
+  ('90000000-0000-4000-8000-000000000012', '80000000-0000-4000-8000-000000000012', '00000000-0000-4000-8000-000000000012');
+
 insert into public.projects (
   id,
-  owner_id,
+  workspace_id,
+  created_by,
   name,
   address,
   google_place_id,
@@ -22,6 +36,7 @@ insert into public.projects (
 values
   (
     '10000000-0000-4000-8000-000000000011',
+    '90000000-0000-4000-8000-000000000011',
     '00000000-0000-4000-8000-000000000011',
     'Owner Client Project',
     '11 Client Street',
@@ -31,6 +46,7 @@ values
   ),
   (
     '10000000-0000-4000-8000-000000000012',
+    '90000000-0000-4000-8000-000000000012',
     '00000000-0000-4000-8000-000000000012',
     'Other Client Project',
     '12 Client Street',
@@ -41,11 +57,13 @@ values
 
 insert into public.clients (
   id,
-  owner_id,
+  workspace_id,
+  created_by,
   first_name
 )
 values (
   '20000000-0000-4000-8000-000000000012',
+  '90000000-0000-4000-8000-000000000012',
   '00000000-0000-4000-8000-000000000012',
   'Other Client'
 );
@@ -58,7 +76,7 @@ select lives_ok(
   $$
     insert into public.clients (
       id,
-      owner_id,
+      workspace_id,
       first_name,
       last_name,
       phone_number,
@@ -66,7 +84,7 @@ select lives_ok(
     )
     values (
       '20000000-0000-4000-8000-000000000011',
-      '00000000-0000-4000-8000-000000000011',
+      '90000000-0000-4000-8000-000000000011',
       'Ada',
       'Lovelace',
       '+54 11 5555 0101',
@@ -78,8 +96,8 @@ select lives_ok(
 
 select throws_ok(
   $$
-    insert into public.clients (owner_id, first_name)
-    values ('00000000-0000-4000-8000-000000000012', 'Not Mine')
+    insert into public.clients (workspace_id, first_name)
+    values ('90000000-0000-4000-8000-000000000012', 'Not Mine')
   $$,
   '42501',
   null,
@@ -239,7 +257,7 @@ select throws_ok(
 );
 
 select throws_ok(
-  $$ insert into public.clients (owner_id, first_name) values (gen_random_uuid(), 'Anon') $$,
+  $$ insert into public.clients (workspace_id, first_name) values (gen_random_uuid(), 'Anon') $$,
   '42501',
   null,
   'anonymous users cannot create clients'

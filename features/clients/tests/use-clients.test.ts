@@ -55,7 +55,8 @@ const client: Client = {
   first_name: "Ada",
   id: "client-1",
   last_name: null,
-  owner_id: user.id,
+  created_by: user.id,
+  workspace_id: "workspace-1",
   phone_number: null,
   updated_at: null
 };
@@ -103,8 +104,7 @@ describe("useClients", () => {
       filters: { query: "" },
       offset: 0,
       pageSize: 24,
-      userId: user.id,
-      userRole: "user"
+      workspaceId: "workspace-1"
     });
     expect(result.current.data?.pages[0].items).toEqual([client]);
     await unmount();
@@ -121,9 +121,9 @@ describe("useCreateClient", () => {
     );
 
     await act(async () => {
-      await expect(
-        result.current.mutateAsync(clientInput)
-      ).rejects.toThrow("You must be signed in to save clients.");
+      await expect(result.current.mutateAsync(clientInput)).rejects.toThrow(
+        "You must be signed in to save clients."
+      );
     });
     expect(createClient).not.toHaveBeenCalled();
     await unmount();
@@ -148,7 +148,7 @@ describe("useCreateClient", () => {
     });
 
     expect(createUser).toHaveBeenCalledWith(session);
-    expect(createClient).toHaveBeenCalledWith(clientInput);
+    expect(createClient).toHaveBeenCalledWith(clientInput, "workspace-1");
     expect(
       queryClient.getQueryData([...clientsKey, "detail", client.id])
     ).toEqual(client);

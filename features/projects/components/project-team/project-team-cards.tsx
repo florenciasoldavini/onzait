@@ -62,16 +62,29 @@ export function InviteMemberCard({
 
   const submit = form.handleSubmit(async (values) => {
     try {
-      await inviteMutation.mutateAsync(values);
+      const result = await inviteMutation.mutateAsync(values);
       form.reset({ email: "", language, roleCode: defaultRole });
+      const alreadyHasAccess =
+        typeof result === "object" &&
+        result !== null &&
+        "status" in result &&
+        result.status === "already_has_access";
       toast.show({
-        description: t(
-          ($) => $["features/projects"].invitationForm.sentDescription,
-          { email: values.email }
-        ),
-        title: t(
-          ($) => $["features/projects"].invitationForm.sentTitle
-        ),
+        description: alreadyHasAccess
+          ? t(
+              ($) =>
+                $["features/projects"].invitationForm
+                  .alreadyHasAccessDescription,
+              { email: values.email }
+            )
+          : t(($) => $["features/projects"].invitationForm.sentDescription, {
+              email: values.email
+            }),
+        title: alreadyHasAccess
+          ? t(
+              ($) => $["features/projects"].invitationForm.alreadyHasAccessTitle
+            )
+          : t(($) => $["features/projects"].invitationForm.sentTitle),
         tone: "success"
       });
     } catch (error) {
@@ -98,9 +111,7 @@ export function InviteMemberCard({
               autoCapitalize="none"
               errorText={fieldState.error?.message}
               keyboardType="email-address"
-              label={t(
-                ($) => $["features/projects"].invitationForm.email
-              )}
+              label={t(($) => $["features/projects"].invitationForm.email)}
               onBlur={field.onBlur}
               onChangeText={field.onChange}
               placeholder="person@example.com"
@@ -132,22 +143,18 @@ export function InviteMemberCard({
           render={({ field, fieldState }) => (
             <SelectField
               errorText={fieldState.error?.message}
-              label={t(
-                ($) => $["features/projects"].invitationForm.language
-              )}
+              label={t(($) => $["features/projects"].invitationForm.language)}
               onChange={field.onChange}
               options={[
                 {
                   label: t(
-                    ($) =>
-                      $["features/projects"].invitationForm.languageSpanish
+                    ($) => $["features/projects"].invitationForm.languageSpanish
                   ),
                   value: "es"
                 },
                 {
                   label: t(
-                    ($) =>
-                      $["features/projects"].invitationForm.languageEnglish
+                    ($) => $["features/projects"].invitationForm.languageEnglish
                   ),
                   value: "en"
                 }
@@ -200,13 +207,11 @@ function projectRoleLabel(
 export function MembersCard({
   canManage,
   members,
-  ownerUserId,
   projectId,
   roles
 }: {
   canManage: boolean;
   members: ProjectMemberSummary[];
-  ownerUserId: string;
   projectId: string;
   roles: ProjectRoleOption[];
 }) {
@@ -240,82 +245,85 @@ export function MembersCard({
           <AppHeading variant="section">
             {t(($) => $["features/projects"].team.activeMembers)}
           </AppHeading>
-          {members.map((member) => {
-            const isOwner = member.userId === ownerUserId;
-            return (
-              <View
-                key={member.id}
-                style={{
-                  alignItems: "center",
-                  flexDirection: "row",
-                  flexWrap: "wrap",
-                  gap: atomSpacing[3],
-                  justifyContent: "space-between"
-                }}
-              >
-                <View style={{ flex: 1, gap: atomSpacing[1], minWidth: 180 }}>
-                  <AppText selectable variant="label">
-                    {member.firstName} {member.lastName ?? ""}
-                  </AppText>
-                  <AppText selectable tone="muted" variant="bodySm">
-                    {member.email}
-                  </AppText>
-                </View>
-                {canManage && !isOwner ? (
-                  <View
-                    style={{
-                      alignItems: "center",
-                      flexDirection: "row",
-                      flexWrap: "wrap",
-                      gap: atomSpacing[2]
-                    }}
-                  >
-                    <SelectField
-                      disabled={updateRole.isPending}
-                      label={t(($) => $["features/projects"].team.role)}
-                      onChange={(roleCode) =>
-                        updateRole.mutate({
-                          membershipId: member.id,
-                          roleCode
-                        })
-                      }
-                      options={roles.map((role) => ({
-                        label: projectRoleLabel(
-                          role.code,
-                          role.displayName,
-                          t
-                        ),
-                        value: role.code
-                      }))}
-                      value={member.roleCode}
-                    />
-                    <AppButton
-                      accessibilityLabel={`Remove ${member.firstName}`}
-                      color="danger"
-                      fullWidth={false}
-                      icon={TrashIcon}
-                      layout="icon"
-                      onPress={() => {
-                        setSelected(member);
-                        confirmation.open();
-                      }}
-                      variant="bordered"
-                    />
+          {members.length === 0 ? (
+            <AppText tone="muted">
+              {t(($) => $["features/projects"].team.noExternalCollaborators)}
+            </AppText>
+          ) : (
+            members.map((member) => {
+              return (
+                <View
+                  key={member.id}
+                  style={{
+                    alignItems: "center",
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: atomSpacing[3],
+                    justifyContent: "space-between"
+                  }}
+                >
+                  <View style={{ flex: 1, gap: atomSpacing[1], minWidth: 180 }}>
+                    <AppText selectable variant="label">
+                      {member.firstName} {member.lastName ?? ""}
+                    </AppText>
+                    <AppText selectable tone="muted" variant="bodySm">
+                      {member.email}
+                    </AppText>
                   </View>
-                ) : (
-                  <AppText tone="accent" variant="label">
-                    {isOwner
-                      ? t(($) => $["features/projects"].roles.owner)
-                      : projectRoleLabel(
-                          member.roleCode,
-                          roleLabel(member.roleCode, roles),
-                          t
-                        )}
-                  </AppText>
-                )}
-              </View>
-            );
-          })}
+                  {canManage ? (
+                    <View
+                      style={{
+                        alignItems: "center",
+                        flexDirection: "row",
+                        flexWrap: "wrap",
+                        gap: atomSpacing[2]
+                      }}
+                    >
+                      <SelectField
+                        disabled={updateRole.isPending}
+                        label={t(($) => $["features/projects"].team.role)}
+                        onChange={(roleCode) =>
+                          updateRole.mutate({
+                            membershipId: member.id,
+                            roleCode
+                          })
+                        }
+                        options={roles.map((role) => ({
+                          label: projectRoleLabel(
+                            role.code,
+                            role.displayName,
+                            t
+                          ),
+                          value: role.code
+                        }))}
+                        value={member.roleCode}
+                      />
+                      <AppButton
+                        accessibilityLabel={`Remove ${member.firstName}`}
+                        color="danger"
+                        fullWidth={false}
+                        icon={TrashIcon}
+                        layout="icon"
+                        onPress={() => {
+                          setSelected(member);
+                          confirmation.open();
+                        }}
+                        variant="bordered"
+                      />
+                    </View>
+                  ) : (
+                    <AppText tone="accent" variant="label">
+                      {projectRoleLabel(
+                        member.roleCode,
+                        roleLabel(member.roleCode, roles),
+                        t
+                      )}
+                    </AppText>
+                  )}
+                </View>
+              );
+            })
+          )}
           {updateRole.isError ? (
             <AppText selectable tone="danger">
               {getUserFacingErrorMessage(
@@ -327,19 +335,14 @@ export function MembersCard({
         </View>
       </AppCard>
       <DestructiveConfirmationDialog
-        accessibilityLabel={t(
-          ($) => $["features/projects"].team.removeMember
-        )}
+        accessibilityLabel={t(($) => $["features/projects"].team.removeMember)}
         confirmLabel={t(($) => $["features/projects"].team.remove)}
         controller={confirmation}
-        description={t(
-          ($) => $["features/projects"].team.removeDescription,
-          {
-            name:
-              selected?.firstName ??
-              t(($) => $["features/projects"].team.memberFallback)
-          }
-        )}
+        description={t(($) => $["features/projects"].team.removeDescription, {
+          name:
+            selected?.firstName ??
+            t(($) => $["features/projects"].team.memberFallback)
+        })}
         isPending={removeMember.isPending}
         onConfirm={confirmRemoval}
         title={t(($) => $["features/projects"].team.removeMember)}
@@ -438,9 +441,7 @@ export function PendingInvitationsCard({
                 ($) => $["features/projects"].team.emptyInvitationsDescription
               )}
               icon={UserIcon}
-              title={t(
-                ($) => $["features/projects"].team.emptyInvitations
-              )}
+              title={t(($) => $["features/projects"].team.emptyInvitations)}
             />
           ) : (
             pending.map((invitation) => {
@@ -473,10 +474,7 @@ export function PendingInvitationsCard({
                             ($) =>
                               $["features/projects"].invitations.emailFailed
                           )
-                        : t(
-                            ($) =>
-                              $["features/projects"].invitations.awaiting
-                          )}
+                        : t(($) => $["features/projects"].invitations.awaiting)}
                     </AppText>
                   </View>
                   <View style={{ flexDirection: "row", gap: atomSpacing[2] }}>
@@ -501,10 +499,7 @@ export function PendingInvitationsCard({
                                 .resendCountdown,
                             { count: cooldown }
                           )
-                        : t(
-                            ($) =>
-                              $["features/projects"].invitations.resend
-                          )}
+                        : t(($) => $["features/projects"].invitations.resend)}
                     </AppButton>
                     <AppButton
                       color="danger"
@@ -528,33 +523,23 @@ export function PendingInvitationsCard({
         </View>
       </AppCard>
       <DestructiveConfirmationDialog
-        accessibilityLabel={t(
-          ($) => $["features/projects"].team.revokeTitle
-        )}
-        confirmLabel={t(
-          ($) => $["features/projects"].invitations.revoke
-        )}
+        accessibilityLabel={t(($) => $["features/projects"].team.revokeTitle)}
+        confirmLabel={t(($) => $["features/projects"].invitations.revoke)}
         controller={confirmation}
-        description={t(
-          ($) => $["features/projects"].team.revokeDescription,
-          { email: selected?.email ?? "—" }
-        )}
+        description={t(($) => $["features/projects"].team.revokeDescription, {
+          email: selected?.email ?? "—"
+        })}
         isPending={revoke.isPending}
         onConfirm={confirmRevoke}
         title={t(($) => $["features/projects"].team.revokeTitle)}
       />
       <DestructiveConfirmationDialog
-        accessibilityLabel={t(
-          ($) => $["features/projects"].team.resendTitle
-        )}
-        confirmLabel={t(
-          ($) => $["features/projects"].invitations.resend
-        )}
+        accessibilityLabel={t(($) => $["features/projects"].team.resendTitle)}
+        confirmLabel={t(($) => $["features/projects"].invitations.resend)}
         controller={resendConfirmation}
-        description={t(
-          ($) => $["features/projects"].team.resendDescription,
-          { email: selectedResend?.email ?? "—" }
-        )}
+        description={t(($) => $["features/projects"].team.resendDescription, {
+          email: selectedResend?.email ?? "—"
+        })}
         isPending={resend.isPending}
         onConfirm={confirmResend}
         title={t(($) => $["features/projects"].team.resendTitle)}

@@ -60,6 +60,7 @@ const project: Project = {
   client_id: null,
   cover_image_path: null,
   created_at: "2026-07-28T10:00:00.000Z",
+  created_by: "user-id",
   deleted_at: null,
   description: null,
   end_date: null,
@@ -70,13 +71,13 @@ const project: Project = {
   latitude: -34.6,
   longitude: -58.4,
   name: "River House",
-  owner_id: "owner-1",
   phase: "concept",
   progress_percentage: 0,
   project_type: "new_build",
   start_date: null,
   status: "planned",
-  updated_at: null
+  updated_at: null,
+  workspace_id: "workspace-1"
 };
 
 const photo: ProjectPhoto = {
@@ -95,7 +96,6 @@ const photo: ProjectPhoto = {
   location_source: null,
   longitude: null,
   mime_type: "image/jpeg",
-  owner_id: "owner-1",
   project_id: mockProjectId,
   thumbnail_path: "owner-1/project-1/photo-1/thumb.jpg",
   updated_at: null,

@@ -7,6 +7,7 @@ import {
 describe("project collaboration access", () => {
   it("maps the database access result and checks capability codes", () => {
     const access = parseProjectAccess({
+      access_source: "project_membership",
       is_admin: false,
       is_owner: false,
       permissions: ["project.read", "project.photos.write"],
@@ -15,6 +16,7 @@ describe("project collaboration access", () => {
     });
 
     expect(access).toEqual({
+      accessSource: "project_membership",
       isAdmin: false,
       isOwner: false,
       permissions: ["project.read", "project.photos.write"],
@@ -49,6 +51,7 @@ describe("project collaboration access", () => {
   it("rejects capability codes the application does not know how to consume", () => {
     expect(() =>
       parseProjectAccess({
+        access_source: "project_membership",
         is_admin: false,
         is_owner: false,
         permissions: ["project.read", "project.unknown"],

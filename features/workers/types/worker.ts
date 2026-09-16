@@ -26,7 +26,7 @@ export type WorkerSummary = Pick<
   | "first_name"
   | "id"
   | "last_name"
-  | "owner_id"
+  | "created_by"
   | "phone_number"
   | "trade_categories"
 >;

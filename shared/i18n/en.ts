@@ -5,6 +5,8 @@ export default {
     hidePassword: "Hide password",
     loading: "Loading",
     loadingScreen: "Loading screen",
+    notifications: "Notifications",
+    notificationsComingSoon: "Notifications are coming soon.",
     primaryNavigation: "Primary navigation",
     showPassword: "Show password"
   },

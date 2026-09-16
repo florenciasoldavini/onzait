@@ -54,7 +54,7 @@ describe("project schema", () => {
       google_place_id: "google-place-id",
       progress_percentage: 15
     });
-    expect(input).not.toHaveProperty("owner_id");
+    expect(input).not.toHaveProperty("created_by");
   });
 
   it("rejects invalid date ordering", () => {

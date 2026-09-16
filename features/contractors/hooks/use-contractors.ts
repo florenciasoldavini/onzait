@@ -1,4 +1,5 @@
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useWorkspace } from "@/features/workspaces/hooks/use-workspace";
 import { normalizeContractorFilters } from "@/features/contractors/schemas/contractor.schema";
 import {
   createContractor,
@@ -31,6 +32,7 @@ export const contractorsKey = ["contractors"] as const;
 
 export function useContractors(filters: ContractorFilters = {}) {
   const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
   const debouncedQuery = useDebouncedValue(filters.query ?? "", 350);
   const requestFilters = useMemo(
     () => ({ ...filters, query: debouncedQuery }),
@@ -48,7 +50,7 @@ export function useContractors(filters: ContractorFilters = {}) {
     readonly unknown[],
     number
   >({
-    enabled: Boolean(user),
+    enabled: Boolean(user && activeWorkspaceId),
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
@@ -56,15 +58,9 @@ export function useContractors(filters: ContractorFilters = {}) {
         filters: requestFilters,
         offset: pageParam,
         pageSize: DEFAULT_PAGE_SIZE,
-        userId: user!.id,
-        userRole: user!.role
+        workspaceId: activeWorkspaceId!
       }),
-    queryKey: [
-      ...contractorsKey,
-      user?.id,
-      user?.role,
-      normalizedFilters
-    ]
+    queryKey: [...contractorsKey, activeWorkspaceId, normalizedFilters]
   });
 }
 
@@ -79,13 +75,12 @@ export function useContractor(contractorId?: string) {
 export function useCreateContractor() {
   const { createUser, session, user } = useAuth();
   const queryClient = useQueryClient();
+  const { activeWorkspaceId } = useWorkspace();
 
   return useMutation({
     mutationFn: async (input: CreateContractorInput) => {
       if (!session) {
-        throw new UserFacingError(
-          "You must be signed in to save contractors."
-        );
+        throw new UserFacingError("You must be signed in to save contractors.");
       }
 
       const currentUser = user ?? (await createUser(session));
@@ -96,7 +91,12 @@ export function useCreateContractor() {
         );
       }
 
-      return createContractor(input);
+      if (!activeWorkspaceId) {
+        throw new UserFacingError(
+          "Select a workspace before saving contractors."
+        );
+      }
+      return createContractor(input, activeWorkspaceId);
     },
     onSuccess: async (contractor) => {
       queryClient.setQueryData(
@@ -134,8 +134,7 @@ export function useSoftDeleteContractor() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (contractorId: string) =>
-      softDeleteContractor(contractorId),
+    mutationFn: (contractorId: string) => softDeleteContractor(contractorId),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: contractorsKey }),

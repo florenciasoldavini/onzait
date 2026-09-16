@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import { buildSupplierListQueryPlan } from "@/features/suppliers/repositories/supplier-list-query";
 import type {
   CreateSupplierInput,
@@ -16,7 +15,6 @@ import {
   toPaginatedResult,
   type OffsetPageRequest
 } from "@/shared/utils/pagination";
-import { UserFacingError } from "@/shared/utils/user-facing-errors";
 
 const SUPPLIER_SUMMARY_COLUMNS = [
   "address",
@@ -24,24 +22,23 @@ const SUPPLIER_SUMMARY_COLUMNS = [
   "email",
   "id",
   "name",
-  "owner_id",
+  "created_by",
   "phone_number",
-  "website_url"
+  "website_url",
+  "workspace_id"
 ].join(",");
 
 export async function listSupplierRows({
   filters,
   offset,
   pageSize,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: SupplierFilters;
-  userId: string;
-  userRole: UserRole;
+  workspaceId: string;
 } & OffsetPageRequest) {
   const client = requireSupabase();
-  const plan = buildSupplierListQueryPlan({ filters, userId, userRole });
+  const plan = buildSupplierListQueryPlan({ filters, workspaceId });
   const range = getOffsetPageRange({ offset, pageSize });
   let query = client.from("suppliers").select(SUPPLIER_SUMMARY_COLUMNS);
 
@@ -62,10 +59,7 @@ export async function listSupplierRows({
   const { data, error } = await query.range(range.from, range.to);
   if (error) throw toRepositoryError(error);
 
-  return toPaginatedResult(
-    (data ?? []) as unknown as SupplierSummary[],
-    range
-  );
+  return toPaginatedResult((data ?? []) as unknown as SupplierSummary[], range);
 }
 
 export async function getSupplierRow(supplierId: string) {
@@ -81,21 +75,14 @@ export async function getSupplierRow(supplierId: string) {
   return data ? (data as Supplier) : null;
 }
 
-export async function insertSupplierRow(input: CreateSupplierInput) {
+export async function insertSupplierRow(
+  input: CreateSupplierInput,
+  workspaceId: string
+) {
   const client = requireSupabase();
-  const {
-    data: { user },
-    error: authError
-  } = await client.auth.getUser();
-
-  if (authError) throw toRepositoryError(authError);
-  if (!user) {
-    throw new UserFacingError("You must be signed in to save suppliers.");
-  }
-
   const { data, error } = await client
     .from("suppliers")
-    .insert({ ...input, owner_id: user.id })
+    .insert({ ...input, workspace_id: workspaceId })
     .select()
     .single();
 

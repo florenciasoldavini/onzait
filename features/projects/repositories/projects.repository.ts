@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import { buildProjectListQueryPlan } from "@/features/projects/repositories/project-list-query";
 import {
   requireSupabase,
@@ -36,15 +35,13 @@ export async function listProjectRows({
   filters,
   offset,
   pageSize,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: ProjectFilters;
-  userId: string;
-  userRole: UserRole;
+  workspaceId: string;
 } & OffsetPageRequest) {
   const client = requireSupabase();
-  const plan = buildProjectListQueryPlan({ filters, userId, userRole });
+  const plan = buildProjectListQueryPlan({ filters, workspaceId });
   const range = getOffsetPageRange({ offset, pageSize });
   let query = client.from("projects").select(PROJECT_SUMMARY_COLUMNS);
 
@@ -70,10 +67,7 @@ export async function listProjectRows({
     throw toRepositoryError(error);
   }
 
-  return toPaginatedResult(
-    (data ?? []) as unknown as ProjectSummary[],
-    range
-  );
+  return toPaginatedResult((data ?? []) as unknown as ProjectSummary[], range);
 }
 
 export async function getProjectRow(projectId: string) {
@@ -92,24 +86,14 @@ export async function getProjectRow(projectId: string) {
   return data ? (data as Project) : null;
 }
 
-export async function insertProjectRow(input: CreateProjectInput) {
+export async function insertProjectRow(
+  input: CreateProjectInput,
+  workspaceId: string
+) {
   const client = requireSupabase();
-  const {
-    data: { user },
-    error: authError
-  } = await client.auth.getUser();
-
-  if (authError) {
-    throw toRepositoryError(authError);
-  }
-
-  if (!user) {
-    throw new UserFacingError("You must be signed in to save projects.");
-  }
-
   const { data, error } = await client
     .from("projects")
-    .insert({ ...input, owner_id: user.id })
+    .insert({ ...input, workspace_id: workspaceId })
     .select()
     .single();
 

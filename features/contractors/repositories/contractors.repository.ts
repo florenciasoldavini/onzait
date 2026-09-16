@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import { buildContractorListQueryPlan } from "@/features/contractors/repositories/contractor-list-query";
 import type {
   Contractor,
@@ -16,30 +15,28 @@ import {
   toPaginatedResult,
   type OffsetPageRequest
 } from "@/shared/utils/pagination";
-import { UserFacingError } from "@/shared/utils/user-facing-errors";
 
 const CONTRACTOR_SUMMARY_COLUMNS = [
   "email",
   "first_name",
   "id",
   "last_name",
-  "owner_id",
-  "phone_number"
+  "created_by",
+  "phone_number",
+  "workspace_id"
 ].join(",");
 
 export async function listContractorRows({
   filters,
   offset,
   pageSize,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: ContractorFilters;
-  userId: string;
-  userRole: UserRole;
+  workspaceId: string;
 } & OffsetPageRequest) {
   const client = requireSupabase();
-  const plan = buildContractorListQueryPlan({ filters, userId, userRole });
+  const plan = buildContractorListQueryPlan({ filters, workspaceId });
   const range = getOffsetPageRange({ offset, pageSize });
   let query = client.from("contractors").select(CONTRACTOR_SUMMARY_COLUMNS);
 
@@ -85,24 +82,14 @@ export async function getContractorRow(contractorId: string) {
   return data ? (data as Contractor) : null;
 }
 
-export async function insertContractorRow(input: CreateContractorInput) {
+export async function insertContractorRow(
+  input: CreateContractorInput,
+  workspaceId: string
+) {
   const client = requireSupabase();
-  const {
-    data: { user },
-    error: authError
-  } = await client.auth.getUser();
-
-  if (authError) {
-    throw toRepositoryError(authError);
-  }
-
-  if (!user) {
-    throw new UserFacingError("You must be signed in to save contractors.");
-  }
-
   const { data, error } = await client
     .from("contractors")
-    .insert({ ...input, owner_id: user.id })
+    .insert({ ...input, workspace_id: workspaceId })
     .select()
     .single();
 

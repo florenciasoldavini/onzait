@@ -23,7 +23,7 @@ export const getContractorInitials = getPersonInitials;
 
 export function normalizeContractorFilters(filters: ContractorFilters = {}) {
   return {
-    ownerId: normalizeNullableText(filters.ownerId ?? ""),
+    workspaceId: normalizeNullableText(filters.workspaceId ?? ""),
     query: normalizeNullableText(filters.query ?? ""),
     sort: normalizeContractorSort(filters.sort)
   };

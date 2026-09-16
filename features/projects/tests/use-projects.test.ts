@@ -76,7 +76,8 @@ const project: Project = {
   latitude: -34.6,
   longitude: -58.4,
   name: "River House",
-  owner_id: user.id,
+  created_by: user.id,
+  workspace_id: "workspace-1",
   phase: "concept",
   progress_percentage: 0,
   project_type: "new_build",
@@ -141,8 +142,7 @@ describe("useProjects", () => {
       filters: { query: "", sort: "name_asc" },
       offset: 0,
       pageSize: 24,
-      userId: user.id,
-      userRole: "user"
+      workspaceId: "workspace-1"
     });
     await unmount();
     queryClient.clear();
@@ -187,7 +187,8 @@ describe("useCreateProject", () => {
     expect(createUser).toHaveBeenCalledWith(session);
     expect(createProjectWithOptionalCover).toHaveBeenCalledWith({
       coverAsset: null,
-      input
+      input,
+      workspaceId: "workspace-1"
     });
     expect(
       queryClient.getQueryData(["projects", "detail", project.id])

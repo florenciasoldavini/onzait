@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import {
   createProjectPhotoSignedUrl,
   removeProjectPhotoObjects,
@@ -38,22 +37,16 @@ export async function listProjectPhotos({
   filters,
   offset,
   pageSize,
-  projectId,
-  userId,
-  userRole
+  projectId
 }: {
   filters?: ProjectPhotoFilters;
   projectId: string;
-  userId: string;
-  userRole: UserRole;
 } & OffsetPageRequest): Promise<PaginatedResult<ProjectPhoto>> {
   const page = await listProjectPhotoRows({
     filters,
     offset,
     pageSize,
-    projectId,
-    userId,
-    userRole
+    projectId
   });
 
   return {
@@ -120,10 +113,7 @@ export async function uploadProjectPhotoBatch({
     }
   }
 
-  await Promise.all([
-    worker(),
-    worker()
-  ]);
+  await Promise.all([worker(), worker()]);
 
   return outcomes;
 }
@@ -147,10 +137,7 @@ export async function softDeleteProjectPhoto(photoId: string) {
   await softDeleteProjectPhotoRow(photoId);
 
   try {
-    await removeProjectPhotoObjects([
-      photo.full_path,
-      photo.thumbnail_path
-    ]);
+    await removeProjectPhotoObjects([photo.full_path, photo.thumbnail_path]);
   } catch (error) {
     Sentry.captureException(error, {
       tags: { storage_cleanup: "project-photo-soft-delete" }

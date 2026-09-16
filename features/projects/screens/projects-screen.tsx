@@ -40,6 +40,7 @@ import {
 } from "@/shared/ui/icons";
 import { useRouter } from "expo-router";
 import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
+import { useAppTopBarSearch } from "@/shared/hooks/use-app-topbar";
 import { Suspense, lazy, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -70,6 +71,21 @@ export default function ProjectsScreen() {
     initialProjectFilters
   );
   const [filtersVisible, setFiltersVisible] = useState(false);
+  const searchPlaceholder = t(
+    ($) => $["features/projects"].list.searchPlaceholder
+  );
+  const topBarSearch = useMemo(
+    () =>
+      isExpanded
+        ? {
+            onChangeText: setQuery,
+            placeholder: searchPlaceholder,
+            value: query
+          }
+        : null,
+    [isExpanded, query, searchPlaceholder]
+  );
+  useAppTopBarSearch(topBarSearch);
   const projectSortOptions = useMemo(
     () =>
       [
@@ -189,15 +205,15 @@ export default function ProjectsScreen() {
       <View
         style={[styles.toolbar, isExpanded ? styles.toolbarExpanded : null]}
       >
-        <View style={isExpanded ? styles.searchExpanded : styles.searchFluid}>
-          <SearchField
-            onChangeText={setQuery}
-            placeholder={t(
-              ($) => $["features/projects"].list.searchPlaceholder
-            )}
-            value={query}
-          />
-        </View>
+        {!isExpanded ? (
+          <View style={styles.searchFluid}>
+            <SearchField
+              onChangeText={setQuery}
+              placeholder={searchPlaceholder}
+              value={query}
+            />
+          </View>
+        ) : null}
 
         <View style={styles.controlsRow}>
           <SelectMenu

@@ -36,9 +36,10 @@ describe("contact schema", () => {
         first_name: "Alex",
         id: "person-1",
         last_name: null,
-        owner_id: "owner-1",
+        created_by: "owner-1",
         phone_number: null,
-        updated_at: null
+        updated_at: null,
+        workspace_id: "workspace-1"
       }).success
     ).toBe(true);
   });

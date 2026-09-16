@@ -67,13 +67,22 @@ export function createPersonContactFormSchema(t: TFunction<"shared">) {
   const firstNameSchema = z
     .string()
     .trim()
-    .min(1, t(($) => $.shared.validation.firstNameRequired))
-    .max(80, t(($) => $.shared.validation.firstNameMax));
+    .min(
+      1,
+      t(($) => $.shared.validation.firstNameRequired)
+    )
+    .max(
+      80,
+      t(($) => $.shared.validation.firstNameMax)
+    );
 
   const lastNameSchema = z
     .string()
     .trim()
-    .max(80, t(($) => $.shared.validation.lastNameMax));
+    .max(
+      80,
+      t(($) => $.shared.validation.lastNameMax)
+    );
 
   return z.object({
     email: optionalEmailSchema,
@@ -90,9 +99,10 @@ export const personContactRecordSchema = z.object({
   first_name: z.string(),
   id: z.string(),
   last_name: z.string().nullable(),
-  owner_id: z.string(),
+  created_by: z.string(),
   phone_number: z.string().nullable(),
-  updated_at: z.string().nullable()
+  updated_at: z.string().nullable(),
+  workspace_id: z.string()
 }) satisfies z.ZodType<OwnedPersonContactRecord>;
 
 export const personContactSummarySchema = personContactRecordSchema.pick({
@@ -100,6 +110,7 @@ export const personContactSummarySchema = personContactRecordSchema.pick({
   first_name: true,
   id: true,
   last_name: true,
-  owner_id: true,
-  phone_number: true
+  created_by: true,
+  phone_number: true,
+  workspace_id: true
 });

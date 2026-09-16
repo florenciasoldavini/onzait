@@ -5,6 +5,8 @@ export default {
     hidePassword: "Ocultar contraseña",
     loading: "Cargando",
     loadingScreen: "Cargando pantalla",
+    notifications: "Notificaciones",
+    notificationsComingSoon: "Las notificaciones estarán disponibles pronto.",
     primaryNavigation: "Navegación principal",
     showPassword: "Mostrar contraseña"
   },

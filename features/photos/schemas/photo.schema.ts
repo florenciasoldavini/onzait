@@ -29,7 +29,6 @@ export const ProjectPhotoSchema: z.ZodType<ProjectPhoto> = z.object({
   location_source: z.literal("photo_exif").nullable(),
   longitude: z.number().min(-180).max(180).nullable(),
   mime_type: z.literal("image/jpeg"),
-  owner_id: z.string().uuid(),
   project_id: z.string().uuid(),
   thumbnail_path: z.string(),
   thumbnail_url: z.string().nullable().optional(),

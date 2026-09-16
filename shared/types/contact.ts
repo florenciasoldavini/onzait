@@ -12,13 +12,20 @@ export interface OwnedPersonContactRecord extends PersonContactDetails {
   created_at: string;
   deleted_at: string | null;
   id: string;
-  owner_id: string;
+  created_by: string;
   updated_at: string | null;
+  workspace_id: string;
 }
 
 export type PersonContactSummary = Pick<
   OwnedPersonContactRecord,
-  "email" | "first_name" | "id" | "last_name" | "owner_id" | "phone_number"
+  | "created_by"
+  | "email"
+  | "first_name"
+  | "id"
+  | "last_name"
+  | "phone_number"
+  | "workspace_id"
 >;
 
 export interface PersonContactFormValues {
