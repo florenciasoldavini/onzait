@@ -4,39 +4,36 @@ import {
 } from "@/features/clients/repositories/client-list-query";
 
 describe("client list query", () => {
-  it("scopes normal users to their own clients", () => {
+  it("scopes clients to the active workspace", () => {
     const plan = buildClientListQueryPlan({
-      filters: { ownerId: "other-user" },
-      userId: "current-user",
-      userRole: "user"
+      filters: { workspaceId: "other-user" },
+      workspaceId: "current-user"
     });
 
     expect(plan.filters).toContainEqual({
-      column: "owner_id",
+      column: "workspace_id",
       operator: "eq",
       value: "current-user"
     });
   });
 
-  it("lets admins explicitly scope a project picker by owner", () => {
+  it("does not let a picker override the active workspace", () => {
     const plan = buildClientListQueryPlan({
-      filters: { ownerId: "project-owner" },
-      userId: "admin-user",
-      userRole: "admin"
+      filters: { workspaceId: "project-owner" },
+      workspaceId: "admin-user"
     });
 
     expect(plan.filters).toContainEqual({
-      column: "owner_id",
+      column: "workspace_id",
       operator: "eq",
-      value: "project-owner"
+      value: "admin-user"
     });
   });
 
   it("uses deterministic alphabetical ordering", () => {
     const plan = buildClientListQueryPlan({
       filters: { sort: "name_desc" },
-      userId: "current-user",
-      userRole: "user"
+      workspaceId: "current-user"
     });
 
     expect(plan.orders).toEqual([

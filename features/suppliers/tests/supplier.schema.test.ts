@@ -29,10 +29,11 @@ describe("supplier schema", () => {
         longitude: null,
         name: "Patagonia Supply",
         notes: null,
-        owner_id: "owner-1",
+        created_by: "owner-1",
         phone_number: null,
         updated_at: null,
-        website_url: null
+        website_url: null,
+        workspace_id: "workspace-1"
       }).success
     ).toBe(true);
   });
@@ -122,18 +123,18 @@ describe("supplier schema", () => {
 
   it("normalizes filters", () => {
     expect(normalizeSupplierFilters()).toEqual({
-      ownerId: null,
+      workspaceId: null,
       query: null,
       sort: "created_desc"
     });
     expect(
       normalizeSupplierFilters({
-        ownerId: " owner-1 ",
+        workspaceId: " owner-1 ",
         query: "  timber ",
         sort: "name_asc"
       })
     ).toEqual({
-      ownerId: "owner-1",
+      workspaceId: "owner-1",
       query: "timber",
       sort: "name_asc"
     });

@@ -104,7 +104,6 @@ function photo(id: string): ProjectPhoto {
     location_source: null,
     longitude: null,
     mime_type: "image/jpeg",
-    owner_id: "owner-id",
     project_id: "project-id",
     thumbnail_path: `projects/project-id/photos/${id}/thumbnail.jpg`,
     updated_at: null,
@@ -265,9 +264,7 @@ describe("project photo workflow", () => {
       filters: { kind: "issue", marketing: "marketing" },
       offset: 0,
       pageSize: 24,
-      projectId: "project-id",
-      userId: "owner-id",
-      userRole: "user"
+      projectId: "project-id"
     });
 
     expect(result.nextOffset).toBe(24);
@@ -284,9 +281,7 @@ describe("project photo workflow", () => {
     const result = await listProjectPhotos({
       offset: 0,
       pageSize: 24,
-      projectId: "project-id",
-      userId: "owner-id",
-      userRole: "user"
+      projectId: "project-id"
     });
 
     expect(result.items[0]).toMatchObject({

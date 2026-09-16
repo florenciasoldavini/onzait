@@ -7,7 +7,7 @@ import {
   useClientProjectCount,
   useSoftDeleteClient
 } from "@/features/clients/hooks/use-clients";
-import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useWorkspaceAccess } from "@/features/workspaces/hooks/use-workspace-access";
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { AppButton } from "@/shared/ui/components/button";
@@ -54,7 +54,7 @@ export function ClientDetailContent({
   const router = useRouter();
   const { t } = useTranslation("features/clients");
   const { t: tShared } = useTranslation("shared");
-  const { user } = useAuth();
+  const { canDeleteDirectory, canWriteDirectory } = useWorkspaceAccess();
   const { isCompact, isExpanded } = useLayoutMode();
   const toast = useAppToast();
   const projectsQuery = useProjects({
@@ -69,8 +69,7 @@ export function ClientDetailContent({
     [projectsQuery.data]
   );
   const displayName = getClientDisplayName(client);
-  const canManageClient =
-    user?.role === "admin" || user?.id === client.owner_id;
+  const canManageClient = canWriteDirectory;
 
   const deleteClient = async () => {
     deleteConfirmation.clearError();
@@ -78,10 +77,9 @@ export function ClientDetailContent({
       await deleteMutation.mutateAsync(client.id);
       deleteConfirmation.close();
       toast.show({
-        description: t(
-          ($) => $["features/clients"].detail.deletedDescription,
-          { name: displayName }
-        ),
+        description: t(($) => $["features/clients"].detail.deletedDescription, {
+          name: displayName
+        }),
         title: t(($) => $["features/clients"].detail.deletedTitle),
         tone: "success"
       });
@@ -147,9 +145,7 @@ export function ClientDetailContent({
                   </AppText>
                   <AppHeading variant="hero">{displayName}</AppHeading>
                   <AppText tone="muted">
-                    {t(
-                      ($) => $["features/clients"].detail.profileDescription
-                    )}
+                    {t(($) => $["features/clients"].detail.profileDescription)}
                   </AppText>
                 </View>
               </View>
@@ -174,20 +170,22 @@ export function ClientDetailContent({
               >
                 {tShared(($) => $.shared.actions.edit)}
               </AppButton>
-              <AppButton
-                color="danger"
-                fullWidth={isCompact}
-                icon={TrashIcon}
-                iconAfter={false}
-                onPress={() => {
-                  deleteConfirmation.open();
-                  void projectCountQuery.refetch();
-                }}
-                size="sm"
-                variant="bordered"
-              >
-                {tShared(($) => $.shared.actions.delete)}
-              </AppButton>
+              {canDeleteDirectory ? (
+                <AppButton
+                  color="danger"
+                  fullWidth={isCompact}
+                  icon={TrashIcon}
+                  iconAfter={false}
+                  onPress={() => {
+                    deleteConfirmation.open();
+                    void projectCountQuery.refetch();
+                  }}
+                  size="sm"
+                  variant="bordered"
+                >
+                  {tShared(($) => $.shared.actions.delete)}
+                </AppButton>
+              ) : null}
             </View>
           </View>
         </AppCard>
@@ -264,9 +262,7 @@ export function ClientDetailContent({
                   }}
                   description={getUserFacingErrorMessage(
                     projectsQuery.error,
-                    t(
-                      ($) => $["features/clients"].detail.linkedProjectsError
-                    )
+                    t(($) => $["features/clients"].detail.linkedProjectsError)
                   )}
                   title={t(
                     ($) =>
@@ -280,9 +276,7 @@ export function ClientDetailContent({
                   </View>
                   <View style={{ gap: atomSpacing[1] }}>
                     <AppHeading variant="card">
-                      {t(
-                        ($) => $["features/clients"].detail.noLinkedProjects
-                      )}
+                      {t(($) => $["features/clients"].detail.noLinkedProjects)}
                     </AppHeading>
                     <AppText
                       style={detailStyles.projectsEmptyCopy}
@@ -325,9 +319,7 @@ export function ClientDetailContent({
                       size="sm"
                       variant="bordered"
                     >
-                      {t(
-                        ($) => $["features/clients"].detail.loadMoreProjects
-                      )}
+                      {t(($) => $["features/clients"].detail.loadMoreProjects)}
                     </AppButton>
                   ) : null}
                 </View>
@@ -355,9 +347,7 @@ export function ClientDetailContent({
           ) : (
             <AppText tone="muted">
               {(projectCountQuery.data ?? 0) === 0
-                ? t(
-                    ($) => $["features/clients"].delete.descriptionUnlinked
-                  )
+                ? t(($) => $["features/clients"].delete.descriptionUnlinked)
                 : t(($) => $["features/clients"].delete.linkedProjects, {
                     count: projectCountQuery.data ?? 0
                   })}

@@ -3,6 +3,7 @@ import { GluestackUIProvider } from "@/shared/ui/primitives/gluestack-ui-provide
 import { AnimatedSplash } from "@/shared/splash/animated-splash";
 import { useAppFonts } from "@/shared/hooks/use-app-fonts";
 import { AuthProvider } from "@/features/auth/providers/auth-provider";
+import { WorkspaceProvider } from "@/features/workspaces/providers/workspace-provider";
 import { LocalizationProvider } from "@/features/localization/providers/localization-provider";
 import { useLocalization } from "@/features/localization/hooks/use-localization";
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -44,9 +45,11 @@ function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <LocalizationProvider>
           <AuthProvider>
-            <SafeAreaProvider>
-              <RootNavigator />
-            </SafeAreaProvider>
+            <WorkspaceProvider>
+              <SafeAreaProvider>
+                <RootNavigator />
+              </SafeAreaProvider>
+            </WorkspaceProvider>
           </AuthProvider>
         </LocalizationProvider>
       </QueryClientProvider>
@@ -79,6 +82,7 @@ function RootNavigator() {
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           </Stack.Protected>
           <Stack.Screen name="invitations/accept" />
+          <Stack.Screen name="organization-invitations/accept" />
         </Stack>
       ) : null}
       {!splashDone ? (

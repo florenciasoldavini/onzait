@@ -1,5 +1,6 @@
 import { ClientFormFields } from "@/features/clients/components/client-form-fields";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useWorkspaceAccess } from "@/features/workspaces/hooks/use-workspace-access";
 import {
   createClientFormSchema,
   getClientDisplayName,
@@ -113,10 +114,8 @@ export default function ClientFormScreen({
   });
 
   const existingClient = clientQuery.data;
-  const canManageClient =
-    mode === "create" ||
-    user?.role === "admin" ||
-    user?.id === existingClient?.owner_id;
+  const { canWriteDirectory } = useWorkspaceAccess();
+  const canManageClient = mode === "create" || canWriteDirectory;
   const backToClients = {
     label: t(($) => $["features/clients"].accessibility.backToClients),
     onPress: () => router.replace("/directory?section=clients" as never)

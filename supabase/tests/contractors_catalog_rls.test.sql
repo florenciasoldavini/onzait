@@ -10,13 +10,28 @@ values
   ('00000000-0000-4000-8000-000000000022', 'Other Owner', 'contractor-other@example.com', 'user'),
   ('00000000-0000-4000-8000-000000000023', 'Contractor Admin', 'contractor-admin@example.com', 'admin');
 
+insert into public.organizations (id, owner_user_id, name, created_by)
+values
+  ('80000000-0000-4000-8000-000000000021', '00000000-0000-4000-8000-000000000021', 'Contractor Owner Organization', '00000000-0000-4000-8000-000000000021'),
+  ('80000000-0000-4000-8000-000000000022', '00000000-0000-4000-8000-000000000022', 'Other Contractor Organization', '00000000-0000-4000-8000-000000000022');
+insert into public.organization_memberships (organization_id, user_id, role_code, invited_by)
+values
+  ('80000000-0000-4000-8000-000000000021', '00000000-0000-4000-8000-000000000021', 'admin', '00000000-0000-4000-8000-000000000021'),
+  ('80000000-0000-4000-8000-000000000022', '00000000-0000-4000-8000-000000000022', 'admin', '00000000-0000-4000-8000-000000000022');
+insert into public.workspaces (id, organization_id, created_by)
+values
+  ('00000000-0000-4000-8000-000000000021', '80000000-0000-4000-8000-000000000021', '00000000-0000-4000-8000-000000000021'),
+  ('00000000-0000-4000-8000-000000000022', '80000000-0000-4000-8000-000000000022', '00000000-0000-4000-8000-000000000022');
+
 insert into public.contractors (
   id,
-  owner_id,
+  workspace_id,
+  created_by,
   first_name
 )
 values (
   '20000000-0000-4000-8000-000000000022',
+  '00000000-0000-4000-8000-000000000022',
   '00000000-0000-4000-8000-000000000022',
   'Other Contractor'
 );
@@ -29,7 +44,7 @@ select lives_ok(
   $$
     insert into public.contractors (
       id,
-      owner_id,
+      workspace_id,
       first_name,
       last_name,
       phone_number,
@@ -59,7 +74,7 @@ select is(
 
 select throws_ok(
   $$
-    insert into public.contractors (owner_id, first_name)
+    insert into public.contractors (workspace_id, first_name)
     values ('00000000-0000-4000-8000-000000000022', 'Not Mine')
   $$,
   '42501',
@@ -148,7 +163,7 @@ select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000021
 select throws_ok(
   $$
     update public.contractors
-    set owner_id = '00000000-0000-4000-8000-000000000022'
+    set workspace_id = '00000000-0000-4000-8000-000000000022'
     where id = '20000000-0000-4000-8000-000000000021'
   $$,
   '42501',
@@ -203,7 +218,7 @@ select throws_ok(
 );
 
 select throws_ok(
-  $$ insert into public.contractors (owner_id, first_name) values (gen_random_uuid(), 'Anon') $$,
+  $$ insert into public.contractors (workspace_id, first_name) values (gen_random_uuid(), 'Anon') $$,
   '42501',
   null,
   'anonymous users cannot create contractors'

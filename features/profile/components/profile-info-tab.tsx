@@ -1,36 +1,22 @@
 import { useAuth } from "@/features/auth/hooks/use-auth";
-import { useProfileAvatarUrl } from "@/features/profile/hooks/use-profile-avatar";
-import type { ProfileAvatarAsset } from "@/features/profile/repositories/profile-avatar.repository";
+import { ProfileAvatarPicker } from "@/features/profile/components/profile-avatar-picker";
+import type { ProfileAvatarAsset } from "@/features/profile/services/profile.service";
 import {
   createProfileInfoSchema,
   type ProfileInfoInput
 } from "@/features/profile/schemas/profile.schemas";
-import { getSupabaseErrorMessage } from "@/infrastructure/supabase/client";
 import { AppButton } from "@/shared/ui/components/button";
 import { AppCard } from "@/shared/ui/components/card";
 import { FieldMessage } from "@/shared/ui/components/field-message";
 import { TextField } from "@/shared/ui/components/input";
 import { AppText } from "@/shared/ui/components/text";
-import {
-  atomPalette,
-  atomRadii,
-  atomSpacing
-} from "@/shared/ui/components/theme";
-import { CameraIcon, PhoneIcon, UserIcon } from "@/shared/ui/icons";
+import { atomSpacing } from "@/shared/ui/components/theme";
+import { PhoneIcon, UserIcon } from "@/shared/ui/icons";
 import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  StyleSheet,
-  View,
-  type ViewStyle
-} from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 function getProfileInfoDefaults(
@@ -79,13 +65,7 @@ export function ProfileInfoTab() {
     watch
   } = form;
   const avatar = watch("avatar");
-  const {
-    data: avatarDisplayUrl = null,
-    error: avatarDisplayError,
-    isLoading: avatarDisplayLoading
-  } = useProfileAvatarUrl(avatar);
-  const isSaveDisabled =
-    isSaving || !isValid || (!isDirty && !avatarAsset);
+  const isSaveDisabled = isSaving || !isValid || (!isDirty && !avatarAsset);
 
   useEffect(() => {
     setAvatarAsset(null);
@@ -133,7 +113,12 @@ export function ProfileInfoTab() {
         setStatusMessage(t(($) => $["features/profile"].info.updated));
       }
     } catch (error) {
-      setFormError(getSupabaseErrorMessage(error));
+      setFormError(
+        getUserFacingErrorMessage(
+          error,
+          t(($) => $["features/profile"].info.saveError)
+        )
+      );
     } finally {
       setIsSaving(false);
     }
@@ -152,22 +137,14 @@ export function ProfileInfoTab() {
         </View>
 
         <View style={styles.fields}>
-          <View style={styles.avatarArea}>
-            <AvatarPicker
-              currentUrl={avatarDisplayUrl ?? ""}
-              isLoading={avatarDisplayLoading}
-              onChange={(asset) => {
-                setAvatarAsset(asset);
-                clearMessages();
-              }}
-              value={avatarAsset}
-            />
-            {avatarDisplayError ? (
-              <FieldMessage tone="error">
-                {t(($) => $["features/profile"].info.avatarError)}
-              </FieldMessage>
-            ) : null}
-          </View>
+          <ProfileAvatarPicker
+            currentReference={avatar}
+            onChange={(asset) => {
+              setAvatarAsset(asset);
+              clearMessages();
+            }}
+            value={avatarAsset}
+          />
 
           <Controller
             control={control}
@@ -253,141 +230,7 @@ export function ProfileInfoTab() {
   );
 }
 
-function AvatarPicker({
-  currentUrl,
-  isLoading,
-  onChange,
-  value
-}: {
-  currentUrl: string;
-  isLoading: boolean;
-  onChange: (asset: ProfileAvatarAsset) => void;
-  value: ProfileAvatarAsset | null;
-}) {
-  const { t } = useTranslation("features/profile");
-  const previewUri = value?.uri ?? currentUrl.trim();
-  const [pickerError, setPickerError] = useState<string | null>(null);
-
-  const pickImage = async () => {
-    setPickerError(null);
-
-    try {
-      const permission =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (!permission.granted) {
-        setPickerError(
-          permission.canAskAgain
-            ? t(($) => $["features/profile"].info.photoPermission)
-            : t(($) => $["features/profile"].info.photoDenied)
-        );
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
-        aspect: [1, 1],
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.82
-      });
-
-      if (result.canceled || !result.assets[0]) {
-        return;
-      }
-
-      const asset = result.assets[0];
-      onChange({
-        fileName: asset.fileName,
-        mimeType: asset.mimeType,
-        uri: asset.uri
-      });
-    } catch (error) {
-      setPickerError(
-        getUserFacingErrorMessage(
-          error,
-          t(($) => $["features/profile"].info.photoError)
-        )
-      );
-    }
-  };
-
-  return (
-    <View style={styles.avatarPickerRoot}>
-      <Pressable
-        accessibilityLabel={t(
-          ($) => $["features/profile"].info.avatarAccessibility
-        )}
-        accessibilityRole="button"
-        onPress={() => void pickImage()}
-        style={StyleSheet.flatten([
-          styles.avatarPicker,
-          Platform.OS === "web" ? styles.webCursor : null
-        ])}
-      >
-        {value?.uri ? (
-          <Image
-            contentFit="cover"
-            source={{ uri: value.uri }}
-            style={styles.avatarImage}
-          />
-        ) : isLoading ? (
-          <ActivityIndicator color={atomPalette.textSubtle} />
-        ) : previewUri ? (
-          <Image
-            contentFit="cover"
-            source={{ uri: previewUri }}
-            style={styles.avatarImage}
-          />
-        ) : (
-          <CameraIcon color={atomPalette.textSubtle} size="lg" />
-        )}
-        <View style={styles.avatarPickerBadge}>
-          <CameraIcon color={atomPalette.accentText} size="sm" />
-        </View>
-      </Pressable>
-      {pickerError ? (
-        <FieldMessage tone="error">{pickerError}</FieldMessage>
-      ) : null}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  avatarArea: {
-    alignItems: "center",
-    gap: atomSpacing[3]
-  },
-  avatarImage: {
-    height: "100%",
-    width: "100%"
-  },
-  avatarPicker: {
-    alignItems: "center",
-    backgroundColor: atomPalette.surfaceLow,
-    borderColor: atomPalette.border,
-    borderRadius: atomRadii.full,
-    borderWidth: 1,
-    height: 104,
-    justifyContent: "center",
-    overflow: "hidden",
-    width: 104
-  },
-  avatarPickerBadge: {
-    alignItems: "center",
-    backgroundColor: atomPalette.accent,
-    borderColor: atomPalette.surface,
-    borderRadius: atomRadii.full,
-    borderWidth: 2,
-    bottom: 4,
-    height: 32,
-    justifyContent: "center",
-    position: "absolute",
-    right: 4,
-    width: 32
-  },
-  avatarPickerRoot: {
-    gap: atomSpacing[2]
-  },
   content: {
     gap: atomSpacing[5]
   },
@@ -399,8 +242,5 @@ const styles = StyleSheet.create({
   },
   messages: {
     gap: atomSpacing[3]
-  },
-  webCursor: {
-    cursor: "pointer"
-  } as ViewStyle
+  }
 });

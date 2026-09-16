@@ -10,17 +10,17 @@ import { useTranslation } from "react-i18next";
 
 export function ContractorPickerField({
   onChange,
-  ownerId,
+  workspaceId,
   value
 }: {
   onChange: (contractorId: string | null) => void;
-  ownerId?: string;
+  workspaceId?: string;
   value: string | null;
 }) {
   const { t } = useTranslation("features/contractors");
   const [query, setQuery] = useState("");
   const contractorsQuery = useContractors({
-    ownerId,
+    workspaceId,
     query,
     sort: "name_asc"
   });
@@ -29,9 +29,7 @@ export function ContractorPickerField({
   return (
     <CatalogPickerField
       entityName={t(($) => $["features/contractors"].picker.entity)}
-      entityNamePlural={t(
-        ($) => $["features/contractors"].picker.entities
-      )}
+      entityNamePlural={t(($) => $["features/contractors"].picker.entities)}
       getDisplayName={getContractorDisplayName}
       hasNextPage={contractorsQuery.hasNextPage}
       icon={HardHatIcon}

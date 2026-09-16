@@ -13,8 +13,14 @@ export const PROJECT_PERMISSION_CODES = [
 
 export type ProjectPermissionCode = (typeof PROJECT_PERMISSION_CODES)[number];
 export type ProjectRoleCode = string;
+export type ProjectAccessSource =
+  | "global_admin"
+  | "organization_member"
+  | "organization_owner"
+  | "project_membership";
 
 export interface ProjectAccess {
+  accessSource: ProjectAccessSource;
   isAdmin: boolean;
   isOwner: boolean;
   permissions: ProjectPermissionCode[];
@@ -37,6 +43,12 @@ export interface ProjectMemberSummary {
   lastName: string | null;
   roleCode: ProjectRoleCode;
   userId: string;
+}
+
+export interface ProjectOrganizationSummary {
+  avatar: string | null;
+  id: string;
+  name: string;
 }
 
 export type ProjectInvitationStatus =
@@ -62,7 +74,7 @@ export interface ProjectInvitationSummary {
 export interface ProjectTeam {
   invitations: ProjectInvitationSummary[];
   members: ProjectMemberSummary[];
-  owner: ProjectMemberSummary;
+  organization: ProjectOrganizationSummary;
 }
 
 export interface ProjectTeamPage extends ProjectTeam {
@@ -90,6 +102,7 @@ export interface ProjectInvitationPreview {
   expiresAt: string;
   id: string;
   inviterName: string;
+  projectId: string;
   projectName: string;
   roleCode: ProjectRoleCode;
   roleName: string;

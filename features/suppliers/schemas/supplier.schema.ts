@@ -28,10 +28,11 @@ export const SupplierSchema: z.ZodType<Supplier> = z.object({
   longitude: z.number().nullable(),
   name: z.string(),
   notes: z.string().nullable(),
-  owner_id: z.string(),
+  created_by: z.string(),
   phone_number: z.string().nullable(),
   updated_at: z.string().nullable(),
-  website_url: z.string().nullable()
+  website_url: z.string().nullable(),
+  workspace_id: z.string()
 });
 
 const optionalWebsiteSchema = z
@@ -101,9 +102,7 @@ export function createSupplierFormSchema(
     .refine(
       (value) => value.length === 0 || normalizeWebsiteUrl(value) !== null,
       {
-        message: t(
-          ($) => $["features/suppliers"].validation.websiteInvalid
-        )
+        message: t(($) => $["features/suppliers"].validation.websiteInvalid)
       }
     );
 
@@ -120,12 +119,21 @@ export function createSupplierFormSchema(
     name: z
       .string()
       .trim()
-      .min(2, t(($) => $["features/suppliers"].validation.nameMin))
-      .max(120, t(($) => $["features/suppliers"].validation.nameMax)),
+      .min(
+        2,
+        t(($) => $["features/suppliers"].validation.nameMin)
+      )
+      .max(
+        120,
+        t(($) => $["features/suppliers"].validation.nameMax)
+      ),
     notes: z
       .string()
       .trim()
-      .max(2000, t(($) => $["features/suppliers"].validation.notesMax)),
+      .max(
+        2000,
+        t(($) => $["features/suppliers"].validation.notesMax)
+      ),
     phone_number: phone,
     website_url: website
   });
@@ -169,7 +177,7 @@ export function normalizeWebsiteUrl(value: string) {
 
 export function normalizeSupplierFilters(filters: SupplierFilters = {}) {
   return {
-    ownerId: normalizeNullableText(filters.ownerId ?? ""),
+    workspaceId: normalizeNullableText(filters.workspaceId ?? ""),
     query: normalizeNullableText(filters.query ?? ""),
     sort: normalizeSupplierSort(filters.sort)
   };

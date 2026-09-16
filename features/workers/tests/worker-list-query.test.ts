@@ -4,15 +4,14 @@ import {
 } from "@/features/workers/repositories/worker-list-query";
 
 describe("worker list query", () => {
-  it("scopes normal users to their own active workers", () => {
+  it("scopes active workers to the workspace", () => {
     expect(
       buildWorkerListQueryPlan({
-        userId: "owner-1",
-        userRole: "user"
+        workspaceId: "workspace-1"
       }).filters
     ).toEqual([
       { column: "deleted_at", operator: "is", value: null },
-      { column: "owner_id", operator: "eq", value: "owner-1" }
+      { column: "workspace_id", operator: "eq", value: "workspace-1" }
     ]);
   });
 
@@ -23,12 +22,11 @@ describe("worker list query", () => {
           contractorId: "contractor-1",
           tradeCategoryIds: ["trade-2", "trade-1"]
         },
-        userId: "owner-1",
-        userRole: "user"
+        workspaceId: "workspace-1"
       }).filters
     ).toEqual([
       { column: "deleted_at", operator: "is", value: null },
-      { column: "owner_id", operator: "eq", value: "owner-1" },
+      { column: "workspace_id", operator: "eq", value: "workspace-1" },
       {
         column: "contractor_id",
         operator: "eq",
@@ -46,8 +44,7 @@ describe("worker list query", () => {
     expect(
       buildWorkerListQueryPlan({
         filters: { sort: "name_desc" },
-        userId: "owner-1",
-        userRole: "user"
+        workspaceId: "workspace-1"
       }).orders
     ).toEqual([
       { ascending: false, column: "first_name" },

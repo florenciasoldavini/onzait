@@ -66,10 +66,10 @@ export const ProjectIdentitySection = memo(function ProjectIdentitySection({
   canChangeClient = true,
   control,
   onInteraction,
-  ownerId
+  workspaceId
 }: ProjectFormSectionProps & {
   canChangeClient?: boolean;
-  ownerId?: string;
+  workspaceId?: string;
 }) {
   const { t } = useTranslation("features/projects");
   return (
@@ -86,9 +86,7 @@ export const ProjectIdentitySection = memo(function ProjectIdentitySection({
               field.onChange(text);
               onInteraction();
             }}
-            placeholder={t(
-              ($) => $["features/projects"].form.namePlaceholder
-            )}
+            placeholder={t(($) => $["features/projects"].form.namePlaceholder)}
             required
             value={field.value}
           />
@@ -125,7 +123,7 @@ export const ProjectIdentitySection = memo(function ProjectIdentitySection({
               field.onChange(clientId);
               onInteraction();
             }}
-            ownerId={ownerId}
+            workspaceId={workspaceId}
             value={field.value}
           />
         )}

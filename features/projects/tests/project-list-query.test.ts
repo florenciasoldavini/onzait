@@ -1,11 +1,10 @@
 import { buildProjectListQueryPlan } from "@/features/projects/repositories/project-list-query";
 
 describe("project list query", () => {
-  it("relies on RLS for owner and shared-project filtering", () => {
+  it("scopes workspace project lists explicitly", () => {
     const plan = buildProjectListQueryPlan({
       filters: { status: "in_progress" },
-      userId: "user-id",
-      userRole: "user"
+      workspaceId: "user-id"
     });
 
     expect(plan.filters).toContainEqual({
@@ -13,16 +12,17 @@ describe("project list query", () => {
       operator: "is",
       value: null
     });
-    expect(plan.filters).not.toContainEqual(
-      expect.objectContaining({ column: "owner_id" })
-    );
+    expect(plan.filters).toContainEqual({
+      column: "workspace_id",
+      operator: "eq",
+      value: "user-id"
+    });
   });
 
   it("filters linked projects by client", () => {
     const plan = buildProjectListQueryPlan({
       filters: { clientId: "client-id" },
-      userId: "user-id",
-      userRole: "user"
+      workspaceId: "user-id"
     });
 
     expect(plan.filters).toContainEqual({
@@ -32,15 +32,14 @@ describe("project list query", () => {
     });
   });
 
-  it("does not add owner filtering for admins", () => {
+  it("keeps global admins inside the selected workspace context", () => {
     const plan = buildProjectListQueryPlan({
       filters: { status: "in_progress" },
-      userId: "admin-id",
-      userRole: "admin"
+      workspaceId: "admin-id"
     });
 
-    expect(plan.filters).not.toContainEqual({
-      column: "owner_id",
+    expect(plan.filters).toContainEqual({
+      column: "workspace_id",
       operator: "eq",
       value: "admin-id"
     });
@@ -53,8 +52,7 @@ describe("project list query", () => {
         projectTypes: ["new_build", "renovation"],
         statuses: ["planned", "in_progress"]
       },
-      userId: "user-id",
-      userRole: "user"
+      workspaceId: "user-id"
     });
 
     expect(plan.filters).toContainEqual({
@@ -77,8 +75,7 @@ describe("project list query", () => {
   it("sorts by newest creation by default", () => {
     const plan = buildProjectListQueryPlan({
       filters: {},
-      userId: "user-id",
-      userRole: "user"
+      workspaceId: "user-id"
     });
 
     expect(plan.orders).toEqual([
@@ -90,8 +87,7 @@ describe("project list query", () => {
   it("sorts alphabetically ascending when requested", () => {
     const plan = buildProjectListQueryPlan({
       filters: { sort: "name_asc" },
-      userId: "user-id",
-      userRole: "user"
+      workspaceId: "user-id"
     });
 
     expect(plan.orders).toEqual([
@@ -103,8 +99,7 @@ describe("project list query", () => {
   it("sorts alphabetically descending when requested", () => {
     const plan = buildProjectListQueryPlan({
       filters: { sort: "name_desc" },
-      userId: "user-id",
-      userRole: "user"
+      workspaceId: "user-id"
     });
 
     expect(plan.orders).toEqual([
@@ -116,8 +111,7 @@ describe("project list query", () => {
   it("sorts creation ascending when requested", () => {
     const plan = buildProjectListQueryPlan({
       filters: { sort: "created_asc" },
-      userId: "user-id",
-      userRole: "user"
+      workspaceId: "user-id"
     });
 
     expect(plan.orders).toEqual([

@@ -84,7 +84,8 @@ const project = {
   latitude: -34.6,
   longitude: -58.4,
   name: "Project name",
-  owner_id: "user-id",
+  created_by: "user-id",
+  workspace_id: "workspace-1",
   phase: "concept" as const,
   progress_percentage: 0,
   project_type: "new_build" as const,
@@ -170,7 +171,11 @@ describe("project save with an optional cover", () => {
 
   it("reports partial success when a new project is saved but its cover fails", async () => {
     await expect(
-      createProjectWithOptionalCover({ coverAsset: asset, input: createInput })
+      createProjectWithOptionalCover({
+        coverAsset: asset,
+        input: createInput,
+        workspaceId: "workspace-1"
+      })
     ).resolves.toEqual({ coverStatus: "failed", project });
 
     expect(mocks.insertProjectRow).toHaveBeenCalledTimes(1);
@@ -194,7 +199,11 @@ describe("project save with an optional cover", () => {
     mocks.insertProjectRow.mockRejectedValue(new Error("database unavailable"));
 
     await expect(
-      createProjectWithOptionalCover({ coverAsset: asset, input: createInput })
+      createProjectWithOptionalCover({
+        coverAsset: asset,
+        input: createInput,
+        workspaceId: "workspace-1"
+      })
     ).rejects.toThrow("database unavailable");
     expect(mocks.uploadProjectCoverObject).not.toHaveBeenCalled();
   });

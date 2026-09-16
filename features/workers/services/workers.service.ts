@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import {
   getWorkerRow,
   insertWorkerRow,
@@ -17,19 +16,16 @@ export function listWorkers({
   filters,
   offset,
   pageSize,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: WorkerFilters;
-  userId: string;
-  userRole: UserRole;
+  workspaceId: string;
 } & OffsetPageRequest) {
   return listWorkerRows({
     filters,
     offset,
     pageSize,
-    userId,
-    userRole
+    workspaceId
   });
 }
 
@@ -37,8 +33,8 @@ export function getWorker(workerId: string) {
   return getWorkerRow(workerId);
 }
 
-export function createWorker(input: CreateWorkerInput) {
-  return insertWorkerRow(input);
+export function createWorker(input: CreateWorkerInput, workspaceId: string) {
+  return insertWorkerRow(input, workspaceId);
 }
 
 export function updateWorker(workerId: string, input: UpdateWorkerInput) {

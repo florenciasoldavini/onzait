@@ -49,9 +49,23 @@ set
   role = excluded.role,
   deleted_at = null;
 
+insert into public.organizations (id, owner_user_id, name, created_by)
+values
+  ('80000000-0000-4000-8000-000000000011', '00000000-0000-4000-8000-000000000011', 'Photo Organization', '00000000-0000-4000-8000-000000000011'),
+  ('80000000-0000-4000-8000-000000000012', '00000000-0000-4000-8000-000000000012', 'Other Photo Organization', '00000000-0000-4000-8000-000000000012');
+insert into public.organization_memberships (organization_id, user_id, role_code, invited_by)
+values
+  ('80000000-0000-4000-8000-000000000011', '00000000-0000-4000-8000-000000000011', 'admin', '00000000-0000-4000-8000-000000000011'),
+  ('80000000-0000-4000-8000-000000000012', '00000000-0000-4000-8000-000000000012', 'admin', '00000000-0000-4000-8000-000000000012');
+insert into public.workspaces (id, organization_id, created_by)
+values
+  ('90000000-0000-4000-8000-000000000011', '80000000-0000-4000-8000-000000000011', '00000000-0000-4000-8000-000000000011'),
+  ('90000000-0000-4000-8000-000000000012', '80000000-0000-4000-8000-000000000012', '00000000-0000-4000-8000-000000000012');
+
 insert into public.projects (
   id,
-  owner_id,
+  workspace_id,
+  created_by,
   name,
   address,
   google_place_id,
@@ -61,6 +75,7 @@ insert into public.projects (
 values
   (
     '10000000-0000-4000-8000-000000000011',
+    '90000000-0000-4000-8000-000000000011',
     '00000000-0000-4000-8000-000000000011',
     'Photo Project',
     '11 Photo Street',
@@ -70,6 +85,7 @@ values
   ),
   (
     '10000000-0000-4000-8000-000000000012',
+    '90000000-0000-4000-8000-000000000012',
     '00000000-0000-4000-8000-000000000012',
     'Other Photo Project',
     '12 Photo Street',
@@ -79,6 +95,7 @@ values
   ),
   (
     '10000000-0000-4000-8000-000000000013',
+    '90000000-0000-4000-8000-000000000011',
     '00000000-0000-4000-8000-000000000011',
     'Archived Photo Project',
     '13 Photo Street',
@@ -137,12 +154,12 @@ select lives_ok(
 
 select is(
   (
-    select owner_id
+    select project_id
     from public.project_photos
     where id = '20000000-0000-4000-8000-000000000011'
   ),
-  '00000000-0000-4000-8000-000000000011'::uuid,
-  'photo owner is derived from the active project'
+  '10000000-0000-4000-8000-000000000011'::uuid,
+  'photo remains scoped to the active project'
 );
 
 select is(
@@ -160,7 +177,6 @@ select throws_ok(
     insert into public.project_photos (
       id,
       project_id,
-      owner_id,
       uploaded_by,
       full_path,
       thumbnail_path,
@@ -170,8 +186,7 @@ select throws_ok(
     )
     values (
       '20000000-0000-4000-8000-000000000010',
-      '10000000-0000-4000-8000-000000000011',
-      '00000000-0000-4000-8000-000000000013',
+      '10000000-0000-4000-8000-000000000012',
       '00000000-0000-4000-8000-000000000013',
       'projects/10000000-0000-4000-8000-000000000011/photos/20000000-0000-4000-8000-000000000010/full.jpg',
       'projects/10000000-0000-4000-8000-000000000011/photos/20000000-0000-4000-8000-000000000010/thumbnail.jpg',
@@ -182,7 +197,7 @@ select throws_ok(
   $$,
   '42501',
   null,
-  'clients cannot assign forged owner or uploader values'
+  'clients cannot upload photos to another organizations project'
 );
 
 select is(

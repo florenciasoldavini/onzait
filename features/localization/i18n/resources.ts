@@ -26,6 +26,8 @@ import suppliersEn from "@/features/suppliers/i18n/en";
 import suppliersEs from "@/features/suppliers/i18n/es";
 import workersEn from "@/features/workers/i18n/en";
 import workersEs from "@/features/workers/i18n/es";
+import workspacesEn from "@/features/workspaces/i18n/en";
+import workspacesEs from "@/features/workspaces/i18n/es";
 import sharedEn from "@/shared/i18n/en";
 import sharedEs from "@/shared/i18n/es";
 
@@ -45,6 +47,7 @@ export const localizationResources = {
     "features/trade-categories": tradeCategoriesEn,
     "features/suppliers": suppliersEn,
     "features/workers": workersEn,
+    "features/workspaces": workspacesEn,
     shared: sharedEn
   },
   es: {
@@ -62,6 +65,7 @@ export const localizationResources = {
     "features/trade-categories": tradeCategoriesEs,
     "features/suppliers": suppliersEs,
     "features/workers": workersEs,
+    "features/workspaces": workspacesEs,
     shared: sharedEs
   }
 } as const;

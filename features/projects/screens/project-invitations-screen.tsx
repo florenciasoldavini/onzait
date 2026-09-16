@@ -11,6 +11,7 @@ import { AlertIcon, MailIcon, RefreshIcon } from "@/shared/ui/icons";
 import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
+import { OrganizationInvitationList } from "@/features/workspaces/components/organization-invitation-list";
 
 export function ProjectInvitationsScreen({
   highlightedInvitationId
@@ -61,10 +62,9 @@ export function ProjectInvitationsScreen({
             description={t(
               ($) => $["features/projects"].invitations.listDescription
             )}
-            title={t(
-              ($) => $["features/projects"].invitations.listTitle
-            )}
+            title={t(($) => $["features/projects"].invitations.listTitle)}
           />
+          <OrganizationInvitationList />
           {invitations.length ? (
             invitations.map((invitation) => (
               <ProjectInvitationCard
@@ -79,9 +79,7 @@ export function ProjectInvitationsScreen({
                 ($) => $["features/projects"].invitations.emptyDescription
               )}
               icon={MailIcon}
-              title={t(
-                ($) => $["features/projects"].team.emptyInvitations
-              )}
+              title={t(($) => $["features/projects"].team.emptyInvitations)}
             />
           )}
           {invitationsQuery.hasNextPage ? (

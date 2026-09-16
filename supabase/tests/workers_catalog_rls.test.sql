@@ -10,15 +10,30 @@ values
   ('00000000-0000-4000-8000-000000000032', 'Other Owner', 'worker-other@example.com', 'user'),
   ('00000000-0000-4000-8000-000000000033', 'Worker Admin', 'worker-admin@example.com', 'admin');
 
-insert into public.contractors (id, owner_id, first_name)
+insert into public.organizations (id, owner_user_id, name, created_by)
+values
+  ('80000000-0000-4000-8000-000000000031', '00000000-0000-4000-8000-000000000031', 'Worker Owner Organization', '00000000-0000-4000-8000-000000000031'),
+  ('80000000-0000-4000-8000-000000000032', '00000000-0000-4000-8000-000000000032', 'Other Worker Organization', '00000000-0000-4000-8000-000000000032');
+insert into public.organization_memberships (organization_id, user_id, role_code, invited_by)
+values
+  ('80000000-0000-4000-8000-000000000031', '00000000-0000-4000-8000-000000000031', 'admin', '00000000-0000-4000-8000-000000000031'),
+  ('80000000-0000-4000-8000-000000000032', '00000000-0000-4000-8000-000000000032', 'admin', '00000000-0000-4000-8000-000000000032');
+insert into public.workspaces (id, organization_id, created_by)
+values
+  ('00000000-0000-4000-8000-000000000031', '80000000-0000-4000-8000-000000000031', '00000000-0000-4000-8000-000000000031'),
+  ('00000000-0000-4000-8000-000000000032', '80000000-0000-4000-8000-000000000032', '00000000-0000-4000-8000-000000000032');
+
+insert into public.contractors (id, workspace_id, created_by, first_name)
 values
   (
     '30000000-0000-4000-8000-000000000031',
+    '00000000-0000-4000-8000-000000000031',
     '00000000-0000-4000-8000-000000000031',
     'Owner Contractor'
   ),
   (
     '30000000-0000-4000-8000-000000000032',
+    '00000000-0000-4000-8000-000000000032',
     '00000000-0000-4000-8000-000000000032',
     'Other Contractor'
   );
@@ -38,6 +53,7 @@ select lives_ok(
   $$
     select public.create_worker_with_relationships(
       p_first_name => '  Alex  ',
+      p_workspace_id => '00000000-0000-4000-8000-000000000031',
       p_last_name => '  Morgan  ',
       p_phone_number => '  +54 11 5555 0101  ',
       p_email => '  WORKER@EXAMPLE.COM  ',
@@ -108,7 +124,7 @@ select is(
 
 select throws_ok(
   $$
-    insert into public.workers (owner_id, first_name)
+    insert into public.workers (workspace_id, first_name)
     values ('00000000-0000-4000-8000-000000000032', 'Not Mine')
   $$,
   '42501',
@@ -120,6 +136,7 @@ select throws_ok(
   $$
     select public.create_worker_with_relationships(
       p_first_name => 'Wrong Contractor',
+      p_workspace_id => '00000000-0000-4000-8000-000000000031',
       p_contractor_id => '30000000-0000-4000-8000-000000000032'
     )
   $$,
@@ -132,6 +149,7 @@ select throws_ok(
   $$
     select public.create_worker_with_relationships(
       p_first_name => 'Invalid Trade',
+      p_workspace_id => '00000000-0000-4000-8000-000000000031',
       p_trade_category_ids => array[
         '40000000-0000-4000-8000-000000000038'::uuid
       ]
@@ -156,6 +174,7 @@ select throws_ok(
   $$
     select public.create_worker_with_relationships(
       p_first_name => 'Archived Trade',
+      p_workspace_id => '00000000-0000-4000-8000-000000000031',
       p_trade_category_ids => array[
         '40000000-0000-4000-8000-000000000039'::uuid
       ]
@@ -228,7 +247,7 @@ select throws_ok(
 select throws_ok(
   $$
     update public.workers
-    set owner_id = '00000000-0000-4000-8000-000000000032'
+    set workspace_id = '00000000-0000-4000-8000-000000000032'
     where email = 'worker@example.com'
   $$,
   '42501',
@@ -340,6 +359,7 @@ select throws_ok(
   $$
     select public.create_worker_with_relationships(
       p_first_name => 'Archived Contractor',
+      p_workspace_id => '00000000-0000-4000-8000-000000000031',
       p_contractor_id => '30000000-0000-4000-8000-000000000031'
     )
   $$,
@@ -402,7 +422,7 @@ select throws_ok(
 );
 
 select throws_ok(
-  $$ select public.create_worker_with_relationships(p_first_name => 'Anon') $$,
+  $$ select public.create_worker_with_relationships(p_first_name => 'Anon', p_workspace_id => gen_random_uuid()) $$,
   '42501',
   null,
   'anonymous users cannot call worker save functions'

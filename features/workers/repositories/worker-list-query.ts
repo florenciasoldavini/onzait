@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import { normalizeWorkerFilters } from "@/features/workers/schemas/worker.schema";
 import type {
   WorkerFilters,
@@ -16,25 +15,21 @@ export interface WorkerListQueryPlan {
 
 export function buildWorkerListQueryPlan({
   filters,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: WorkerFilters;
-  userId: string;
-  userRole: UserRole;
+  workspaceId: string;
 }): WorkerListQueryPlan {
   const normalized = normalizeWorkerFilters(filters);
   const queryFilters: WorkerListQueryPlan["filters"] = [
     { column: "deleted_at", operator: "is", value: null }
   ];
 
-  if (userRole !== "admin") {
-    queryFilters.push({
-      column: "owner_id",
-      operator: "eq",
-      value: userId
-    });
-  }
+  queryFilters.push({
+    column: "workspace_id",
+    operator: "eq",
+    value: workspaceId
+  });
 
   if (normalized.contractorId) {
     queryFilters.push({

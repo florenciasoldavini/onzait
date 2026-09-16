@@ -68,7 +68,7 @@ describe("client schema", () => {
 
   it("normalizes the default list state", () => {
     expect(normalizeClientFilters({ query: " " })).toEqual({
-      ownerId: null,
+      workspaceId: null,
       query: null,
       sort: "created_desc"
     });

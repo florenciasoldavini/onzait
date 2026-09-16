@@ -4,33 +4,33 @@ import {
 } from "@/features/suppliers/repositories/supplier-list-query";
 
 describe("supplier list query", () => {
-  it("scopes normal users to their own active suppliers", () => {
+  it("scopes active suppliers to the workspace", () => {
     expect(
       buildSupplierListQueryPlan({
-        userId: "owner-1",
-        userRole: "user"
+        workspaceId: "workspace-1"
       }).filters
     ).toEqual([
       { column: "deleted_at", operator: "is", value: null },
-      { column: "owner_id", operator: "eq", value: "owner-1" }
+      { column: "workspace_id", operator: "eq", value: "workspace-1" }
     ]);
   });
 
-  it("lets admins query active suppliers across owners", () => {
+  it("keeps admins in the selected workspace", () => {
     expect(
       buildSupplierListQueryPlan({
-        userId: "admin-1",
-        userRole: "admin"
+        workspaceId: "admin-1"
       }).filters
-    ).toEqual([{ column: "deleted_at", operator: "is", value: null }]);
+    ).toEqual([
+      { column: "deleted_at", operator: "is", value: null },
+      { column: "workspace_id", operator: "eq", value: "admin-1" }
+    ]);
   });
 
   it("uses stable name ordering", () => {
     expect(
       buildSupplierListQueryPlan({
         filters: { sort: "name_desc" },
-        userId: "owner-1",
-        userRole: "user"
+        workspaceId: "workspace-1"
       }).orders
     ).toEqual([
       { ascending: false, column: "name" },

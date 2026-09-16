@@ -4,37 +4,37 @@ import {
 } from "@/features/contractors/repositories/contractor-list-query";
 
 describe("contractor list query", () => {
-  it("scopes normal users to their own active contractors", () => {
+  it("scopes active contractors to the workspace", () => {
     expect(
       buildContractorListQueryPlan({
-        userId: "owner-1",
-        userRole: "user"
+        workspaceId: "workspace-1"
       }).filters
     ).toEqual([
       { column: "deleted_at", operator: "is", value: null },
-      { column: "owner_id", operator: "eq", value: "owner-1" }
+      { column: "workspace_id", operator: "eq", value: "workspace-1" }
     ]);
   });
 
-  it("lets admins query active contractors across owners", () => {
+  it("keeps admins in the selected workspace", () => {
     expect(
       buildContractorListQueryPlan({
-        userId: "admin-1",
-        userRole: "admin"
-      }).filters
-    ).toEqual([{ column: "deleted_at", operator: "is", value: null }]);
-  });
-
-  it("lets admins explicitly scope a contractor picker by owner", () => {
-    expect(
-      buildContractorListQueryPlan({
-        filters: { ownerId: "owner-1" },
-        userId: "admin-1",
-        userRole: "admin"
+        workspaceId: "admin-1"
       }).filters
     ).toEqual([
       { column: "deleted_at", operator: "is", value: null },
-      { column: "owner_id", operator: "eq", value: "owner-1" }
+      { column: "workspace_id", operator: "eq", value: "admin-1" }
+    ]);
+  });
+
+  it("does not let a picker override the active workspace", () => {
+    expect(
+      buildContractorListQueryPlan({
+        filters: { workspaceId: "owner-1" },
+        workspaceId: "admin-1"
+      }).filters
+    ).toEqual([
+      { column: "deleted_at", operator: "is", value: null },
+      { column: "workspace_id", operator: "eq", value: "admin-1" }
     ]);
   });
 
@@ -42,8 +42,7 @@ describe("contractor list query", () => {
     expect(
       buildContractorListQueryPlan({
         filters: { sort: "name_desc" },
-        userId: "owner-1",
-        userRole: "user"
+        workspaceId: "workspace-1"
       }).orders
     ).toEqual([
       { ascending: false, column: "first_name" },

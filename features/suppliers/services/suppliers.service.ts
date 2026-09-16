@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import {
   getSupplierRow,
   insertSupplierRow,
@@ -17,19 +16,16 @@ export function listSuppliers({
   filters,
   offset,
   pageSize,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: SupplierFilters;
-  userId: string;
-  userRole: UserRole;
+  workspaceId: string;
 } & OffsetPageRequest) {
   return listSupplierRows({
     filters,
     offset,
     pageSize,
-    userId,
-    userRole
+    workspaceId
   });
 }
 
@@ -37,14 +33,14 @@ export function getSupplier(supplierId: string) {
   return getSupplierRow(supplierId);
 }
 
-export function createSupplier(input: CreateSupplierInput) {
-  return insertSupplierRow(input);
+export function createSupplier(
+  input: CreateSupplierInput,
+  workspaceId: string
+) {
+  return insertSupplierRow(input, workspaceId);
 }
 
-export function updateSupplier(
-  supplierId: string,
-  input: UpdateSupplierInput
-) {
+export function updateSupplier(supplierId: string, input: UpdateSupplierInput) {
   return updateSupplierRow(supplierId, input);
 }
 

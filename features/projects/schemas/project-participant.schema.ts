@@ -4,10 +4,10 @@ import {
   type MyProjectInvitationPage,
   type ProjectAccess,
   type ProjectInvitationPreview,
+  type ProjectPermissionCode,
   type ProjectRoleOption,
   type ProjectTeamPage
 } from "@/features/projects/types/project-participant";
-import type { ProjectPermissionCode } from "@/features/projects/types/project-participant";
 import { supportedLanguages } from "@/features/localization/types/language";
 import { z } from "zod";
 
@@ -25,6 +25,12 @@ export type ProjectInviteInput = z.infer<typeof projectInviteInputSchema>;
 export function parseProjectAccess(value: unknown): ProjectAccess {
   const result = z
     .object({
+      access_source: z.enum([
+        "global_admin",
+        "organization_member",
+        "organization_owner",
+        "project_membership"
+      ]),
       is_admin: z.boolean(),
       is_owner: z.boolean(),
       permissions: z.array(permissionSchema),
@@ -34,6 +40,7 @@ export function parseProjectAccess(value: unknown): ProjectAccess {
     .parse(value);
 
   return {
+    accessSource: result.access_source,
     isAdmin: result.is_admin,
     isOwner: result.is_owner,
     permissions: result.permissions,
@@ -102,7 +109,11 @@ export function parseProjectTeam(value: unknown): ProjectTeamPage {
       has_more: z.boolean(),
       members: z.array(memberSchema.extend({ id: z.string().uuid() })),
       next_page: z.number().int().nonnegative().nullable(),
-      owner: memberSchema
+      organization: z.object({
+        avatar: z.string().nullable(),
+        id: z.string().uuid(),
+        name: z.string()
+      })
     })
     .parse(value);
 
@@ -130,7 +141,7 @@ export function parseProjectTeam(value: unknown): ProjectTeamPage {
     hasMore: result.has_more,
     members: result.members.map(mapMember),
     nextPage: result.next_page,
-    owner: mapMember(result.owner)
+    organization: result.organization
   };
 }
 
@@ -178,6 +189,7 @@ export function parseInvitationPreview(
       expiresAt: z.string(),
       id: z.string().uuid(),
       inviterName: z.string(),
+      projectId: z.string().uuid(),
       projectName: z.string(),
       roleCode: roleCodeSchema,
       roleName: z.string(),

@@ -2,6 +2,9 @@ export default {
   info: {
     avatarAccessibility: "Cambiar foto de perfil",
     avatarError: "La foto de perfil no está disponible. Actualizá la página.",
+    avatarHint: "Opcional · JPG, PNG o WebP de hasta 5 MB",
+    avatarLabel: "Foto de perfil",
+    avatarPreviewLabel: "Vista previa de la foto de perfil",
     firstName: "Nombre",
     lastName: "Apellido",
     personalDetails: "Datos personales",
@@ -13,6 +16,7 @@ export default {
       "Se necesita acceso a las fotos para elegir una imagen de perfil. Permití el acceso e intentá nuevamente.",
     profile: "Perfil",
     save: "Guardar perfil",
+    saveError: "No pudimos actualizar tu perfil. Intentá de nuevo.",
     signInError: "Iniciá sesión para actualizar el perfil.",
     updated: "Perfil actualizado"
   },

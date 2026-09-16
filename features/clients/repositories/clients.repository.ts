@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import { buildClientListQueryPlan } from "@/features/clients/repositories/client-list-query";
 import type {
   Client,
@@ -16,30 +15,28 @@ import {
   toPaginatedResult,
   type OffsetPageRequest
 } from "@/shared/utils/pagination";
-import { UserFacingError } from "@/shared/utils/user-facing-errors";
 
 const CLIENT_SUMMARY_COLUMNS = [
   "email",
   "first_name",
   "id",
   "last_name",
-  "owner_id",
-  "phone_number"
+  "created_by",
+  "phone_number",
+  "workspace_id"
 ].join(",");
 
 export async function listClientRows({
   filters,
   offset,
   pageSize,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: ClientFilters;
-  userId: string;
-  userRole: UserRole;
+  workspaceId: string;
 } & OffsetPageRequest) {
   const client = requireSupabase();
-  const plan = buildClientListQueryPlan({ filters, userId, userRole });
+  const plan = buildClientListQueryPlan({ filters, workspaceId });
   const range = getOffsetPageRange({ offset, pageSize });
   let query = client.from("clients").select(CLIENT_SUMMARY_COLUMNS);
 
@@ -82,24 +79,14 @@ export async function getClientRow(clientId: string) {
   return data ? (data as Client) : null;
 }
 
-export async function insertClientRow(input: CreateClientInput) {
+export async function insertClientRow(
+  input: CreateClientInput,
+  workspaceId: string
+) {
   const client = requireSupabase();
-  const {
-    data: { user },
-    error: authError
-  } = await client.auth.getUser();
-
-  if (authError) {
-    throw toRepositoryError(authError);
-  }
-
-  if (!user) {
-    throw new UserFacingError("You must be signed in to save clients.");
-  }
-
   const { data, error } = await client
     .from("clients")
-    .insert({ ...input, owner_id: user.id })
+    .insert({ ...input, workspace_id: workspaceId })
     .select()
     .single();
 

@@ -16,7 +16,7 @@ export type Client = OwnedPersonContactRecord;
 export type ClientSummary = PersonContactSummary;
 
 export interface ClientFilters {
-  ownerId?: string;
+  workspaceId?: string;
   query?: string;
   sort?: ClientSort;
 }

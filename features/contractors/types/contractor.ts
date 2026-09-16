@@ -16,7 +16,7 @@ export type Contractor = OwnedPersonContactRecord;
 export type ContractorSummary = PersonContactSummary;
 
 export interface ContractorFilters {
-  ownerId?: string;
+  workspaceId?: string;
   query?: string;
   sort?: ContractorSort;
 }

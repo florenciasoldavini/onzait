@@ -44,8 +44,7 @@ describe("useContractors", () => {
       filters: { query: "", sort: "name_asc" },
       offset: 0,
       pageSize: 24,
-      userId: "owner-1",
-      userRole: "user"
+      workspaceId: "workspace-1"
     });
     await hook.unmount();
     queryClient.clear();
@@ -53,10 +52,9 @@ describe("useContractors", () => {
 
   it("rejects creation without a session", async () => {
     const queryClient = createTestQueryClient();
-    const hook = await renderHookWithAppProviders(
-      () => useCreateContractor(),
-      { queryClient }
-    );
+    const hook = await renderHookWithAppProviders(() => useCreateContractor(), {
+      queryClient
+    });
 
     await act(async () => {
       await expect(

@@ -25,6 +25,9 @@ import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
+import { AppCard } from "@/shared/ui/components/card";
+import { AppHeading } from "@/shared/ui/components/heading";
+import { AppText } from "@/shared/ui/components/text";
 
 export function ProjectTeamContent({ projectId }: { projectId: string }) {
   const router = useRouter();
@@ -40,7 +43,7 @@ export function ProjectTeamContent({ projectId }: { projectId: string }) {
     return {
       invitations: pages.flatMap((page) => page.invitations),
       members: pages.flatMap((page) => page.members),
-      owner: first.owner
+      organization: first.organization
     };
   }, [teamQuery.data]);
   const canManage = accessQuery.can("project.members.manage");
@@ -121,7 +124,7 @@ export function ProjectTeamContent({ projectId }: { projectId: string }) {
             <NavScreenHeader
               action={
                 accessQuery.data &&
-                !accessQuery.data.isOwner &&
+                accessQuery.data.accessSource === "project_membership" &&
                 !accessQuery.data.isAdmin ? (
                   <AppButton
                     color="danger"
@@ -134,12 +137,8 @@ export function ProjectTeamContent({ projectId }: { projectId: string }) {
                   </AppButton>
                 ) : null
               }
-              breadcrumbLabel={t(
-                ($) => $["features/projects"].team.title
-              )}
-              description={t(
-                ($) => $["features/projects"].team.description
-              )}
+              breadcrumbLabel={t(($) => $["features/projects"].team.title)}
+              description={t(($) => $["features/projects"].team.description)}
               title={t(($) => $["features/projects"].team.title)}
             />
             {canManage ? (
@@ -152,9 +151,7 @@ export function ProjectTeamContent({ projectId }: { projectId: string }) {
               accessibilityLabel={t(
                 ($) => $["features/projects"].invitations.leave
               )}
-              confirmLabel={t(
-                ($) => $["features/projects"].invitations.leave
-              )}
+              confirmLabel={t(($) => $["features/projects"].invitations.leave)}
               controller={leaveConfirmation}
               description={t(
                 ($) => $["features/projects"].team.leaveDescription
@@ -163,10 +160,19 @@ export function ProjectTeamContent({ projectId }: { projectId: string }) {
               onConfirm={confirmLeave}
               title={t(($) => $["features/projects"].team.leaveTitle)}
             />
+            <AppCard padding="lg">
+              <View style={{ gap: atomSpacing[2] }}>
+                <AppText tone="accent" variant="eyebrow">
+                  {t(($) => $["features/projects"].team.owningOrganization)}
+                </AppText>
+                <AppHeading variant="section">
+                  {team.organization.name}
+                </AppHeading>
+              </View>
+            </AppCard>
             <MembersCard
               canManage={canManage}
-              members={[team.owner, ...team.members]}
-              ownerUserId={team.owner.userId}
+              members={team.members}
               projectId={projectId}
               roles={rolesQuery.data ?? []}
             />

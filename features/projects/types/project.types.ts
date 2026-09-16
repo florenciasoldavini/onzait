@@ -37,13 +37,14 @@ export interface Project {
   latitude: number;
   longitude: number;
   name: string;
-  owner_id: string;
+  created_by: string;
   phase: ProjectPhase;
   progress_percentage: number;
   project_type: ProjectType;
   start_date: string | null;
   status: ProjectStatus;
   updated_at: string | null;
+  workspace_id: string;
 }
 
 export type ProjectSummary = Pick<
@@ -62,6 +63,12 @@ export type ProjectSummary = Pick<
 > & {
   cover_image_url?: string | null;
 };
+
+export interface SharedProjectSummary extends ProjectSummary {
+  organization_id: string;
+  organization_name: string;
+  role_code: string;
+}
 
 export interface ProjectFilters {
   buildingType?: ProjectBuildingType | "all";

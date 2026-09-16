@@ -89,6 +89,12 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="shared"
+        options={{
+          href: null
+        }}
+      />
+      <Tabs.Screen
         name="tasks"
         options={{
           title: t(($) => $["features/localization"].navigation.tasks),

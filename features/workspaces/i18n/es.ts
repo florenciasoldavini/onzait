@@ -1,0 +1,143 @@
+export default {
+  avatar: {
+    accessibilityLabel: "Elegir avatar de la organización",
+    creationWarning:
+      "La organización fue creada, pero no pudimos subir su avatar. Podés agregarlo más tarde desde la configuración General.",
+    denied:
+      "El acceso a las fotos está deshabilitado. Habilitalo en la configuración del dispositivo e intentá de nuevo.",
+    error: "No pudimos abrir tus fotos. Intentá de nuevo.",
+    hint: "Opcional · JPG, PNG o WebP de hasta 5 MB",
+    label: "Avatar de la organización",
+    permission:
+      "Permití el acceso a las fotos para elegir un avatar para la organización.",
+    previewLabel: "Vista previa del avatar de la organización"
+  },
+  invitations: {
+    accept: "Unirme a la organización",
+    decline: "Rechazar",
+    incomplete: "Abre el enlace completo de tu invitación.",
+    invalid: "Esta invitación no es válida o ya no está disponible.",
+    invalidStatus: "Esta invitación está {{status}}.",
+    invitedBy: "{{inviter}} te invitó.",
+    joinTitle: "Únete a {{organization}}",
+    loadError: "No pudimos revisar tus invitaciones. Inténtalo de nuevo.",
+    respondError: "No pudimos responder a esta invitación. Inténtalo de nuevo.",
+    role: "Rol en la organización: {{role}}",
+    title: "Invitaciones a organizaciones",
+    unavailable: "Invitación no disponible"
+  },
+  invitationStatuses: {
+    accepted: "aceptada",
+    declined: "rechazada",
+    expired: "vencida",
+    pending: "pendiente",
+    revoked: "revocada"
+  },
+  members: {
+    alreadyMember: "Esta persona ya pertenece a la organización.",
+    changeRole: "Cambiar el rol de {{name}}",
+    closeInvite: "Cerrar invitación de miembro",
+    current: "Miembros",
+    email: "Correo electrónico",
+    emailInvalid: "Ingresá un correo electrónico válido.",
+    emailRequired: "Ingresá un correo electrónico.",
+    emailTooLong: "El correo electrónico es demasiado largo.",
+    invite: "Enviar invitación",
+    inviteAction: "Invitar miembro",
+    inviteDescription:
+      "Recibirá una invitación para unirse a la organización y acceder a sus espacios de trabajo.",
+    inviteError: "No pudimos crear esta invitación a la organización.",
+    inviteTitle: "Invitar a un colega",
+    joined: "Se unió",
+    loadError: "No pudimos cargar los miembros de la organización.",
+    loadMore: "Cargar más",
+    name: "Nombre",
+    noMembers: "Todavía no hay miembros en la organización.",
+    noSearchResults:
+      "No hay miembros ni invitaciones que coincidan con tu búsqueda.",
+    remove: "Quitar",
+    removeDescription:
+      "{{name}} perderá de inmediato el acceso a los espacios de trabajo y datos de esta organización.",
+    removeError: "No pudimos quitar a esta persona. Intentá de nuevo.",
+    removeLabel: "Quitar a {{name}}",
+    removeTitle: "¿Quitar miembro de la organización?",
+    role: "Rol en la organización",
+    roleError: "No pudimos cambiar el rol de esta persona. Intentá de nuevo.",
+    roleShort: "Rol",
+    search: "Buscar miembros",
+    summary: "{{active}} activos · {{pending}} pendientes",
+    title: "Miembros de la organización",
+    unavailable: "Los miembros no están disponibles",
+    you: "Tú"
+  },
+  pendingInvitations: {
+    description: "Invitaciones que todavía no fueron aceptadas.",
+    details: "{{role}} · Vence el {{date}}",
+    empty: "No hay invitaciones pendientes.",
+    expires: "Vence el {{date}}",
+    invitedBy: "Invitación de {{name}}",
+    loadError:
+      "No pudimos cargar las invitaciones pendientes. Intentá de nuevo.",
+    loadMore: "Cargar más invitaciones",
+    pending: "Pendiente",
+    revoke: "Revocar",
+    revokeDescription:
+      "{{email}} ya no podrá unirse a esta organización con la invitación actual.",
+    revokeError: "No pudimos revocar esta invitación. Intentá de nuevo.",
+    revokeLabel: "Revocar la invitación para {{email}}",
+    revokeTitle: "¿Revocar invitación?",
+    sentLabel: "Invitación enviada",
+    title: "Invitaciones pendientes",
+    unavailable: "Las invitaciones no están disponibles"
+  },
+  roles: {
+    admin: "Administrador",
+    member: "Miembro",
+    owner: "Propietario"
+  },
+  settings: {
+    description: "Administrá los datos y accesos de tu organización.",
+    general: "General",
+    generalDescription: "Nombre y avatar de la organización",
+    generalTitle: "Información de la organización",
+    members: "Miembros",
+    membersDescription: "Invitaciones, miembros y roles",
+    save: "Guardar organización",
+    saved: "Organización actualizada.",
+    saveError: "No pudimos actualizar la organización. Intentá de nuevo.",
+    title: "Configuración de la organización"
+  },
+  setup: {
+    additionalDescription:
+      "Crea una organización separada con su propio espacio de trabajo, proyectos y directorio.",
+    additionalSubmit: "Crear organización",
+    additionalTitle: "Crear una nueva organización",
+    description:
+      "Crea el estudio o empresa que será titular de tus proyectos, directorio y tareas. Después podrás invitar a tus colegas.",
+    error: "No pudimos crear tu estudio o empresa. Inténtalo de nuevo.",
+    finish: "Finalizar configuración",
+    invitationSent: "Invitación enviada a {{email}}.",
+    inviteDescription:
+      "Invitá colegas a {{organization}} ahora o salteá este paso y agregalos más tarde desde la configuración de la organización.",
+    inviteTitle: "Invitá a tu equipo",
+    nameLabel: "Nombre del estudio o empresa",
+    namePlaceholder: "Estudio Norte",
+    next: "Continuar",
+    skip: "Omitir por ahora",
+    step: "Paso {{current}} de {{total}}",
+    submit: "Crear espacio de trabajo",
+    title: "Configura tu estudio o empresa",
+    validation: {
+      nameRequired: "Ingresa el nombre del estudio o empresa.",
+      nameTooLong: "El nombre del estudio o empresa es demasiado largo.",
+      nameTooShort: "El nombre del estudio o empresa es demasiado corto."
+    }
+  },
+  switcher: {
+    accessibilityLabel: "Espacio de trabajo actual",
+    createOrganization: "Crear nueva organización",
+    label: "Espacio de trabajo",
+    organizationSettings: "Configuración de la organización",
+    sharedWithMe: "Compartidos conmigo"
+  }
+} as const;

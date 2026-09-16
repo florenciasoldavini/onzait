@@ -13,7 +13,6 @@ import type {
   ClientFormValues,
   ClientSummary
 } from "@/features/clients/types/client";
-import { useAuth } from "@/features/auth/hooks/use-auth";
 import { AppButton } from "@/shared/ui/components/button";
 import { AppCard } from "@/shared/ui/components/card";
 import { CatalogPickerField } from "@/shared/ui/components/catalog-picker-field";
@@ -38,26 +37,24 @@ const quickClientDefaults: ClientFormValues = {
 export function ClientPickerField({
   disabled = false,
   onChange,
-  ownerId,
+  workspaceId,
   value
 }: {
   disabled?: boolean;
   onChange: (clientId: string | null) => void;
-  ownerId?: string;
+  workspaceId?: string;
   value: string | null;
 }) {
-  const { user } = useAuth();
   const { t } = useTranslation("features/clients");
-  const effectiveOwnerId = ownerId ?? user?.id;
   const [query, setQuery] = useState("");
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const clientsQuery = useClients({
-    ownerId: effectiveOwnerId,
+    workspaceId,
     query,
     sort: "name_asc"
   });
   const selectedClientQuery = useClient(value ?? undefined);
-  const canQuickCreate = Boolean(user) && (!ownerId || ownerId === user?.id);
+  const canQuickCreate = true;
 
   return (
     <>

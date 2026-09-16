@@ -25,13 +25,11 @@ describe("photos repository collaboration scope", () => {
     await listProjectPhotoRows({
       offset: 20,
       pageSize: 20,
-      projectId: "project-1",
-      userId: "member-1",
-      userRole: "user"
+      projectId: "project-1"
     });
 
     expect(eq).toHaveBeenCalledWith("project_id", "project-1");
-    expect(eq).not.toHaveBeenCalledWith("owner_id", expect.anything());
+    expect(eq).not.toHaveBeenCalledWith("created_by", expect.anything());
     expect(is).toHaveBeenCalledWith("deleted_at", null);
     expect(range).toHaveBeenCalledWith(20, 40);
   });

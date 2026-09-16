@@ -1,4 +1,5 @@
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useWorkspace } from "@/features/workspaces/hooks/use-workspace";
 import { normalizeWorkerFilters } from "@/features/workers/schemas/worker.schema";
 import {
   createWorker,
@@ -31,6 +32,7 @@ export const workersKey = ["workers"] as const;
 
 export function useWorkers(filters: WorkerFilters = {}) {
   const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
   const debouncedQuery = useDebouncedValue(filters.query ?? "", 350);
   const requestFilters = useMemo(
     () => ({ ...filters, query: debouncedQuery }),
@@ -48,7 +50,7 @@ export function useWorkers(filters: WorkerFilters = {}) {
     readonly unknown[],
     number
   >({
-    enabled: Boolean(user),
+    enabled: Boolean(user && activeWorkspaceId),
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
@@ -56,10 +58,9 @@ export function useWorkers(filters: WorkerFilters = {}) {
         filters: requestFilters,
         offset: pageParam,
         pageSize: DEFAULT_PAGE_SIZE,
-        userId: user!.id,
-        userRole: user!.role
+        workspaceId: activeWorkspaceId!
       }),
-    queryKey: [...workersKey, user?.id, user?.role, normalizedFilters]
+    queryKey: [...workersKey, activeWorkspaceId, normalizedFilters]
   });
 }
 
@@ -74,6 +75,7 @@ export function useWorker(workerId?: string) {
 export function useCreateWorker() {
   const { createUser, session, user } = useAuth();
   const queryClient = useQueryClient();
+  const { activeWorkspaceId } = useWorkspace();
 
   return useMutation({
     mutationFn: async (input: CreateWorkerInput) => {
@@ -88,7 +90,10 @@ export function useCreateWorker() {
         );
       }
 
-      return createWorker(input);
+      if (!activeWorkspaceId) {
+        throw new UserFacingError("Select a workspace before saving workers.");
+      }
+      return createWorker(input, activeWorkspaceId);
     },
     onSuccess: async (worker) => {
       queryClient.setQueryData([...workersKey, "detail", worker.id], worker);

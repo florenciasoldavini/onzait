@@ -150,7 +150,7 @@ describe("auth repository", () => {
     const stopObserving = observeAuthSession(listener);
     await expect(signOutAuthSession()).resolves.toBeUndefined();
 
-    expect(listener).toHaveBeenCalledWith(session);
+    expect(listener).toHaveBeenCalledWith("SIGNED_IN", session);
     stopObserving();
     expect(unsubscribe).toHaveBeenCalledTimes(1);
   });

@@ -8,13 +8,9 @@ import {
   subscribeToAuthSession
 } from "@/features/auth/services/auth-session.service";
 import type { User } from "@/features/auth/types/auth.types";
-import {
-  act,
-  fireEvent,
-  waitFor
-} from "@testing-library/react-native";
+import { act, fireEvent, waitFor } from "@testing-library/react-native";
 import { renderWithAppProviders as render } from "@/tests/support/render";
-import type { Session } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { Pressable, Text } from "react-native";
 
 jest.mock("@/features/auth/services/auth-session.service", () => ({
@@ -57,7 +53,9 @@ const session = {
   }
 } as Session;
 
-let sessionListener: ((nextSession: Session | null) => void) | null = null;
+let sessionListener:
+  | ((event: AuthChangeEvent, nextSession: Session | null) => void)
+  | null = null;
 const mockUnsubscribe = jest.fn();
 
 function AuthProbe() {
@@ -129,7 +127,7 @@ describe("AuthProvider", () => {
     });
 
     await act(async () => {
-      sessionListener?.(session);
+      sessionListener?.("SIGNED_IN", session);
     });
 
     await waitFor(() => {
@@ -138,13 +136,42 @@ describe("AuthProvider", () => {
     });
 
     await act(async () => {
-      sessionListener?.(null);
+      sessionListener?.("SIGNED_OUT", null);
     });
 
     await waitFor(() => {
       expect(view.getByText("anonymous")).toBeOnTheScreen();
       expect(view.getByText("no-profile")).toBeOnTheScreen();
     });
+  });
+
+  it("keeps repeated events for the same authenticated user lightweight", async () => {
+    const view = await render(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(view.getByText("ready")).toBeOnTheScreen();
+      expect(view.getByText("authenticated")).toBeOnTheScreen();
+    });
+    jest.mocked(hydrateAuthUser).mockClear();
+
+    await act(async () => {
+      sessionListener?.("TOKEN_REFRESHED", {
+        ...session,
+        access_token: "refreshed-token"
+      });
+      sessionListener?.("SIGNED_IN", {
+        ...session,
+        access_token: "confirmed-token"
+      });
+    });
+
+    expect(hydrateAuthUser).not.toHaveBeenCalled();
+    expect(view.getByText("authenticated")).toBeOnTheScreen();
+    expect(view.getByText(user.email)).toBeOnTheScreen();
   });
 
   it("presents a safe error when the stored session cannot be restored", async () => {

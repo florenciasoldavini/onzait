@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import { buildWorkerListQueryPlan } from "@/features/workers/repositories/worker-list-query";
 import type {
   CreateWorkerInput,
@@ -24,8 +23,9 @@ const WORKER_RELATION_COLUMNS = `
     first_name,
     id,
     last_name,
-    owner_id,
-    phone_number
+    created_by,
+    phone_number,
+    workspace_id
   ),
   worker_trade_categories(
     trade_category:trade_categories(
@@ -44,8 +44,9 @@ const WORKER_SUMMARY_COLUMNS = `
   first_name,
   id,
   last_name,
-  owner_id,
+  created_by,
   phone_number,
+  workspace_id,
   ${WORKER_RELATION_COLUMNS}
 `;
 
@@ -57,9 +58,10 @@ const WORKER_DETAIL_COLUMNS = `
   first_name,
   id,
   last_name,
-  owner_id,
+  created_by,
   phone_number,
   updated_at,
+  workspace_id,
   ${WORKER_RELATION_COLUMNS}
 `;
 
@@ -72,15 +74,13 @@ export async function listWorkerRows({
   filters,
   offset,
   pageSize,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: WorkerFilters;
-  userId: string;
-  userRole: UserRole;
+  workspaceId: string;
 } & OffsetPageRequest) {
   const client = requireSupabase();
-  const plan = buildWorkerListQueryPlan({ filters, userId, userRole });
+  const plan = buildWorkerListQueryPlan({ filters, workspaceId });
   const range = getOffsetPageRange({ offset, pageSize });
   const hasTradeFilter = plan.filters.some(
     (filter) => filter.operator === "in"
@@ -136,10 +136,16 @@ export async function getWorkerRow(workerId: string) {
   return data ? toWorker(data) : null;
 }
 
-export async function insertWorkerRow(input: CreateWorkerInput) {
+export async function insertWorkerRow(
+  input: CreateWorkerInput,
+  workspaceId: string
+) {
   const client = requireSupabase();
   const { data, error } = await client
-    .rpc("create_worker_with_relationships", toRpcInput(input))
+    .rpc("create_worker_with_relationships", {
+      ...toRpcInput(input),
+      p_workspace_id: workspaceId
+    })
     .single();
 
   if (error) {
@@ -233,9 +239,10 @@ function toWorker(row: Record<string, unknown>): Worker {
     first_name: row.first_name as string,
     id: row.id as string,
     last_name: (row.last_name as string | null) ?? null,
-    owner_id: row.owner_id as string,
+    created_by: row.created_by as string,
     phone_number: (row.phone_number as string | null) ?? null,
     trade_categories: tradeCategories,
-    updated_at: (row.updated_at as string | null) ?? null
+    updated_at: (row.updated_at as string | null) ?? null,
+    workspace_id: row.workspace_id as string
   };
 }

@@ -135,13 +135,18 @@ Last reviewed: 2026-07-31
 - [20260727213244_create_project_photos_feature.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260727213244_create_project_photos_feature.sql:1)
 - [20260730151708_create_project_documents_feature.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260730151708_create_project_documents_feature.sql:1)
 - [20260731160045_create_notification_inbox_persistence.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260731160045_create_notification_inbox_persistence.sql:1)
+- [20260916143902_add_organization_workspaces.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260916143902_add_organization_workspaces.sql:1)
+- [20260916161042_add_organization_invitation_onboarding_flow.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260916161042_add_organization_invitation_onboarding_flow.sql:1)
+- [20260916191300_manage_organization_invitations.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260916191300_manage_organization_invitations.sql:1)
+- [20260916193804_create_organization_avatar_storage.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260916193804_create_organization_avatar_storage.sql:1)
 
 ### RLS Baseline
 
-- `public.users` is the auth profile table and `public.projects` is the first product feature table
-- Feature tables must default to owner-scoped access for normal users and admin-wide access for `users.role = 'admin'`
+- `public.users` is the auth profile table. Organizations own operational data, while workspaces group the data shown in the application.
+- Workspace-scoped feature tables store `workspace_id`; `created_by` is immutable audit metadata and is never an ownership or authorization key.
+- Normal access derives from active organization membership or explicit project collaboration, while global `users.role = 'admin'` retains support access.
 - Admin users should see all non-deleted rows for feature tables unless a feature documents a narrower rule
-- Normal users should see only their own rows unless a feature explicitly introduces participant access
+- Normal users see rows in organizations they belong to, plus projects and project-scoped data shared with them directly.
 - All get/list reads must filter out rows where `deleted_at` is not null
 - Owner/admin `SELECT` policies may retain access to archived owner-scoped rows when PostgreSQL requires that visibility for direct RLS-protected soft-deletion updates; archived-row exclusion remains mandatory in every product get/list query
 - Policies are anchored to `auth.uid()` plus trusted database role checks, not client-only role checks
@@ -228,13 +233,26 @@ Last reviewed: 2026-07-31
 ### Project Collaboration
 
 - project roles, capabilities, and role-to-capability mappings are database catalogs changed through tracked migrations
-- `owner` is derived from `projects.owner_id`; assignable roles are memberships using validated stable string codes
+- `owner` is derived from the project's owning organization; organization members inherit access and assignable project roles are only direct external memberships using validated stable string codes
+- users who already inherit access from the owning organization must not receive a direct project membership
 - every project RLS policy and collaboration mutation must authorize through the central database capability engine
 - application UI must use `useProjectAccess(projectId).can(permission)` and must not branch on project role names
 - global admins receive every project capability without acquiring membership
 - invitation tokens are stored only as SHA-256 hashes, expire after seven days, and use URL fragments in email links
 - project cover, photo, and document signed URLs expire after five minutes
 - the complete authorization and invitation contract lives in [docs/project-collaboration.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/project-collaboration.md:1)
+
+### Organizations and Workspaces
+
+- organizations are the sole owners of operational data; workspaces are display and grouping contexts belonging to one organization
+- users join organizations, not workspaces, and may join many organizations
+- the schema permits many workspaces per organization, while the MVP creates one initial workspace atomically with each organization
+- organization ownership is separate from the assignable `admin | member` roles; the owner must retain an active admin membership
+- active workspace is a local UI preference and never replaces database authorization
+- workspaces have no archive state; `deleted_at` is deletion and a future reversible archive must use a separate field
+- organization and workspace image columns use the shared name `avatar`
+- organization avatars live in the public `organization-avatars` bucket because they are organization identity marks rather than private operational files; only organization owners, admins, and global admins may upload, replace, or delete objects under that organization's scoped path
+- the complete contract lives in [docs/organizations-workspaces.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/organizations-workspaces.md:1)
 
 ### Notifications
 

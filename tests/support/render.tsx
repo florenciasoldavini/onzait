@@ -27,6 +27,11 @@ import { useMemo, useState } from "react";
 import { SafeAreaProvider, type Metrics } from "react-native-safe-area-context";
 import { createInstance } from "i18next";
 import { I18nextProvider, initReactI18next } from "react-i18next";
+import {
+  WorkspaceContext,
+  type WorkspaceContextValue
+} from "@/features/workspaces/providers/workspace-context";
+import { AppTopBarProvider } from "@/shared/ui/providers/app-topbar-provider";
 
 const defaultQueryOptions: DefaultOptions = {
   mutations: {
@@ -64,6 +69,29 @@ const defaultSafeAreaMetrics: Metrics = {
   }
 };
 
+const defaultWorkspace = {
+  avatar: null,
+  display_avatar: null,
+  display_name: "Test workspace",
+  id: "workspace-1",
+  name: null,
+  organization_avatar: null,
+  organization_id: "organization-1",
+  organization_name: "Test organization",
+  owner_user_id: "owner-1",
+  role_code: "admin" as const
+};
+
+const defaultWorkspaceValue: WorkspaceContextValue = {
+  activeWorkspace: defaultWorkspace,
+  activeWorkspaceId: defaultWorkspace.id,
+  hasWorkspaces: true,
+  isLoading: false,
+  refresh: async () => {},
+  selectWorkspace: async () => {},
+  workspaces: [defaultWorkspace]
+};
+
 export function createTestQueryClient(defaultOptions = defaultQueryOptions) {
   return new QueryClient({ defaultOptions });
 }
@@ -74,6 +102,7 @@ interface AppTestProviderOptions {
   language?: SupportedLanguage;
   queryClient?: QueryClient;
   safeAreaMetrics?: Metrics;
+  workspace?: Partial<WorkspaceContextValue>;
 }
 
 function createAppTestWrapper({
@@ -81,7 +110,8 @@ function createAppTestWrapper({
   includeNavigation = true,
   language: initialLanguage = "en",
   queryClient = createTestQueryClient(),
-  safeAreaMetrics = defaultSafeAreaMetrics
+  safeAreaMetrics = defaultSafeAreaMetrics,
+  workspace
 }: AppTestProviderOptions = {}) {
   setUserFacingErrorLanguage(initialLanguage);
   const i18n = createInstance();
@@ -125,7 +155,11 @@ function createAppTestWrapper({
             <SafeAreaProvider initialMetrics={safeAreaMetrics}>
               <QueryClientProvider client={queryClient}>
                 <AuthContext.Provider value={{ ...defaultAuthValue, ...auth }}>
-                  {content}
+                  <WorkspaceContext.Provider
+                    value={{ ...defaultWorkspaceValue, ...workspace }}
+                  >
+                    <AppTopBarProvider>{content}</AppTopBarProvider>
+                  </WorkspaceContext.Provider>
                 </AuthContext.Provider>
               </QueryClientProvider>
             </SafeAreaProvider>
@@ -146,6 +180,7 @@ export function renderWithAppProviders(
     language,
     queryClient,
     safeAreaMetrics,
+    workspace,
     ...renderOptions
   } = options;
 
@@ -155,7 +190,8 @@ export function renderWithAppProviders(
       includeNavigation,
       language,
       queryClient,
-      safeAreaMetrics
+      safeAreaMetrics,
+      workspace
     }),
     ...renderOptions
   });
@@ -171,6 +207,7 @@ export function renderHookWithAppProviders<Result, Props>(
     language,
     queryClient,
     safeAreaMetrics,
+    workspace,
     ...renderHookOptions
   } = options;
 
@@ -180,7 +217,8 @@ export function renderHookWithAppProviders<Result, Props>(
       includeNavigation,
       language,
       queryClient,
-      safeAreaMetrics
+      safeAreaMetrics,
+      workspace
     }),
     ...renderHookOptions
   });

@@ -2,6 +2,9 @@ export default {
   info: {
     avatarAccessibility: "Change profile photo",
     avatarError: "Profile photo unavailable. Try refreshing the page.",
+    avatarHint: "Optional · JPG, PNG or WebP up to 5 MB",
+    avatarLabel: "Profile photo",
+    avatarPreviewLabel: "Profile photo preview",
     firstName: "First name",
     lastName: "Last Name",
     personalDetails: "Personal details",
@@ -13,6 +16,7 @@ export default {
       "Photo access is required to choose a profile picture. Allow access and try again.",
     profile: "Profile",
     save: "Save Profile",
+    saveError: "We couldn't update your profile. Try again.",
     signInError: "You must be signed in to update your profile.",
     updated: "Profile updated"
   },

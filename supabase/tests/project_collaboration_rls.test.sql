@@ -91,9 +91,17 @@ values
   ('00000000-0000-4000-8000-000000000107', 'Admin', 'collab-admin@example.com', 'admin'),
   ('00000000-0000-4000-8000-000000000108', 'Invitee', 'collab-invitee@example.com', 'user');
 
+insert into public.organizations (id, owner_user_id, name, created_by)
+values ('80000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-000000000101', 'Collaboration Organization', '00000000-0000-4000-8000-000000000101');
+insert into public.organization_memberships (organization_id, user_id, role_code, invited_by)
+values ('80000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-000000000101', 'admin', '00000000-0000-4000-8000-000000000101');
+insert into public.workspaces (id, organization_id, created_by)
+values ('90000000-0000-4000-8000-000000000101', '80000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-000000000101');
+
 insert into public.projects (
   id,
-  owner_id,
+  workspace_id,
+  created_by,
   name,
   address,
   google_place_id,
@@ -104,6 +112,7 @@ insert into public.projects (
 values
   (
     '10000000-0000-4000-8000-000000000101',
+    '90000000-0000-4000-8000-000000000101',
     '00000000-0000-4000-8000-000000000101',
     'Collaboration Project',
     '101 Collaboration Street',
@@ -114,6 +123,7 @@ values
   ),
   (
     '10000000-0000-4000-8000-000000000102',
+    '90000000-0000-4000-8000-000000000101',
     '00000000-0000-4000-8000-000000000101',
     'Archived Collaboration Project',
     '102 Collaboration Street',

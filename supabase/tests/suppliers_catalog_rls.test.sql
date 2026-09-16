@@ -10,9 +10,23 @@ values
   ('00000000-0000-4000-8000-000000000042', 'Other Owner', 'supplier-other@example.com', 'user'),
   ('00000000-0000-4000-8000-000000000043', 'Supplier Admin', 'supplier-admin@example.com', 'admin');
 
-insert into public.suppliers (id, owner_id, name)
+insert into public.organizations (id, owner_user_id, name, created_by)
+values
+  ('80000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000041', 'Supplier Owner Organization', '00000000-0000-4000-8000-000000000041'),
+  ('80000000-0000-4000-8000-000000000042', '00000000-0000-4000-8000-000000000042', 'Other Supplier Organization', '00000000-0000-4000-8000-000000000042');
+insert into public.organization_memberships (organization_id, user_id, role_code, invited_by)
+values
+  ('80000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000041', 'admin', '00000000-0000-4000-8000-000000000041'),
+  ('80000000-0000-4000-8000-000000000042', '00000000-0000-4000-8000-000000000042', 'admin', '00000000-0000-4000-8000-000000000042');
+insert into public.workspaces (id, organization_id, created_by)
+values
+  ('00000000-0000-4000-8000-000000000041', '80000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000041'),
+  ('00000000-0000-4000-8000-000000000042', '80000000-0000-4000-8000-000000000042', '00000000-0000-4000-8000-000000000042');
+
+insert into public.suppliers (id, workspace_id, created_by, name)
 values (
   '40000000-0000-4000-8000-000000000042',
+  '00000000-0000-4000-8000-000000000042',
   '00000000-0000-4000-8000-000000000042',
   'Other Supplier'
 );
@@ -25,7 +39,7 @@ select lives_ok(
   $$
     insert into public.suppliers (
       id,
-      owner_id,
+      workspace_id,
       name,
       contact_name,
       phone_number,
@@ -77,7 +91,7 @@ select is(
 
 select throws_ok(
   $$
-    insert into public.suppliers (owner_id, name)
+    insert into public.suppliers (workspace_id, name)
     values ('00000000-0000-4000-8000-000000000042', 'Not Mine')
   $$,
   '42501',
@@ -88,7 +102,7 @@ select throws_ok(
 select throws_ok(
   $$
     insert into public.suppliers (
-      owner_id,
+      workspace_id,
       name,
       address
     )
@@ -105,7 +119,7 @@ select throws_ok(
 
 select throws_ok(
   $$
-    insert into public.suppliers (owner_id, name, website_url)
+    insert into public.suppliers (workspace_id, name, website_url)
     values (
       '00000000-0000-4000-8000-000000000041',
       'Bad Website',
@@ -196,7 +210,7 @@ select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000041
 select throws_ok(
   $$
     update public.suppliers
-    set owner_id = '00000000-0000-4000-8000-000000000042'
+    set workspace_id = '00000000-0000-4000-8000-000000000042'
     where id = '40000000-0000-4000-8000-000000000041'
   $$,
   '42501',
@@ -251,7 +265,7 @@ select throws_ok(
 );
 
 select throws_ok(
-  $$ insert into public.suppliers (owner_id, name) values (gen_random_uuid(), 'Anon') $$,
+  $$ insert into public.suppliers (workspace_id, name) values (gen_random_uuid(), 'Anon') $$,
   '42501',
   null,
   'anonymous users cannot create suppliers'

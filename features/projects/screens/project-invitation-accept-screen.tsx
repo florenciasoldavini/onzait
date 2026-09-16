@@ -7,7 +7,13 @@ import { AlertIcon } from "@/shared/ui/icons";
 import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
 import { useTranslation } from "react-i18next";
 
-export function ProjectInvitationAcceptScreen({ token }: { token?: string }) {
+export function ProjectInvitationAcceptScreen({
+  autoAccept = false,
+  token
+}: {
+  autoAccept?: boolean;
+  token?: string;
+}) {
   const { t } = useTranslation("features/projects");
   const preview = useProjectInvitationPreview(token);
 
@@ -19,9 +25,7 @@ export function ProjectInvitationAcceptScreen({ token }: { token?: string }) {
             ($) => $["features/projects"].invitations.incompleteDescription
           ),
           icon: AlertIcon,
-          title: t(
-            ($) => $["features/projects"].invitations.incompleteTitle
-          )
+          title: t(($) => $["features/projects"].invitations.incompleteTitle)
         },
         loadError: {
           description: getUserFacingErrorMessage(
@@ -32,9 +36,7 @@ export function ProjectInvitationAcceptScreen({ token }: { token?: string }) {
           title: t(($) => $["features/projects"].invitations.unavailable)
         },
         notFound: {
-          description: t(
-            ($) => $["features/projects"].invitations.invalid
-          ),
+          description: t(($) => $["features/projects"].invitations.invalid),
           icon: AlertIcon,
           title: t(($) => $["features/projects"].invitations.unavailable)
         }
@@ -51,7 +53,11 @@ export function ProjectInvitationAcceptScreen({ token }: { token?: string }) {
       resourceName="invitation"
     >
       {preview.data ? (
-        <ProjectInvitationLandingContent invitation={preview.data} />
+        <ProjectInvitationLandingContent
+          autoAccept={autoAccept}
+          invitation={preview.data}
+          token={token!}
+        />
       ) : null}
     </RouteStateBoundary>
   );

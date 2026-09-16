@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import { normalizeContractorFilters } from "@/features/contractors/schemas/contractor.schema";
 import type {
   ContractorFilters,
@@ -16,24 +15,21 @@ export interface ContractorListQueryPlan {
 
 export function buildContractorListQueryPlan({
   filters,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: ContractorFilters;
-  userId: string;
-  userRole: UserRole;
+  workspaceId: string;
 }): ContractorListQueryPlan {
   const normalized = normalizeContractorFilters(filters);
-  const ownerId = userRole === "admin" ? normalized.ownerId : userId;
   const queryFilters: ContractorListQueryPlan["filters"] = [
     { column: "deleted_at", operator: "is", value: null }
   ];
 
-  if (ownerId) {
+  if (workspaceId) {
     queryFilters.push({
-      column: "owner_id",
+      column: "workspace_id",
       operator: "eq",
-      value: ownerId
+      value: workspaceId
     });
   }
 

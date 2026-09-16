@@ -68,16 +68,14 @@ describe("paginated project listing", () => {
       filters: { status: "planned" },
       offset: 0,
       pageSize: 24,
-      userId: "user-1",
-      userRole: "user"
+      workspaceId: "workspace-1"
     });
 
     expect(mockListProjectRows).toHaveBeenCalledWith({
       filters: { status: "planned" },
       offset: 0,
       pageSize: 24,
-      userId: "user-1",
-      userRole: "user"
+      workspaceId: "workspace-1"
     });
     expect(result.nextOffset).toBe(24);
     expect(result.items).toEqual([

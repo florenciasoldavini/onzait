@@ -55,14 +55,10 @@ const teamPage = {
   ],
   members: [],
   nextPage: null,
-  owner: {
-    email: "owner@example.com",
-    firstName: "Owner",
+  organization: {
+    avatar: null,
     id: "00000000-0000-4000-8000-000000000001",
-    joinedAt: null,
-    lastName: null,
-    roleCode: "owner",
-    userId: "00000000-0000-4000-8000-000000000001"
+    name: "North Studio"
   }
 };
 
@@ -121,7 +117,7 @@ describe("ProjectTeamScreen", () => {
       can: (permission: string) =>
         permission === "project.members.read" ||
         permission === "project.members.manage",
-      data: { isOwner: true },
+      data: { accessSource: "organization_owner", isOwner: true },
       error: null,
       isError: false,
       isLoading: false,
@@ -140,7 +136,7 @@ describe("ProjectTeamScreen", () => {
   it("keeps read-only members out of management controls", async () => {
     jest.mocked(useProjectAccess).mockReturnValue({
       can: (permission: string) => permission === "project.members.read",
-      data: { isOwner: false },
+      data: { accessSource: "project_membership", isOwner: false },
       error: null,
       isError: false,
       isLoading: false,
@@ -154,5 +150,22 @@ describe("ProjectTeamScreen", () => {
     expect(screen.queryByText("Invite a member")).not.toBeOnTheScreen();
     expect(screen.queryByText("Pending invitations")).not.toBeOnTheScreen();
     expect(screen.getByText("Leave project")).toBeOnTheScreen();
+  });
+
+  it("does not offer to leave access inherited from an organization", async () => {
+    jest.mocked(useProjectAccess).mockReturnValue({
+      can: (permission: string) => permission === "project.members.read",
+      data: { accessSource: "organization_member", isOwner: false },
+      error: null,
+      isError: false,
+      isLoading: false,
+      refetch: jest.fn()
+    } as never);
+
+    await renderWithAppProviders(
+      <ProjectTeamScreen projectId="10000000-0000-4000-8000-000000000001" />
+    );
+
+    expect(screen.queryByText("Leave project")).not.toBeOnTheScreen();
   });
 });

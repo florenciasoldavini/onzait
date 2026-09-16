@@ -1,4 +1,3 @@
-import type { UserRole } from "@/features/auth/types/auth.types";
 import {
   createProjectCoverSignedUrl,
   removeProjectCoverObject,
@@ -21,7 +20,10 @@ import type {
   ProjectSummary,
   UpdateProjectInput
 } from "@/features/projects/types/project.types";
-import type { OffsetPageRequest, PaginatedResult } from "@/shared/utils/pagination";
+import type {
+  OffsetPageRequest,
+  PaginatedResult
+} from "@/shared/utils/pagination";
 import { Sentry } from "@/infrastructure/monitoring/sentry";
 import { UserFacingError } from "@/shared/utils/user-facing-errors";
 
@@ -29,19 +31,16 @@ export async function listProjects({
   filters,
   offset,
   pageSize,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: ProjectFilters;
-  userId: string;
-  userRole: UserRole;
+  workspaceId: string;
 } & OffsetPageRequest): Promise<PaginatedResult<ProjectSummary>> {
   const page = await listProjectRows({
     filters,
     offset,
     pageSize,
-    userId,
-    userRole
+    workspaceId
   });
 
   return {
@@ -61,18 +60,23 @@ export async function getProject(projectId: string) {
   return projectWithCover;
 }
 
-export async function createProject(input: CreateProjectInput) {
-  return insertProjectRow(input);
+export async function createProject(
+  input: CreateProjectInput,
+  workspaceId: string
+) {
+  return insertProjectRow(input, workspaceId);
 }
 
 export async function createProjectWithOptionalCover({
   coverAsset,
-  input
+  input,
+  workspaceId
 }: {
   coverAsset?: ProjectCoverAsset | null;
   input: CreateProjectInput;
+  workspaceId: string;
 }): Promise<ProjectSaveOutcome> {
-  const project = await createProject(input);
+  const project = await createProject(input, workspaceId);
 
   return saveOptionalProjectCover({ coverAsset, project });
 }

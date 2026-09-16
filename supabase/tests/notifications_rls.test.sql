@@ -12,9 +12,17 @@ values
   ('00000000-0000-4000-8000-000000000304', 'Notification', 'Admin', 'notification-admin@example.com', 'admin', null),
   ('00000000-0000-4000-8000-000000000305', 'Archived', 'Recipient', 'notification-archived@example.com', 'user', current_timestamp);
 
+insert into public.organizations (id, owner_user_id, name, created_by)
+values ('80000000-0000-4000-8000-000000000301', '00000000-0000-4000-8000-000000000301', 'Notification Organization', '00000000-0000-4000-8000-000000000301');
+insert into public.organization_memberships (organization_id, user_id, role_code, invited_by)
+values ('80000000-0000-4000-8000-000000000301', '00000000-0000-4000-8000-000000000301', 'admin', '00000000-0000-4000-8000-000000000301');
+insert into public.workspaces (id, organization_id, created_by)
+values ('90000000-0000-4000-8000-000000000301', '80000000-0000-4000-8000-000000000301', '00000000-0000-4000-8000-000000000301');
+
 insert into public.projects (
   id,
-  owner_id,
+  workspace_id,
+  created_by,
   name,
   address,
   google_place_id,
@@ -23,6 +31,7 @@ insert into public.projects (
 )
 values (
   '10000000-0000-4000-8000-000000000301',
+  '90000000-0000-4000-8000-000000000301',
   '00000000-0000-4000-8000-000000000301',
   'Notification Project',
   '301 Notification Street',

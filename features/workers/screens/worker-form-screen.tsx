@@ -1,4 +1,3 @@
-import { useAuth } from "@/features/auth/hooks/use-auth";
 import { WorkerFormFields } from "@/features/workers/components/worker-form-fields";
 import {
   useCreateWorker,
@@ -8,7 +7,7 @@ import {
 import {
   getWorkerDisplayName,
   createWorkerFormSchema,
-  toWorkerInput,
+  toWorkerInput
 } from "@/features/workers/schemas/worker.schema";
 import type { WorkerFormValues } from "@/features/workers/types/worker";
 import { getWorkerFormValues } from "@/features/workers/utils/worker-form-values";
@@ -29,6 +28,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useWorkspace } from "@/features/workspaces/hooks/use-workspace";
 import { View } from "react-native";
 
 const defaultValues: WorkerFormValues = {
@@ -51,7 +51,7 @@ export default function WorkerFormScreen({
   const { t } = useTranslation("features/workers");
   const { i18n, t: tShared } = useTranslation("shared");
   const toast = useAppToast();
-  const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
   const workerQuery = useWorker(mode === "edit" ? workerId : undefined);
   const createMutation = useCreateWorker();
   const updateMutation = useUpdateWorker(workerId ?? "");
@@ -163,7 +163,9 @@ export default function WorkerFormScreen({
               mode === "edit" && workerId
                 ? [
                     {
-                      label: t(($) => $["features/workers"].breadcrumbs.workers),
+                      label: t(
+                        ($) => $["features/workers"].breadcrumbs.workers
+                      ),
                       onPress: () =>
                         router.replace("/directory?section=workers" as never)
                     },
@@ -176,7 +178,9 @@ export default function WorkerFormScreen({
                   ]
                 : [
                     {
-                      label: t(($) => $["features/workers"].breadcrumbs.workers),
+                      label: t(
+                        ($) => $["features/workers"].breadcrumbs.workers
+                      ),
                       onPress: () =>
                         router.replace("/directory?section=workers" as never)
                     },
@@ -201,7 +205,11 @@ export default function WorkerFormScreen({
               <WorkerFormFields
                 control={control}
                 onChange={() => setFormError(null)}
-                ownerId={workerQuery.data?.owner_id ?? user?.id}
+                workspaceId={
+                  workerQuery.data?.workspace_id ??
+                  activeWorkspaceId ??
+                  undefined
+                }
               />
               {formError ? (
                 <AppText selectable tone="danger">
