@@ -170,12 +170,15 @@ export async function getCurrentAuthSession() {
 }
 
 export function observeAuthSession(
-  listener: (session: import("@supabase/supabase-js").Session | null) => void
+  listener: (
+    event: import("@supabase/supabase-js").AuthChangeEvent,
+    session: import("@supabase/supabase-js").Session | null
+  ) => void
 ) {
   const {
     data: { subscription }
-  } = requireAuthClient().onAuthStateChange((_event, session) => {
-    listener(session);
+  } = requireAuthClient().onAuthStateChange((event, session) => {
+    listener(event, session);
   });
 
   return () => subscription.unsubscribe();

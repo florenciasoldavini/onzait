@@ -17,7 +17,7 @@ export default function AppLayout() {
     pathname.startsWith("/invitations") ||
     (/^\/projects\/[^/]+/.test(pathname) && pathname !== "/projects/new");
 
-  if (isLoading) {
+  if (isLoading && !hasWorkspaces) {
     return (
       <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
         <ActivityIndicator />

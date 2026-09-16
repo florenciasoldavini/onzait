@@ -20,7 +20,7 @@ import { sendWelcomeToOnzaitEmail } from "@/features/auth/services/welcome-email
 import type { User } from "@/features/auth/types/auth.types";
 import type { SupportedLanguage } from "@/features/localization/types/language";
 import { defaultLanguage } from "@/features/localization/types/language";
-import type { Session } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 export type EditableUserProfile = Pick<
   User,
@@ -164,7 +164,7 @@ export function loadCurrentAuthSession() {
 }
 
 export function subscribeToAuthSession(
-  listener: (session: Session | null) => void
+  listener: (event: AuthChangeEvent, session: Session | null) => void
 ) {
   return observeAuthSession(listener);
 }

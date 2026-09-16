@@ -12,27 +12,37 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode
 } from "react";
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const { session, user } = useAuth();
+  const sessionUserId = session?.user.id ?? null;
+  const profileUserId = user?.id ?? null;
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(
     null
   );
   const [isLoading, setIsLoading] = useState(Boolean(session));
+  const loadedUserIdRef = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!session || !user) {
+    if (!sessionUserId || profileUserId !== sessionUserId) {
       setWorkspaces([]);
       setActiveWorkspaceId(null);
-      setIsLoading(false);
+      setIsLoading(Boolean(sessionUserId));
+      loadedUserIdRef.current = null;
       return;
     }
 
-    setIsLoading(true);
+    const isInitialLoadForUser = loadedUserIdRef.current !== sessionUserId;
+    if (isInitialLoadForUser) {
+      setWorkspaces([]);
+      setActiveWorkspaceId(null);
+      setIsLoading(true);
+    }
     try {
       const [page, preferredId] = await Promise.all([
         listMyWorkspaces(),
@@ -44,15 +54,25 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
       setWorkspaces(page.items);
       setActiveWorkspaceId(selected);
-      await savePreferredWorkspaceId(selected);
+      loadedUserIdRef.current = sessionUserId;
+      try {
+        await savePreferredWorkspaceId(selected);
+      } catch (error) {
+        Sentry.captureException(error, {
+          tags: { workspace: "preferred-workspace-persistence" }
+        });
+      }
     } catch (error) {
       Sentry.captureException(error);
-      setWorkspaces([]);
-      setActiveWorkspaceId(null);
+      if (isInitialLoadForUser) {
+        setWorkspaces([]);
+        setActiveWorkspaceId(null);
+        loadedUserIdRef.current = null;
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [session, user]);
+  }, [profileUserId, sessionUserId]);
 
   useEffect(() => {
     void refresh();

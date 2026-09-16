@@ -30,23 +30,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const authTransitionRef = useRef(0);
+  const sessionUserIdRef = useRef<string | null>(null);
 
-  const setAuthenticatedUser = useCallback((nextUser: User) => {
-    setUser(nextUser);
-    setAuthError(null);
+  const setAuthenticatedUser = useCallback(
+    (nextUser: User) => {
+      setUser(nextUser);
+      setAuthError(null);
 
-    void deliverWelcomeEmailIfNeeded(nextUser, language).then((welcomedUser) => {
-      setUser((currentUser) =>
-        currentUser?.id === welcomedUser.id &&
-        welcomedUser.welcome_email_sent_at
-          ? {
-              ...currentUser,
-              welcome_email_sent_at: welcomedUser.welcome_email_sent_at
-            }
-          : currentUser
+      void deliverWelcomeEmailIfNeeded(nextUser, language).then(
+        (welcomedUser) => {
+          setUser((currentUser) =>
+            currentUser?.id === welcomedUser.id &&
+            welcomedUser.welcome_email_sent_at
+              ? {
+                  ...currentUser,
+                  welcome_email_sent_at: welcomedUser.welcome_email_sent_at
+                }
+              : currentUser
+          );
+        }
       );
-    });
-  }, [language]);
+    },
+    [language]
+  );
 
   const createUser = async (
     nextSession: Session,
@@ -99,6 +105,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const hydrateUser = useCallback(
     async (nextSession: Session | null) => {
       const transition = ++authTransitionRef.current;
+      sessionUserIdRef.current = nextSession?.user.id ?? null;
       setSession(nextSession);
 
       if (!nextSession) {
@@ -132,6 +139,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await logOutCurrentSession();
       authTransitionRef.current += 1;
+      sessionUserIdRef.current = null;
       setSession(null);
       setUser(null);
       setAuthError(null);
@@ -194,7 +202,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       });
 
-    const unsubscribe = subscribeToAuthSession((nextSession) => {
+    const unsubscribe = subscribeToAuthSession((event, nextSession) => {
+      const nextUserId = nextSession?.user.id ?? null;
+      const isSameAuthenticatedUser =
+        Boolean(nextUserId) && nextUserId === sessionUserIdRef.current;
+
+      if (
+        (event === "TOKEN_REFRESHED" && nextSession) ||
+        (event === "SIGNED_IN" && isSameAuthenticatedUser)
+      ) {
+        sessionUserIdRef.current = nextUserId;
+        setSession(nextSession);
+        return;
+      }
+
       void finishHydration(nextSession);
     });
 
