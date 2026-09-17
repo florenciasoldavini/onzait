@@ -1,3 +1,5 @@
+import { ProjectsMapView } from "@/features/projects/components/projects-map-lazy";
+import { ProjectsSplitView } from "@/features/projects/components/projects-split-view";
 import { AppButton } from "@/shared/ui/components/button";
 import { EmptyState } from "@/shared/ui/components/empty-state";
 import { InlineErrorState } from "@/shared/ui/components/inline-error-state";
@@ -34,6 +36,9 @@ import type {
 } from "@/features/projects/types/project.types";
 import {
   FilterIcon,
+  GridIcon,
+  MapPinIcon,
+  SplitViewIcon,
   FolderPlusIcon,
   RefreshIcon,
   SortIcon
@@ -41,22 +46,15 @@ import {
 import { useRouter } from "expo-router";
 import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
 import { useAppTopBarSearch } from "@/shared/hooks/use-app-topbar";
-import { Suspense, lazy, useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   FlatList,
+  Platform,
   View,
   useWindowDimensions,
   type ListRenderItemInfo
 } from "react-native";
-
-const ProjectsMapView = lazy(async () => {
-  const module = await import(
-    "@/features/projects/components/projects-map-view"
-  );
-
-  return { default: module.ProjectsMapView };
-});
 
 export default function ProjectsScreen() {
   const router = useRouter();
@@ -64,6 +62,7 @@ export default function ProjectsScreen() {
   const { t: tShared } = useTranslation("shared");
   const { width } = useWindowDimensions();
   const { isCompact, isExpanded } = useLayoutMode();
+  const canUseSplitView = Platform.OS === "web" && isExpanded;
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<ProjectSort>("created_desc");
   const [viewMode, setViewMode] = useState<ProjectsViewMode>("list");
@@ -76,14 +75,14 @@ export default function ProjectsScreen() {
   );
   const topBarSearch = useMemo(
     () =>
-      isExpanded
+      !isCompact
         ? {
             onChangeText: setQuery,
             placeholder: searchPlaceholder,
             value: query
           }
         : null,
-    [isExpanded, query, searchPlaceholder]
+    [isCompact, query, searchPlaceholder]
   );
   useAppTopBarSearch(topBarSearch);
   const projectSortOptions = useMemo(
@@ -112,14 +111,25 @@ export default function ProjectsScreen() {
     () => [
       {
         label: t(($) => $["features/projects"].gallery.list),
+        icon: GridIcon,
         value: "list" as const
       },
+      ...(canUseSplitView
+        ? [
+            {
+              label: t(($) => $["features/projects"].gallery.split),
+              icon: SplitViewIcon,
+              value: "split" as const
+            }
+          ]
+        : []),
       {
         label: t(($) => $["features/projects"].gallery.map),
+        icon: MapPinIcon,
         value: "map" as const
       }
     ],
-    [t]
+    [canUseSplitView, t]
   );
   const projectsQuery = useProjects({
     ...filters,
@@ -134,8 +144,24 @@ export default function ProjectsScreen() {
   const activeFilterCount = getActiveFilterCount(filters);
   const hasSearchOrFilters =
     query.trim().length > 0 || activeFilterCount > 0 || sort !== "created_desc";
-  const projectGrid = useMemo(() => getProjectGridMetrics(width), [width]);
-  const isMapMode = viewMode === "map";
+  const projectGrid = useMemo(
+    () =>
+      getProjectGridMetrics(
+        width -
+          (isCompact
+            ? 0
+            : isExpanded
+              ? atomLayout.navigationSidebarWidth
+              : atomLayout.navigationRailWidth)
+      ),
+    [width, isCompact, isExpanded]
+  );
+  const activeViewMode =
+    viewMode === "split" && !canUseSplitView ? "list" : viewMode;
+  const isSplitMode = activeViewMode === "split";
+  const isMapMode = activeViewMode === "map" || isSplitMode;
+  const isFullMapMode = activeViewMode === "map" && canUseSplitView;
+  const isEdgeToEdge = isSplitMode || isFullMapMode;
   const mapScreenBottomPadding =
     width >= atomLayout.breakpointDesktop
       ? atomLayout.marginDesktop
@@ -183,6 +209,51 @@ export default function ProjectsScreen() {
     }));
   };
 
+  const projectControls = (
+    <View style={styles.controlsRow}>
+      <SelectMenu
+        accessibilityLabel={t(($) => $["features/projects"].accessibility.sort)}
+        icon={SortIcon}
+        labelPrefix={t(($) => $["features/projects"].sort.label)}
+        onChange={setSort}
+        options={projectSortOptions}
+        value={sort}
+      />
+      <View style={styles.filterControl}>
+        <AppButton
+          color="neutral"
+          fullWidth={false}
+          icon={FilterIcon}
+          size="sm"
+          variant="bordered"
+          onPress={() => setFiltersVisible(true)}
+        >
+          {activeFilterCount > 0
+            ? t(($) => $["features/projects"].filters.activeCount, {
+                activeCount: activeFilterCount
+              })
+            : t(($) => $["features/projects"].filters.label)}
+        </AppButton>
+      </View>
+    </View>
+  );
+  const projectViewTabs = (
+    <View
+      style={[
+        styles.viewTabs,
+        isExpanded && !isSplitMode ? styles.viewTabsExpanded : undefined
+      ]}
+    >
+      <SegmentedTabs
+        iconOnly
+        onChange={setViewMode}
+        options={projectViewOptions}
+        selectedTone="accent"
+        value={activeViewMode}
+      />
+    </View>
+  );
+
   const projectsHeader = (
     <View style={styles.listHeader}>
       <NavScreenHeader
@@ -205,7 +276,7 @@ export default function ProjectsScreen() {
       <View
         style={[styles.toolbar, isExpanded ? styles.toolbarExpanded : null]}
       >
-        {!isExpanded ? (
+        {isCompact ? (
           <View style={styles.searchFluid}>
             <SearchField
               onChangeText={setQuery}
@@ -215,43 +286,9 @@ export default function ProjectsScreen() {
           </View>
         ) : null}
 
-        <View style={styles.controlsRow}>
-          <SelectMenu
-            accessibilityLabel={t(
-              ($) => $["features/projects"].accessibility.sort
-            )}
-            icon={SortIcon}
-            labelPrefix={t(($) => $["features/projects"].sort.label)}
-            onChange={setSort}
-            options={projectSortOptions}
-            value={sort}
-          />
-          <View style={styles.filterControl}>
-            <AppButton
-              color="neutral"
-              fullWidth={false}
-              icon={FilterIcon}
-              size="sm"
-              variant="bordered"
-              onPress={() => setFiltersVisible(true)}
-            >
-              {activeFilterCount > 0
-                ? t(($) => $["features/projects"].filters.activeCount, {
-                    activeCount: activeFilterCount
-                  })
-                : t(($) => $["features/projects"].filters.label)}
-            </AppButton>
-          </View>
-        </View>
+        {projectControls}
 
-        <View style={isExpanded ? styles.viewTabsExpanded : undefined}>
-          <SegmentedTabs
-            onChange={setViewMode}
-            options={projectViewOptions}
-            selectedTone="accent"
-            value={viewMode}
-          />
-        </View>
+        {projectViewTabs}
       </View>
     </View>
   );
@@ -320,14 +357,19 @@ export default function ProjectsScreen() {
   return (
     <Screen
       contentContainerStyle={
-        isMapMode
-          ? [
-              styles.mapScreenContainer,
-              { paddingBottom: mapScreenBottomPadding }
-            ]
-          : undefined
+        isEdgeToEdge
+          ? styles.splitScreenContainer
+          : isMapMode
+            ? [
+                styles.mapScreenContainer,
+                { paddingBottom: mapScreenBottomPadding }
+              ]
+            : undefined
       }
-      contentStyle={styles.screenContent}
+      contentStyle={[
+        styles.screenContent,
+        isEdgeToEdge ? styles.splitScreenContent : null
+      ]}
       floatingAction={
         hasProjects && !isMapMode && isCompact ? (
           <AppButton
@@ -344,7 +386,55 @@ export default function ProjectsScreen() {
       }
       scrollable={false}
     >
-      {isMapMode ? (
+      {isSplitMode ? (
+        <ProjectsSplitView
+          onOpenProject={openProject}
+          projects={projectsQuery.isError ? [] : projects}
+          paginationFooter={paginationFooter}
+          emptyContent={
+            projectsQuery.isLoading ? <ProjectsTableSkeleton /> : emptyContent
+          }
+          floatingAction={
+            <AppButton
+              accessibilityLabel={t(
+                ($) => $["features/projects"].accessibility.newProject
+              )}
+              fullWidth={false}
+              icon={FolderPlusIcon}
+              layout="icon"
+              onPress={() => router.push("/projects/new" as never)}
+              shape="pill"
+              size="iconLg"
+            />
+          }
+          sidebarHeader={
+            <View style={styles.splitSidebarHeader}>{projectControls}</View>
+          }
+          viewSwitcher={projectViewTabs}
+        />
+      ) : isFullMapMode ? (
+        <View style={styles.mapScreenStack}>
+          <Suspense fallback={<ProjectCardSkeleton />}>
+            <ProjectsMapView
+              edgeToEdge
+              fillAvailableSpace
+              showMapWhenEmpty
+              onOpenProject={(project) => openProject(project.id)}
+              projects={projectsQuery.isError ? [] : projects}
+            />
+          </Suspense>
+          <View style={styles.mapFloatingControls}>{projectControls}</View>
+          <View style={styles.mapFloatingViewSwitcher}>{projectViewTabs}</View>
+          {projectsQuery.isLoading || projectsQuery.isError || !hasProjects ? (
+            <View style={styles.mapFloatingFeedback}>
+              {projectsQuery.isLoading ? <ProjectCardSkeleton /> : emptyContent}
+            </View>
+          ) : null}
+          {projectsQuery.hasNextPage ? (
+            <View style={styles.mapFloatingPagination}>{paginationFooter}</View>
+          ) : null}
+        </View>
+      ) : isMapMode ? (
         <View style={styles.mapScreenStack}>
           {projectsHeader}
           {hasProjects ? (

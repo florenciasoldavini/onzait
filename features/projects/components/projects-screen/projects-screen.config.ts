@@ -22,7 +22,7 @@ import type { ViewStyle } from "react-native";
 export type ProjectFilterState = Required<
   Pick<ProjectFilters, "buildingTypes" | "phases" | "projectTypes" | "statuses">
 >;
-export type ProjectsViewMode = "list" | "map";
+export type ProjectsViewMode = "list" | "split" | "map";
 
 export const initialProjectFilters: ProjectFilterState = {
   buildingTypes: [],

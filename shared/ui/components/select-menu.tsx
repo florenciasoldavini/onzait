@@ -12,7 +12,7 @@ import {
   ChevronDownIcon,
   type AppIconComponent
 } from "@/shared/ui/icons";
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Image } from "expo-image";
 import {
@@ -20,6 +20,7 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  ScrollView,
   useWindowDimensions,
   View,
   type LayoutRectangle,
@@ -33,12 +34,14 @@ export interface SelectMenuOption<TValue extends string> {
 
 export function SelectMenu<TValue extends string>({
   actions = [],
+  renderMenu,
   accessibilityLabel,
   displayValue,
   eyebrow,
   fullWidth = false,
   icon: Icon,
   imageUri,
+  iconOnly = false,
   labelPrefix,
   minWidth = 192,
   onChange,
@@ -47,6 +50,7 @@ export function SelectMenu<TValue extends string>({
   value,
   valueSelected = true
 }: {
+  renderMenu?: (close: () => void) => ReactNode;
   actions?: {
     accessibilityLabel?: string;
     icon?: AppIconComponent;
@@ -62,14 +66,17 @@ export function SelectMenu<TValue extends string>({
   fullWidth?: boolean;
   icon?: AppIconComponent;
   imageUri?: string | null;
+  iconOnly?: boolean;
   labelPrefix?: string;
   minWidth?: number;
   onChange: (value: TValue) => void;
   options: SelectMenuOption<TValue>[];
-  presentation?: "default" | "workspace";
+  presentation?: "default" | "workspace" | "workspace-mobile";
   value: TValue;
   valueSelected?: boolean;
 }) {
+  const isWorkspace =
+    presentation === "workspace" || presentation === "workspace-mobile";
   const { t } = useTranslation("shared");
   const triggerRef = useRef<View>(null);
   const { height, width } = useWindowDimensions();
@@ -89,7 +96,7 @@ export function SelectMenu<TValue extends string>({
     width - atomSpacing[4] * 2
   );
   const menuHeightEstimate =
-    options.length * 44 +
+    options.length * (renderMenu ? 56 : 44) +
     atomSpacing[2] * 2 +
     actions.length * 40 +
     actions.filter((action) => action.dividerBefore).length * 13;
@@ -130,23 +137,18 @@ export function SelectMenu<TValue extends string>({
       <View
         collapsable={false}
         ref={triggerRef}
-        style={
-          presentation === "workspace" || fullWidth
-            ? styles.triggerRootFill
-            : null
-        }
+        style={isWorkspace || fullWidth ? styles.triggerRootFill : null}
       >
         <Pressable
           accessibilityLabel={accessibilityLabel}
+          accessibilityState={{ expanded: isOpen }}
           accessibilityRole="button"
           onHoverIn={() => setIsTriggerHovered(true)}
           onHoverOut={() => setIsTriggerHovered(false)}
           onPress={openMenu}
           style={[
             styles.triggerRoot,
-            presentation === "workspace" || fullWidth
-              ? styles.triggerRootFill
-              : null,
+            isWorkspace || fullWidth ? styles.triggerRootFill : null,
             Platform.OS === "web" ? styles.webCursor : null
           ]}
         >
@@ -154,12 +156,22 @@ export function SelectMenu<TValue extends string>({
             <View
               style={[
                 styles.triggerSurface,
-                presentation === "workspace"
-                  ? styles.workspaceTriggerSurface
-                  : null,
+                isWorkspace ? styles.workspaceTriggerSurface : null,
                 fullWidth ? styles.fullWidthTriggerSurface : null,
+                presentation === "workspace-mobile"
+                  ? styles.mobileWorkspaceSurface
+                  : null,
+                presentation === "workspace" && iconOnly
+                  ? styles.workspaceIconOnlySurface
+                  : null,
                 isTriggerHovered ? styles.triggerHovered : null,
-                pressed || isOpen ? styles.triggerPressed : null
+                pressed || isOpen ? styles.triggerPressed : null,
+                isOpen && isWorkspace
+                  ? {
+                      borderColor: atomPalette.accent,
+                      backgroundColor: atomPalette.surface
+                    }
+                  : null
               ]}
             >
               {imageUri ? (
@@ -169,50 +181,42 @@ export function SelectMenu<TValue extends string>({
                   style={styles.workspaceAvatar}
                 />
               ) : Icon ? (
-                <View
-                  style={
-                    presentation === "workspace"
-                      ? styles.workspaceIconSurface
-                      : null
-                  }
-                >
+                <View style={isWorkspace ? styles.workspaceIconSurface : null}>
                   <Icon
-                    color={
-                      presentation === "workspace"
-                        ? atomPalette.accent
-                        : atomPalette.text
-                    }
-                    size={presentation === "workspace" ? 20 : 16}
+                    color={isWorkspace ? atomPalette.accent : atomPalette.text}
+                    size={iconOnly ? "md" : isWorkspace ? 20 : 16}
                     strokeWidth={1.9}
                   />
                 </View>
               ) : null}
-              <View style={styles.triggerCopy}>
-                {eyebrow ? (
-                  <AppText numberOfLines={1} tone="muted" variant="eyebrow">
-                    {eyebrow}
+              {!iconOnly ? (
+                <View style={styles.triggerCopy}>
+                  {eyebrow ? (
+                    <AppText numberOfLines={1} tone="muted" variant="eyebrow">
+                      {eyebrow}
+                    </AppText>
+                  ) : null}
+                  <AppText
+                    numberOfLines={1}
+                    style={[
+                      styles.triggerLabel,
+                      isWorkspace ? styles.workspaceTriggerLabel : null
+                    ]}
+                    variant="bodySm"
+                  >
+                    {labelPrefix
+                      ? `${labelPrefix}: ${displayValue ?? selectedOption?.label ?? ""}`
+                      : (displayValue ?? selectedOption?.label)}
                   </AppText>
-                ) : null}
-                <AppText
-                  numberOfLines={1}
-                  style={[
-                    styles.triggerLabel,
-                    presentation === "workspace"
-                      ? styles.workspaceTriggerLabel
-                      : null
-                  ]}
-                  variant="bodySm"
-                >
-                  {labelPrefix
-                    ? `${labelPrefix}: ${displayValue ?? selectedOption?.label ?? ""}`
-                    : (displayValue ?? selectedOption?.label)}
-                </AppText>
-              </View>
-              <ChevronDownIcon
-                color={atomPalette.text}
-                size={16}
-                strokeWidth={1.9}
-              />
+                </View>
+              ) : null}
+              {!iconOnly ? (
+                <ChevronDownIcon
+                  color={atomPalette.text}
+                  size={16}
+                  strokeWidth={1.9}
+                />
+              ) : null}
             </View>
           )}
         </Pressable>
@@ -237,115 +241,123 @@ export function SelectMenu<TValue extends string>({
             animateExit
             style={[
               styles.menu,
+              renderMenu ? styles.customMenu : null,
               {
                 left: menuLeft,
                 top: menuTop,
-                width: menuWidth
+                width: menuWidth,
+                maxHeight: Math.max(80, height - menuTop - atomSpacing[4])
               }
             ]}
           >
-            {options.map((option) => {
-              const isSelected = valueSelected && option.value === value;
-              const isHovered = hoveredValue === option.value;
+            {renderMenu ? (
+              <ScrollView>{renderMenu(() => setIsOpen(false))}</ScrollView>
+            ) : (
+              <>
+                {options.map((option) => {
+                  const isSelected = valueSelected && option.value === value;
+                  const isHovered = hoveredValue === option.value;
 
-              return (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isSelected }}
-                  key={option.value}
-                  onHoverIn={() => setHoveredValue(option.value)}
-                  onHoverOut={() =>
-                    setHoveredValue((current) =>
-                      current === option.value ? null : current
-                    )
-                  }
-                  onPress={() => {
-                    onChange(option.value);
-                    setIsOpen(false);
-                  }}
-                  style={({ pressed }) => [
-                    styles.option,
-                    {
-                      backgroundColor: resolveSelectMenuItemBackground({
-                        hovered: isHovered,
-                        pressed,
-                        selected: isSelected
-                      })
-                    },
-                    Platform.OS === "web" ? styles.webCursor : null
-                  ]}
-                >
-                  <AppText
-                    numberOfLines={1}
-                    tone={isSelected ? "accent" : "default"}
-                    variant="bodySm"
-                  >
-                    {option.label}
-                  </AppText>
-                  {isSelected ? (
-                    <CheckIcon color={atomPalette.accent} size={16} />
-                  ) : null}
-                </Pressable>
-              );
-            })}
-            {actions.map((action, actionIndex) => {
-              const actionColor = action.selected
-                ? atomPalette.accent
-                : action.tone === "accent"
-                  ? atomPalette.accent
-                  : atomPalette.text;
-              const isHovered = hoveredActionIndex === actionIndex;
-
-              return (
-                <View key={action.label}>
-                  {action.dividerBefore ? (
-                    <View style={styles.actionDivider} />
-                  ) : null}
-                  <Pressable
-                    accessibilityLabel={
-                      action.accessibilityLabel ?? action.label
-                    }
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: action.selected }}
-                    onHoverIn={() => setHoveredActionIndex(actionIndex)}
-                    onHoverOut={() =>
-                      setHoveredActionIndex((current) =>
-                        current === actionIndex ? null : current
-                      )
-                    }
-                    onPress={() => {
-                      setIsOpen(false);
-                      action.onPress();
-                    }}
-                    style={({ pressed }) => [
-                      styles.action,
-                      {
-                        backgroundColor: resolveSelectMenuItemBackground({
-                          hovered: isHovered,
-                          pressed,
-                          selected: action.selected ?? false
-                        })
-                      },
-                      Platform.OS === "web" ? styles.webCursor : null
-                    ]}
-                  >
-                    {action.icon ? (
-                      <action.icon color={actionColor} size={16} />
-                    ) : null}
-                    <AppText
-                      tone={
-                        action.selected || action.tone === "accent"
-                          ? "accent"
-                          : "default"
+                  return (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      key={option.value}
+                      onHoverIn={() => setHoveredValue(option.value)}
+                      onHoverOut={() =>
+                        setHoveredValue((current) =>
+                          current === option.value ? null : current
+                        )
                       }
-                      variant="bodySm"
+                      onPress={() => {
+                        onChange(option.value);
+                        setIsOpen(false);
+                      }}
+                      style={({ pressed }) => [
+                        styles.option,
+                        {
+                          backgroundColor: resolveSelectMenuItemBackground({
+                            hovered: isHovered,
+                            pressed,
+                            selected: isSelected
+                          })
+                        },
+                        Platform.OS === "web" ? styles.webCursor : null
+                      ]}
                     >
-                      {action.label}
-                    </AppText>
-                  </Pressable>
-                </View>
-              );
-            })}
+                      <AppText
+                        numberOfLines={1}
+                        tone={isSelected ? "accent" : "default"}
+                        variant="bodySm"
+                      >
+                        {option.label}
+                      </AppText>
+                      {isSelected ? (
+                        <CheckIcon color={atomPalette.accent} size={16} />
+                      ) : null}
+                    </Pressable>
+                  );
+                })}
+                {actions.map((action, actionIndex) => {
+                  const actionColor = action.selected
+                    ? atomPalette.accent
+                    : action.tone === "accent"
+                      ? atomPalette.accent
+                      : atomPalette.text;
+                  const isHovered = hoveredActionIndex === actionIndex;
+
+                  return (
+                    <View key={action.label}>
+                      {action.dividerBefore ? (
+                        <View style={styles.actionDivider} />
+                      ) : null}
+                      <Pressable
+                        accessibilityLabel={
+                          action.accessibilityLabel ?? action.label
+                        }
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: action.selected }}
+                        onHoverIn={() => setHoveredActionIndex(actionIndex)}
+                        onHoverOut={() =>
+                          setHoveredActionIndex((current) =>
+                            current === actionIndex ? null : current
+                          )
+                        }
+                        onPress={() => {
+                          setIsOpen(false);
+                          action.onPress();
+                        }}
+                        style={({ pressed }) => [
+                          styles.action,
+                          {
+                            backgroundColor: resolveSelectMenuItemBackground({
+                              hovered: isHovered,
+                              pressed,
+                              selected: action.selected ?? false
+                            })
+                          },
+                          Platform.OS === "web" ? styles.webCursor : null
+                        ]}
+                      >
+                        {action.icon ? (
+                          <action.icon color={actionColor} size={16} />
+                        ) : null}
+                        <AppText
+                          tone={
+                            action.selected || action.tone === "accent"
+                              ? "accent"
+                              : "default"
+                          }
+                          variant="bodySm"
+                        >
+                          {action.label}
+                        </AppText>
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </>
+            )}
           </TransitionView>
         </View>
       </Modal>
@@ -406,6 +418,13 @@ const styles = StyleSheet.create({
     gap: atomSpacing[1],
     padding: atomSpacing[1],
     position: "absolute"
+  },
+  customMenu: {
+    padding: 0,
+    gap: 0,
+    borderRadius: atomRadii.lg,
+    overflow: "hidden",
+    boxShadow: "0 12px 32px rgba(20, 22, 28, 0.12)"
   },
   triggerHovered: {
     backgroundColor: atomPalette.surfaceRaised,
@@ -468,6 +487,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: atomSpacing[3],
     paddingVertical: atomSpacing[3],
     width: "100%"
+  },
+  mobileWorkspaceSurface: {
+    backgroundColor: atomPalette.surface,
+    minHeight: 52,
+    paddingVertical: atomSpacing[1],
+    paddingHorizontal: atomSpacing[2]
+  },
+  workspaceIconOnlySurface: {
+    justifyContent: "center",
+    paddingHorizontal: atomSpacing[2]
   },
   option: {
     alignItems: "center",

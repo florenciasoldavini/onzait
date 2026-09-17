@@ -115,7 +115,10 @@ export default {
   },
   "gallery": {
     "list": "List",
-    "map": "Map"
+    "loadedProjects": "Loaded projects",
+    "map": "Map",
+    "selectOnMap": "Show {{name}} on map",
+    "split": "Split view"
   },
   "invitationForm": {
     "alreadyHasAccessDescription": "{{email}} already has access through the organization. No invitation was sent.",

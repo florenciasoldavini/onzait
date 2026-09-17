@@ -1,3 +1,4 @@
+import type { ProjectsMapViewProps } from "@/features/projects/types/projects-map-view";
 import { AppButton } from "@/shared/ui/components/button";
 import { AppCard } from "@/shared/ui/components/card";
 import { AppHeading } from "@/shared/ui/components/heading";
@@ -48,11 +49,7 @@ export function ProjectsMapView({
   fillAvailableSpace = false,
   onOpenProject,
   projects
-}: {
-  fillAvailableSpace?: boolean;
-  onOpenProject: (project: ProjectSummary) => void;
-  projects: ProjectSummary[];
-}) {
+}: ProjectsMapViewProps) {
   const { t } = useTranslation("features/projects");
   const mapRef = useRef<MapView | null>(null);
   const hasCenteredOnUserRef = useRef(false);
@@ -328,9 +325,7 @@ function SelectedProjectCard({
       </View>
       <View style={styles.selectedCardActions}>
         <Pressable
-          accessibilityLabel={t(
-            ($) => $["features/projects"].map.closePreview
-          )}
+          accessibilityLabel={t(($) => $["features/projects"].map.closePreview)}
           hitSlop={8}
           onPress={onClose}
           style={styles.closeButton}

@@ -9,7 +9,6 @@ import {
   atomSpacing
 } from "@/shared/ui/components/theme";
 import {
-  HardHatIcon,
   ChevronRightIcon,
   ProfileIcon,
   ProjectsIcon,
@@ -73,20 +72,12 @@ export function AdaptiveSideNavigation({ expanded }: { expanded: boolean }) {
           : atomLayout.navigationRailWidth
       }}
     >
-      {!expanded ? (
-        <View
-          style={{
-            alignItems: "center",
-            gap: atomSpacing[3],
-            minHeight: 52
-          }}
-        >
-          <HardHatIcon color={atomPalette.accent} size="md" />
-        </View>
-      ) : null}
-
-      <View style={{ paddingTop: expanded ? 0 : atomSpacing[4] }}>
-        <WorkspaceSwitcher presentation={expanded ? "sidebar" : "default"} />
+      <View
+        style={{
+          alignItems: expanded ? "stretch" : "center"
+        }}
+      >
+        <WorkspaceSwitcher presentation={expanded ? "sidebar" : "rail"} />
       </View>
 
       <View
@@ -113,8 +104,9 @@ export function AdaptiveSideNavigation({ expanded }: { expanded: boolean }) {
           paddingTop: atomSpacing[4]
         }}
       >
-        {expanded && user ? (
+        {user ? (
           <SidebarProfileSummary
+            expanded={expanded}
             avatarUrl={profileAvatarUrl}
             firstName={user.first_name}
             lastName={user.last_name}
@@ -133,12 +125,14 @@ export function AdaptiveSideNavigation({ expanded }: { expanded: boolean }) {
 }
 
 function SidebarProfileSummary({
+  expanded,
   avatarUrl,
   firstName,
   lastName,
   onPress,
   role
 }: {
+  expanded: boolean;
   avatarUrl: string | null;
   firstName: string;
   lastName: string | null;
@@ -147,6 +141,7 @@ function SidebarProfileSummary({
 }) {
   const { t } = useTranslation("features/localization");
   const [isHovered, setIsHovered] = useState(false);
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
   const displayName = [firstName, lastName].filter(Boolean).join(" ");
   const initials = [firstName, lastName]
     .filter(Boolean)
@@ -174,18 +169,20 @@ function SidebarProfileSummary({
         flexDirection: "row",
         gap: atomSpacing[3],
         minHeight: 56,
+        justifyContent: expanded ? "flex-start" : "center",
         opacity: pressed ? 0.72 : 1,
         paddingHorizontal: atomSpacing[2],
         paddingVertical: atomSpacing[2]
       })}
     >
-      {avatarUrl ? (
+      {avatarUrl && failedAvatarUrl !== avatarUrl ? (
         <Image
           accessibilityLabel={displayName}
           accessibilityRole="image"
           accessible
           contentFit="cover"
           source={{ uri: avatarUrl }}
+          onError={() => setFailedAvatarUrl(avatarUrl)}
           style={{
             borderRadius: atomRadii.full,
             height: 40,
@@ -208,21 +205,25 @@ function SidebarProfileSummary({
           </AppText>
         </View>
       )}
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <AppText
-          numberOfLines={1}
-          style={getSansFontStyle("600")}
-          variant="bodySm"
-        >
-          {displayName}
-        </AppText>
-        <AppText numberOfLines={1} tone="muted" variant="meta">
-          {role === "admin"
-            ? t(($) => $["features/localization"].navigation.administrator)
-            : t(($) => $["features/localization"].navigation.accountMember)}
-        </AppText>
-      </View>
-      <ChevronRightIcon color={sideNavigationMuted} size="sm" />
+      {expanded ? (
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <AppText
+            numberOfLines={1}
+            style={getSansFontStyle("600")}
+            variant="bodySm"
+          >
+            {displayName}
+          </AppText>
+          <AppText numberOfLines={1} tone="muted" variant="meta">
+            {role === "admin"
+              ? t(($) => $["features/localization"].navigation.administrator)
+              : t(($) => $["features/localization"].navigation.accountMember)}
+          </AppText>
+        </View>
+      ) : null}
+      {expanded ? (
+        <ChevronRightIcon color={sideNavigationMuted} size="sm" />
+      ) : null}
     </Pressable>
   );
 }
