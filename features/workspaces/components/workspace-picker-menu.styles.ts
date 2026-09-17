@@ -9,7 +9,9 @@ import { getMonoFontStyle, getSansFontStyle } from "@/shared/theme/fonts";
 export const workspacePickerStyles = StyleSheet.create({
   heading: {
     paddingHorizontal: atomSpacing[4],
-    paddingVertical: atomSpacing[2]
+    paddingVertical: atomSpacing[2],
+    borderBottomWidth: 1,
+    borderBottomColor: atomPalette.borderSubtle
   },
   row: {
     flexDirection: "row",
