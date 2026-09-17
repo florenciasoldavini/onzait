@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 export function WorkspaceSwitcher({
   presentation = "default"
 }: {
-  presentation?: "default" | "sidebar";
+  presentation?: "default" | "sidebar" | "rail" | "mobile";
 }) {
   const { activeWorkspace, activeWorkspaceId, selectWorkspace, workspaces } =
     useWorkspace();
@@ -82,9 +82,10 @@ export function WorkspaceSwitcher({
           ? t(($) => $["features/workspaces"].switcher.label)
           : undefined
       }
-      icon={presentation === "sidebar" ? StoreIcon : undefined}
+      icon={presentation !== "default" ? StoreIcon : undefined}
+      iconOnly={presentation === "rail"}
       imageUri={
-        presentation === "sidebar" && !isSharedSelected
+        presentation !== "default" && !isSharedSelected
           ? organizationAvatarUrl
           : null
       }
@@ -93,7 +94,13 @@ export function WorkspaceSwitcher({
         label: workspace.display_name,
         value: workspace.id
       }))}
-      presentation={presentation === "sidebar" ? "workspace" : "default"}
+      presentation={
+        presentation === "mobile"
+          ? "workspace-mobile"
+          : presentation !== "default"
+            ? "workspace"
+            : "default"
+      }
       value={activeWorkspaceId}
       valueSelected={!isSharedSelected}
     />

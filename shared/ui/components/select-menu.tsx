@@ -39,6 +39,7 @@ export function SelectMenu<TValue extends string>({
   fullWidth = false,
   icon: Icon,
   imageUri,
+  iconOnly = false,
   labelPrefix,
   minWidth = 192,
   onChange,
@@ -62,14 +63,17 @@ export function SelectMenu<TValue extends string>({
   fullWidth?: boolean;
   icon?: AppIconComponent;
   imageUri?: string | null;
+  iconOnly?: boolean;
   labelPrefix?: string;
   minWidth?: number;
   onChange: (value: TValue) => void;
   options: SelectMenuOption<TValue>[];
-  presentation?: "default" | "workspace";
+  presentation?: "default" | "workspace" | "workspace-mobile";
   value: TValue;
   valueSelected?: boolean;
 }) {
+  const isWorkspace =
+    presentation === "workspace" || presentation === "workspace-mobile";
   const { t } = useTranslation("shared");
   const triggerRef = useRef<View>(null);
   const { height, width } = useWindowDimensions();
@@ -130,11 +134,7 @@ export function SelectMenu<TValue extends string>({
       <View
         collapsable={false}
         ref={triggerRef}
-        style={
-          presentation === "workspace" || fullWidth
-            ? styles.triggerRootFill
-            : null
-        }
+        style={isWorkspace || fullWidth ? styles.triggerRootFill : null}
       >
         <Pressable
           accessibilityLabel={accessibilityLabel}
@@ -144,9 +144,7 @@ export function SelectMenu<TValue extends string>({
           onPress={openMenu}
           style={[
             styles.triggerRoot,
-            presentation === "workspace" || fullWidth
-              ? styles.triggerRootFill
-              : null,
+            isWorkspace || fullWidth ? styles.triggerRootFill : null,
             Platform.OS === "web" ? styles.webCursor : null
           ]}
         >
@@ -154,10 +152,14 @@ export function SelectMenu<TValue extends string>({
             <View
               style={[
                 styles.triggerSurface,
-                presentation === "workspace"
-                  ? styles.workspaceTriggerSurface
-                  : null,
+                isWorkspace ? styles.workspaceTriggerSurface : null,
                 fullWidth ? styles.fullWidthTriggerSurface : null,
+                presentation === "workspace-mobile"
+                  ? styles.mobileWorkspaceSurface
+                  : null,
+                presentation === "workspace" && iconOnly
+                  ? styles.workspaceIconOnlySurface
+                  : null,
                 isTriggerHovered ? styles.triggerHovered : null,
                 pressed || isOpen ? styles.triggerPressed : null
               ]}
@@ -169,50 +171,42 @@ export function SelectMenu<TValue extends string>({
                   style={styles.workspaceAvatar}
                 />
               ) : Icon ? (
-                <View
-                  style={
-                    presentation === "workspace"
-                      ? styles.workspaceIconSurface
-                      : null
-                  }
-                >
+                <View style={isWorkspace ? styles.workspaceIconSurface : null}>
                   <Icon
-                    color={
-                      presentation === "workspace"
-                        ? atomPalette.accent
-                        : atomPalette.text
-                    }
-                    size={presentation === "workspace" ? 20 : 16}
+                    color={isWorkspace ? atomPalette.accent : atomPalette.text}
+                    size={iconOnly ? "md" : isWorkspace ? 20 : 16}
                     strokeWidth={1.9}
                   />
                 </View>
               ) : null}
-              <View style={styles.triggerCopy}>
-                {eyebrow ? (
-                  <AppText numberOfLines={1} tone="muted" variant="eyebrow">
-                    {eyebrow}
+              {!iconOnly ? (
+                <View style={styles.triggerCopy}>
+                  {eyebrow ? (
+                    <AppText numberOfLines={1} tone="muted" variant="eyebrow">
+                      {eyebrow}
+                    </AppText>
+                  ) : null}
+                  <AppText
+                    numberOfLines={1}
+                    style={[
+                      styles.triggerLabel,
+                      isWorkspace ? styles.workspaceTriggerLabel : null
+                    ]}
+                    variant="bodySm"
+                  >
+                    {labelPrefix
+                      ? `${labelPrefix}: ${displayValue ?? selectedOption?.label ?? ""}`
+                      : (displayValue ?? selectedOption?.label)}
                   </AppText>
-                ) : null}
-                <AppText
-                  numberOfLines={1}
-                  style={[
-                    styles.triggerLabel,
-                    presentation === "workspace"
-                      ? styles.workspaceTriggerLabel
-                      : null
-                  ]}
-                  variant="bodySm"
-                >
-                  {labelPrefix
-                    ? `${labelPrefix}: ${displayValue ?? selectedOption?.label ?? ""}`
-                    : (displayValue ?? selectedOption?.label)}
-                </AppText>
-              </View>
-              <ChevronDownIcon
-                color={atomPalette.text}
-                size={16}
-                strokeWidth={1.9}
-              />
+                </View>
+              ) : null}
+              {!iconOnly ? (
+                <ChevronDownIcon
+                  color={atomPalette.text}
+                  size={16}
+                  strokeWidth={1.9}
+                />
+              ) : null}
             </View>
           )}
         </Pressable>
@@ -468,6 +462,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: atomSpacing[3],
     paddingVertical: atomSpacing[3],
     width: "100%"
+  },
+  mobileWorkspaceSurface: {
+    backgroundColor: atomPalette.surface,
+    minHeight: 52,
+    paddingVertical: atomSpacing[1],
+    paddingHorizontal: atomSpacing[2]
+  },
+  workspaceIconOnlySurface: {
+    justifyContent: "center",
+    paddingHorizontal: atomSpacing[2]
   },
   option: {
     alignItems: "center",

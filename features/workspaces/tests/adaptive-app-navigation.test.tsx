@@ -1,3 +1,4 @@
+import { WorkspaceContextBar } from "@/features/workspaces/components/workspace-context-bar";
 import {
   AdaptiveSideNavigation,
   resolveSideNavigationBackground
@@ -66,44 +67,71 @@ describe("AdaptiveSideNavigation", () => {
     );
     expect(screen.getByText("Administrator")).toBeOnTheScreen();
     expect(screen.queryByText("ONZAIT")).not.toBeOnTheScreen();
-    expect(screen.getByText("FS")).toBeOnTheScreen();
+    expect(await screen.findByText("FS")).toBeOnTheScreen();
 
     fireEvent.press(screen.getByLabelText("Profile"));
     expect(mockNavigate).toHaveBeenCalledWith("/profile");
   });
 
-  it("shows the profile avatar instead of initials when one is available", async () => {
-    mockUseProfileAvatarUrl.mockReturnValue({
-      data: "https://signed.example/profile-avatar.jpg"
-    });
+  it.each([true, false])(
+    "shows the profile avatar with expanded=%s and falls back on image error",
+    async (expanded) => {
+      mockUseProfileAvatarUrl.mockReturnValue({
+        data: "https://signed.example/profile-avatar.jpg"
+      });
 
-    await renderWithAppProviders(<AdaptiveSideNavigation expanded />, {
-      auth: {
-        user: {
-          avatar: "users/owner-1/avatar/profile-avatar.jpg",
-          created_at: new Date("2026-01-01T00:00:00.000Z"),
-          deleted_at: null,
-          email: "florencia@example.com",
-          first_name: "Florencia",
-          id: "owner-1",
-          last_name: "Soldavini",
-          phone_number: null,
-          role: "user",
-          updated_at: null,
-          welcome_email_sent_at: null
+      await renderWithAppProviders(
+        <AdaptiveSideNavigation expanded={expanded} />,
+        {
+          auth: {
+            user: {
+              avatar: "users/owner-1/avatar/profile-avatar.jpg",
+              created_at: new Date("2026-01-01T00:00:00.000Z"),
+              deleted_at: null,
+              email: "florencia@example.com",
+              first_name: "Florencia",
+              id: "owner-1",
+              last_name: "Soldavini",
+              phone_number: null,
+              role: "user",
+              updated_at: null,
+              welcome_email_sent_at: null
+            }
+          }
         }
-      }
-    });
+      );
 
-    expect(mockUseProfileAvatarUrl).toHaveBeenCalledWith(
-      "users/owner-1/avatar/profile-avatar.jpg"
-    );
+      expect(mockUseProfileAvatarUrl).toHaveBeenCalledWith(
+        "users/owner-1/avatar/profile-avatar.jpg"
+      );
+      expect(
+        screen.getByRole("image", { name: "Florencia Soldavini" })
+      ).toHaveProp("source", [
+        { uri: "https://signed.example/profile-avatar.jpg" }
+      ]);
+      expect(screen.queryByText("FS")).not.toBeOnTheScreen();
+      fireEvent(
+        screen.getByRole("image", { name: "Florencia Soldavini" }),
+        "error",
+        { nativeEvent: { error: "Image unavailable" } }
+      );
+      expect(await screen.findByText("FS")).toBeOnTheScreen();
+    }
+  );
+
+  it("shows the mobile workspace selector beside the notification control", async () => {
+    await renderWithAppProviders(<WorkspaceContextBar />);
     expect(
-      screen.getByRole("image", { name: "Florencia Soldavini" })
-    ).toHaveProp("source", [
-      { uri: "https://signed.example/profile-avatar.jpg" }
-    ]);
-    expect(screen.queryByText("FS")).not.toBeOnTheScreen();
+      screen.getByRole("button", { name: "Current workspace" })
+    ).toBeOnTheScreen();
+    expect(screen.getByText("Test workspace")).toBeOnTheScreen();
+    expect(
+      screen.getByRole("button", { name: "Notifications" })
+    ).toBeDisabled();
+    fireEvent.press(screen.getByRole("button", { name: "Current workspace" }));
+    expect(
+      await screen.findByText("Create new organization")
+    ).toBeOnTheScreen();
   });
 
   it("uses hover feedback without overriding the selected destination", () => {

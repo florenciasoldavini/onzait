@@ -43,7 +43,7 @@ export default function AppLayout() {
       <View style={{ flex: 1, flexDirection: "row" }}>
         {!isCompact ? <AdaptiveSideNavigation expanded={isExpanded} /> : null}
         <View key="app-content" style={{ flex: 1, minWidth: 0 }}>
-          {isExpanded ? <DesktopAppTopBar /> : null}
+          {!isCompact ? <DesktopAppTopBar /> : null}
           {isCompact ? <WorkspaceContextBar /> : null}
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />

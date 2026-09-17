@@ -2,6 +2,9 @@ import { atomPalette, atomSpacing } from "@/shared/ui/components/theme";
 import { StyleSheet } from "react-native";
 
 export const projectsScreenStyles = StyleSheet.create({
+  splitScreenContainer: { paddingTop: 0, paddingBottom: 0, minHeight: 0 },
+  splitScreenContent: { paddingHorizontal: 0, maxWidth: "100%", minHeight: 0 },
+  splitSidebarHeader: { gap: atomSpacing[3], padding: atomSpacing[4] },
   controlsRow: {
     alignItems: "center",
     flexDirection: "row",
@@ -30,6 +33,30 @@ export const projectsScreenStyles = StyleSheet.create({
   mapScreenStack: {
     flex: 1,
     minHeight: 0
+  },
+  mapFloatingControls: {
+    position: "absolute",
+    top: atomSpacing[4],
+    left: atomSpacing[4],
+    zIndex: 3
+  },
+  mapFloatingViewSwitcher: {
+    position: "absolute",
+    top: atomSpacing[3],
+    right: atomSpacing[3],
+    zIndex: 3
+  },
+  mapFloatingFeedback: {
+    position: "absolute",
+    top: 80,
+    left: atomSpacing[4],
+    width: 320,
+    maxHeight: "65%"
+  },
+  mapFloatingPagination: {
+    position: "absolute",
+    bottom: atomSpacing[8],
+    alignSelf: "center"
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -96,8 +123,12 @@ export const projectsScreenStyles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row"
   },
+  viewTabs: {
+    alignSelf: "flex-start",
+    width: 152
+  },
   viewTabsExpanded: {
     marginLeft: "auto",
-    width: 220
+    width: 152
   }
 });

@@ -5,11 +5,13 @@ import {
   atomRadii,
   atomSpacing
 } from "@/shared/ui/components/theme";
+import type { AppIconComponent } from "@/shared/ui/icons";
 import { useState } from "react";
 import { Platform, Pressable, View, type ViewStyle } from "react-native";
 
 export type SegmentedTabOption<TValue extends string> = {
   disabled?: boolean;
+  icon?: AppIconComponent;
   label: string;
   value: TValue;
 };
@@ -17,11 +19,13 @@ export type SegmentedTabOption<TValue extends string> = {
 type SegmentedTabsSelectedTone = "accent" | "ink";
 
 export function SegmentedTabs<TValue extends string>({
+  iconOnly = false,
   onChange,
   options,
   selectedTone = "ink",
   value
 }: {
+  iconOnly?: boolean;
   onChange: (value: TValue) => void;
   options: SegmentedTabOption<TValue>[];
   selectedTone?: SegmentedTabsSelectedTone;
@@ -85,6 +89,7 @@ export function SegmentedTabs<TValue extends string>({
         />
       ) : null}
       {options.map((option) => {
+        const Icon = option.icon;
         const isSelected = value === option.value;
         const isHovered = hoveredTab === option.value;
         const isPressed = pressedTab === option.value;
@@ -93,6 +98,9 @@ export function SegmentedTabs<TValue extends string>({
 
         return (
           <Pressable
+            {...(Platform.OS === "web" && iconOnly
+              ? { title: option.label }
+              : {})}
             accessibilityLabel={option.label}
             accessibilityRole="button"
             accessibilityState={{
@@ -156,14 +164,23 @@ export function SegmentedTabs<TValue extends string>({
                 : null
             ]}
           >
-            <AppText
-              numberOfLines={1}
-              style={{ textAlign: "center" }}
-              tone={isSelected ? "inverse" : "muted"}
-              variant="label"
-            >
-              {option.label}
-            </AppText>
+            {iconOnly && Icon ? (
+              <Icon
+                color={
+                  isSelected ? atomPalette.textInverse : atomPalette.textMuted
+                }
+                size={20}
+              />
+            ) : (
+              <AppText
+                numberOfLines={1}
+                style={{ textAlign: "center" }}
+                tone={isSelected ? "inverse" : "muted"}
+                variant="label"
+              >
+                {option.label}
+              </AppText>
+            )}
           </Pressable>
         );
       })}

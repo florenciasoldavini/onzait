@@ -1,3 +1,4 @@
+import type { ProjectsMapViewProps } from "@/features/projects/types/projects-map-view";
 import { AppButton } from "@/shared/ui/components/button";
 import { AppCard } from "@/shared/ui/components/card";
 import { AppHeading } from "@/shared/ui/components/heading";
@@ -72,6 +73,7 @@ type GoogleMapInstance = {
   fitBounds: (bounds: GoogleMapBounds, padding?: number) => void;
   setCenter: (position: GoogleMapPosition) => void;
   getZoom: () => number | undefined;
+  getCenter: () => { lat: () => number; lng: () => number } | undefined;
   setZoom: (zoom: number) => void;
 };
 type GoogleMapsNamespace = {
@@ -122,14 +124,15 @@ function getConstructionMarkerIconUrl({
 }
 
 export function ProjectsMapView({
+  showMapWhenEmpty = false,
+  edgeToEdge = false,
   fillAvailableSpace = false,
+  highlightedProjectId = null,
+  selectedProjectId: controlledSelection,
+  onSelectProject,
   onOpenProject,
   projects
-}: {
-  fillAvailableSpace?: boolean;
-  onOpenProject: (project: ProjectSummary) => void;
-  projects: ProjectSummary[];
-}) {
+}: ProjectsMapViewProps) {
   const { t } = useTranslation("features/projects");
   const locatedProjects = useMemo(
     () =>
@@ -144,8 +147,17 @@ export function ProjectsMapView({
     () => getProjectsMapViewport(locatedProjects),
     [locatedProjects]
   );
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
+  const [internalSelection, setInternalSelection] = useState<string | null>(
     null
+  );
+  const selectedProjectId =
+    controlledSelection === undefined ? internalSelection : controlledSelection;
+  const setSelectedProjectId = useCallback(
+    (id: string | null) => {
+      setInternalSelection(id);
+      onSelectProject?.(id);
+    },
+    [onSelectProject]
   );
   const selectedProject =
     locatedProjects.find((project) => project.id === selectedProjectId) ?? null;
@@ -157,9 +169,9 @@ export function ProjectsMapView({
     ) {
       setSelectedProjectId(null);
     }
-  }, [locatedProjects, selectedProjectId]);
+  }, [locatedProjects, selectedProjectId, setSelectedProjectId]);
 
-  if (locatedProjects.length === 0) {
+  if (locatedProjects.length === 0 && !showMapWhenEmpty) {
     return (
       <AppCard style={{ gap: atomSpacing[4] }}>
         <View style={styles.emptyMapPreview}>
@@ -184,13 +196,15 @@ export function ProjectsMapView({
       <View
         style={[
           styles.mapCanvas,
-          fillAvailableSpace && styles.mapCanvasFillAvailableSpace
+          fillAvailableSpace && styles.mapCanvasFillAvailableSpace,
+          edgeToEdge && styles.mapCanvasEdgeToEdge
         ]}
       >
-        {googleMapsBrowserKey && viewport ? (
+        {googleMapsBrowserKey ? (
           <InteractiveGoogleMap
             apiKey={googleMapsBrowserKey}
-            initialZoom={viewport.zoom}
+            initialZoom={viewport?.zoom ?? 2}
+            highlightedProjectId={highlightedProjectId}
             onSelectProject={setSelectedProjectId}
             projects={locatedProjects}
             selectedProjectId={selectedProjectId}
@@ -215,12 +229,14 @@ export function ProjectsMapView({
 
 function InteractiveGoogleMap({
   apiKey,
+  highlightedProjectId,
   initialZoom,
   onSelectProject,
   projects,
   selectedProjectId
 }: {
   apiKey: string;
+  highlightedProjectId: string | null;
   initialZoom: number;
   onSelectProject: (projectId: string) => void;
   projects: ProjectSummary[];
@@ -230,6 +246,10 @@ function InteractiveGoogleMap({
   const mapElementRef = useRef<HTMLDivElement | null>(null);
   const googleMapsRef = useRef<GoogleMapsNamespace | null>(null);
   const mapInstanceRef = useRef<GoogleMapInstance | null>(null);
+  const lastCameraRef = useRef<{
+    center: GoogleMapPosition;
+    zoom: number;
+  } | null>(null);
   const markersByProjectIdRef = useRef<Map<string, GoogleMapMarker>>(new Map());
   const userMarkerRef = useRef<GoogleMapMarker | null>(null);
   const hasCenteredOnUserRef = useRef(false);
@@ -289,7 +309,10 @@ function InteractiveGoogleMap({
         setShowZoomControls(showZoomControl);
         const map = new google.maps.Map(mapElement, {
           cameraControl: false,
-          center: getMapCenter(projects),
+          center:
+            projects.length > 0
+              ? getMapCenter(projects)
+              : (lastCameraRef.current?.center ?? { lat: 0, lng: 0 }),
           clickableIcons: false,
           fullscreenControl: false,
           gestureHandling: "greedy",
@@ -302,7 +325,10 @@ function InteractiveGoogleMap({
             { featureType: "poi", stylers: [{ visibility: "off" }] },
             { featureType: "transit", stylers: [{ visibility: "off" }] }
           ],
-          zoom: initialZoom,
+          zoom:
+            projects.length > 0
+              ? initialZoom
+              : (lastCameraRef.current?.zoom ?? initialZoom),
           zoomControl: false
         });
         mapInstanceRef.current = map;
@@ -380,6 +406,14 @@ function InteractiveGoogleMap({
 
     return () => {
       isDisposed = true;
+      const map = mapInstanceRef.current;
+      const center = map?.getCenter();
+      if (center) {
+        lastCameraRef.current = {
+          center: { lat: center.lat(), lng: center.lng() },
+          zoom: map?.getZoom() ?? initialZoom
+        };
+      }
       googleMapsRef.current = null;
       mapInstanceRef.current = null;
       userMarkerRef.current?.setMap(null);
@@ -441,10 +475,23 @@ function InteractiveGoogleMap({
 
     markersByProjectIdRef.current.forEach((marker, projectId) => {
       marker.setIcon(
-        getConstructionMarkerIcon(google, selectedProjectId === projectId)
+        getConstructionMarkerIcon(
+          google,
+          selectedProjectId === projectId || highlightedProjectId === projectId
+        )
       );
     });
-  }, [selectedProjectId]);
+  }, [highlightedProjectId, selectedProjectId, loadState]);
+
+  useEffect(() => {
+    const project = projects.find((item) => item.id === selectedProjectId);
+    if (loadState === "ready" && project) {
+      mapInstanceRef.current?.setCenter({
+        lat: project.latitude,
+        lng: project.longitude
+      });
+    }
+  }, [loadState, projects, selectedProjectId]);
 
   return (
     <>
@@ -478,9 +525,7 @@ function InteractiveGoogleMap({
           {showZoomControls ? (
             <>
               <AppButton
-                accessibilityLabel={t(
-                  ($) => $["features/projects"].map.zoomIn
-                )}
+                accessibilityLabel={t(($) => $["features/projects"].map.zoomIn)}
                 color="neutral"
                 fullWidth={false}
                 icon={ZoomInIcon}
@@ -609,9 +654,7 @@ function SelectedProjectCard({
       </View>
       <View style={styles.selectedCardActions}>
         <Pressable
-          accessibilityLabel={t(
-            ($) => $["features/projects"].map.closePreview
-          )}
+          accessibilityLabel={t(($) => $["features/projects"].map.closePreview)}
           hitSlop={8}
           onPress={onClose}
           style={styles.closeButton}
@@ -711,6 +754,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0
   },
+  mapCanvasEdgeToEdge: { borderRadius: 0, borderWidth: 0 },
   mapCanvas: {
     aspectRatio: 720 / 520,
     backgroundColor: atomPalette.surfaceLow,
@@ -792,7 +836,7 @@ const styles = StyleSheet.create({
     gap: atomSpacing[2],
     position: "absolute",
     right: atomSpacing[3],
-    top: atomSpacing[3],
+    bottom: atomSpacing[8],
     zIndex: 2
   }
 });

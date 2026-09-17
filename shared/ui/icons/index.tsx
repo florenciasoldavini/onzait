@@ -1,3 +1,5 @@
+import Columns2 from "lucide-react-native/dist/esm/icons/columns-2.js";
+import LayoutGrid from "lucide-react-native/dist/esm/icons/layout-grid.js";
 import ArrowRight from "lucide-react-native/dist/esm/icons/arrow-right.js";
 import ArrowUpDown from "lucide-react-native/dist/esm/icons/arrow-up-down.js";
 import AtSign from "lucide-react-native/dist/esm/icons/at-sign.js";
@@ -132,3 +134,6 @@ export const UserIcon = createIcon(UserRound);
 export const PhoneIcon = createIcon(Phone);
 export const ZoomInIcon = createIcon(ZoomIn);
 export const ZoomOutIcon = createIcon(ZoomOut);
+
+export const SplitViewIcon = createIcon(Columns2);
+export const GridIcon = createIcon(LayoutGrid);
