@@ -17,7 +17,8 @@ import "intl-pluralrules";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useNavigationContainerRef } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useStartupSplash } from "@/shared/splash/use-startup-splash";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 if (process.env.EXPO_OS !== "web") {
@@ -61,11 +62,10 @@ function RootNavigator() {
   const { isLoading, session } = useAuth();
   const { isReady: localizationReady } = useLocalization();
   const navigationRef = useNavigationContainerRef();
-  const [splashDone, setSplashDone] = useState(false);
-
-  const handleSplashFinish = useCallback(() => {
-    setSplashDone(true);
-  }, []);
+  const { visible: showSplash, finish: handleSplashFinish } = useStartupSplash({
+    ready: !isLoading && localizationReady,
+    authenticated: Boolean(session)
+  });
 
   useEffect(() => {
     navigationIntegration.registerNavigationContainer(navigationRef);
@@ -85,7 +85,7 @@ function RootNavigator() {
           <Stack.Screen name="organization-invitations/accept" />
         </Stack>
       ) : null}
-      {!splashDone ? (
+      {showSplash ? (
         <AnimatedSplash
           appReady={!isLoading && localizationReady}
           onFinish={handleSplashFinish}

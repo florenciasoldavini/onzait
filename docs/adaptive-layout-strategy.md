@@ -179,3 +179,5 @@ Verification should cover navigation continuity, browser resizing or device rota
 - Converting every card to a table merely because the expanded layout has more room.
 
 Tablet navigation uses an icon-only workspace selector and the account photo in the navigation rail, with initials when the image cannot load. Medium and expanded layouts share the search top bar. Project card widths account for the navigation rail before choosing columns.
+
+The animated startup intro waits for authentication to resolve and appears only on the first unauthenticated entry. Web records entry in session storage so refreshing the same tab does not replay it; native remembers entry for the current app runtime. Authenticated launches and later sign-outs skip the intro.
