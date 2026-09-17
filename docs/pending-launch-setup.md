@@ -70,12 +70,14 @@ Setup steps:
 
 Supabase Auth emails and product emails are configured in different places:
 
-- Product emails use the `welcome-to-onzait` and `project-collaboration` Edge Functions plus Resend.
+- Product emails use the `welcome-to-onzait`, `project-collaboration`, and `organization-invitations` Edge Functions plus Resend.
 - Current signup confirmation/resend and password recovery emails use the signed
   `auth-send-email` hook plus Resend.
 - Before enabling that hook, disable unused Auth email flows and hosted security
   notifications, configure the signing secret, and prove signed staging
   delivery in both languages.
+
+The current local sender, `onboarding@resend.dev`, is a test sender restricted to the Resend account email. Organization invitations now call the email provider, but delivery to other recipients still requires the verified-domain setup above. A rejected test-sender request displays setup feedback rather than a success message.
 
 ## DNS Ownership Notes
 

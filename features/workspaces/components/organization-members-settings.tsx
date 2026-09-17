@@ -1,8 +1,10 @@
+import { organizationInvitationEmailMessage } from "@/features/workspaces/errors/organization-invitation-email-error";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { useLocalization } from "@/features/localization/hooks/use-localization";
 import { OrganizationInviteMemberDialog } from "@/features/workspaces/components/organization-invite-member-dialog";
 import {
   useInviteOrganizationMember,
+  useResendOrganizationInvitation,
   useOrganizationMembers,
   usePendingOrganizationInvitations,
   useRemoveOrganizationMember,
@@ -61,6 +63,7 @@ export function OrganizationMembersSettings({
     canManageMembers ? organizationId : undefined
   );
   const invite = useInviteOrganizationMember(organizationId);
+  const resend = useResendOrganizationInvitation(organizationId);
   const updateRole = useUpdateOrganizationMemberRole(organizationId);
   const removeMember = useRemoveOrganizationMember(organizationId);
   const revokeInvitation = useRevokeOrganizationInvitation(organizationId);
@@ -254,6 +257,11 @@ export function OrganizationMembersSettings({
                       invitation={invitation}
                       isCompact={isCompact}
                       key={invitation.id}
+                      resendPending={resend.isPending}
+                      resendLoading={
+                        resend.isPending && resend.variables === invitation.id
+                      }
+                      onResend={() => resend.mutate(invitation.id)}
                       onRevoke={() => {
                         setSelectedInvitation(invitation);
                         revokeConfirmation.open();
@@ -262,6 +270,11 @@ export function OrganizationMembersSettings({
                   ))}
                 </View>
               )}
+              {resend.isError ? (
+                <AppText selectable tone="danger">
+                  {organizationInvitationEmailMessage(resend.error, t)}
+                </AppText>
+              ) : null}
               {updateRole.isError ? (
                 <AppText selectable tone="danger">
                   {getUserFacingErrorMessage(
@@ -495,12 +508,18 @@ function InvitationRow({
   dateFormatter,
   invitation,
   isCompact,
+  onResend,
+  resendPending,
+  resendLoading,
   onRevoke
 }: {
   dateFormatter: Intl.DateTimeFormat;
   invitation: PendingOrganizationInvitation;
   isCompact: boolean;
   onRevoke: () => void;
+  onResend: () => void;
+  resendPending: boolean;
+  resendLoading: boolean;
 }) {
   const { t } = useTranslation("features/workspaces");
   return (
@@ -516,13 +535,33 @@ function InvitationRow({
         </View>
         <View style={styles.memberCopy}>
           <AppText tone="muted" variant="bodySm">
-            {t(($) => $["features/workspaces"].pendingInvitations.sentLabel)}
+            {invitation.delivery_status === "sent"
+              ? t(($) => $["features/workspaces"].invitationEmail.sent)
+              : invitation.delivery_status === "failed"
+                ? t(($) => $["features/workspaces"].invitationEmail.failed)
+                : invitation.delivery_status === "sending"
+                  ? t(($) => $["features/workspaces"].invitationEmail.sending)
+                  : t(($) => $["features/workspaces"].invitationEmail.notSent)}
           </AppText>
           <AppText tone="muted" variant="meta">
             {t(($) => $["features/workspaces"].pendingInvitations.invitedBy, {
               name: invitation.invited_by_name
             })}
           </AppText>
+          <AppButton
+            accessibilityLabel={t(
+              ($) => $["features/workspaces"].invitationEmail.resendLabel,
+              { email: invitation.email }
+            )}
+            fullWidth={false}
+            isDisabled={resendPending}
+            loading={resendLoading}
+            onPress={onResend}
+            size="sm"
+            variant="ghost"
+          >
+            {t(($) => $["features/workspaces"].invitationEmail.resend)}
+          </AppButton>
           {isCompact ? (
             <AppText numberOfLines={1} variant="bodySm">
               {invitation.email}

@@ -1,5 +1,9 @@
+import { useLocalization } from "@/features/localization/hooks/use-localization";
 import {
-  createOrganizationInvitationRow,
+  inviteOrganizationMember,
+  resendOrganizationInvitation
+} from "@/features/workspaces/services/organization-invitations.service";
+import {
   listPendingOrganizationInvitationRows,
   listMyOrganizationInvitationRows,
   listOrganizationMemberRows,
@@ -49,11 +53,12 @@ export function useOrganizationMembers(organizationId?: string) {
 }
 
 export function useInviteOrganizationMember(organizationId: string) {
+  const { language } = useLocalization();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { email: string; roleCode: OrganizationRole }) =>
-      createOrganizationInvitationRow({ organizationId, ...input }),
-    onSuccess: async () => {
+      inviteOrganizationMember({ organizationId, language, ...input }),
+    onSettled: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: organizationMembersKey(organizationId)
@@ -181,5 +186,17 @@ export function useRemoveOrganizationMember(organizationId: string) {
         queryKey: organizationMembersKey(organizationId)
       });
     }
+  });
+}
+
+export function useResendOrganizationInvitation(organizationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (invitationId: string) =>
+      resendOrganizationInvitation(organizationId, invitationId),
+    onSettled: () =>
+      queryClient.invalidateQueries({
+        queryKey: pendingOrganizationInvitationsKey(organizationId)
+      })
   });
 }

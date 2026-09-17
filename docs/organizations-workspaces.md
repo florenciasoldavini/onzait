@@ -68,5 +68,17 @@ The global **Shared with me** surface lists only direct external project members
 - The schema permits many organizations per user and many workspaces per organization.
 - Product creation flows currently create one organization and one initial workspace at a time.
 - Organization creation accepts an optional avatar before the optional member-invitation step. Organization settings separate general information from member management; expanded layouts use vertical tabs and compact layouts use segmented tabs.
-- Organization invitations are persisted, discoverable by verified email, and ready for token-based public links. External email delivery remains deferred and can be added at the trusted server boundary without changing membership or ownership.
+- Organization invitations are persisted, discoverable by verified email, and delivered through the trusted email workflow described below.
 - Ownership transfer and organization/workspace deletion are deferred.
+
+## Organization invitation email delivery
+
+- Creation and resend use the authenticated `organization-invitations` Edge Function and the existing Resend sender configuration.
+- `prepare_organization_invitation_email` checks organization member-management permission before atomically reserving a send. A private ledger enforces a 60-second invitation cooldown, 50 attempts per actor, 100 per organization, and 1,000 total in a rolling 24-hour window. Reservations include failed sends; concurrent reservations are serialized.
+- The legacy creation RPC remains available for compatibility, but only the Edge Function sends email. Product clients must use the email workflow.
+- The invitation persists `language_code` (`es | en`), reused on resend, and delivery status independently of acceptance. Existing invitations start as `not_sent`; they are never retroactively labeled as emailed.
+- Only the trusted server can mark provider acceptance. `sent` means Resend accepted the message, not confirmed inbox delivery. An interrupted request remains visibly unconfirmed and can be resent after the cooldown.
+- Emails contain an organization-specific acceptance URL with the token in its fragment, plus a plain-text alternative. Resend rotates the token and extends expiry to seven days; acceptance still requires the verified invited address.
+- Each send version has a distinct provider idempotency key and a ten-second provider timeout. Failed sends remain pending, with localized feedback and a resend action in organization settings.
+- App success appears only after provider acceptance and delivery-state persistence. If persistence fails after provider acceptance, the user is told to check the inbox before resending.
+- The same function, form feedback, and settings actions are shared by web, iOS, and Android. No native permission is required.

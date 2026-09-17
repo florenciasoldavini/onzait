@@ -31,25 +31,6 @@ export async function listOrganizationMemberRows(
   return toPage(data);
 }
 
-export async function createOrganizationInvitationRow(input: {
-  email: string;
-  organizationId: string;
-  roleCode: OrganizationRole;
-}) {
-  const client = requireSupabase();
-  const { data, error } = await client.rpc("create_organization_invitation", {
-    p_email: input.email.trim().toLowerCase(),
-    p_organization_id: input.organizationId,
-    p_role_code: input.roleCode
-  });
-  if (error) throw toRepositoryError(error);
-  return data as {
-    id?: string;
-    status: "already_member" | "pending";
-    token?: string;
-  };
-}
-
 export async function listPendingOrganizationInvitationRows(
   organizationId: string,
   offset: number
