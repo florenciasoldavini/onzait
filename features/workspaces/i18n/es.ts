@@ -137,7 +137,14 @@ export default {
     accessibilityLabel: "Espacio de trabajo actual",
     createOrganization: "Crear nueva organización",
     label: "Espacio de trabajo",
+    manageDescription: "Nombre, imagen y miembros",
     organizationSettings: "Configuración de la organización",
-    sharedWithMe: "Compartidos conmigo"
+    projectCount_one: "{{count}} proyecto",
+    projectCount_many: "{{count}} proyectos",
+    projectCount_other: "{{count}} proyectos",
+    projectCountError: "Cantidad no disponible · Vuelve a abrir",
+    projectCountLoading: "Cargando proyectos…",
+    sharedWithMe: "Compartidos conmigo",
+    yourWorkspaces: "Tus espacios de trabajo"
   }
 } as const;

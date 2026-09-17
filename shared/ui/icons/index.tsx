@@ -46,6 +46,7 @@ import SlidersHorizontal from "lucide-react-native/dist/esm/icons/sliders-horizo
 import Store from "lucide-react-native/dist/esm/icons/store.js";
 import Trash2 from "lucide-react-native/dist/esm/icons/trash-2.js";
 import UserRound from "lucide-react-native/dist/esm/icons/user-round.js";
+import Users from "lucide-react-native/dist/esm/icons/users.js";
 import X from "lucide-react-native/dist/esm/icons/x.js";
 import ZoomIn from "lucide-react-native/dist/esm/icons/zoom-in.js";
 import ZoomOut from "lucide-react-native/dist/esm/icons/zoom-out.js";
@@ -131,6 +132,7 @@ export const ToDoIcon = TasksIcon;
 export const TrashIcon = createIcon(Trash2);
 export const UploadIcon = ChevronUpIcon;
 export const UserIcon = createIcon(UserRound);
+export const UsersIcon = createIcon(Users);
 export const PhoneIcon = createIcon(Phone);
 export const ZoomInIcon = createIcon(ZoomIn);
 export const ZoomOutIcon = createIcon(ZoomOut);

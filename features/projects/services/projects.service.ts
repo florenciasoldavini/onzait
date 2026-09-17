@@ -4,6 +4,7 @@ import {
   uploadProjectCoverObject
 } from "@/features/projects/repositories/project-covers.repository";
 import {
+  countWorkspaceProjectRows,
   getProjectRow,
   insertProjectRow,
   listProjectRows,
@@ -216,4 +217,8 @@ async function addCoverUrls<TProject extends Pick<Project, "cover_image_path">>(
       };
     })
   );
+}
+
+export async function getWorkspaceProjectCount(workspaceId: string) {
+  return countWorkspaceProjectRows(workspaceId);
 }

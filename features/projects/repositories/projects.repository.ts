@@ -178,3 +178,14 @@ export async function softDeleteProjectRow(projectId: string) {
     throw toRepositoryError(error);
   }
 }
+
+export async function countWorkspaceProjectRows(workspaceId: string) {
+  const { count, error } = await requireSupabase()
+    .from("projects")
+    .select("id", { count: "exact", head: true })
+    .eq("workspace_id", workspaceId)
+    .is("deleted_at", null);
+  if (error) throw toRepositoryError(error);
+  if (count === null) throw new Error("Project count was not returned");
+  return count;
+}

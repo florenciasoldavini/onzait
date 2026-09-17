@@ -134,7 +134,14 @@ export default {
     accessibilityLabel: "Current workspace",
     createOrganization: "Create new organization",
     label: "Workspace",
+    manageDescription: "Name, avatar & members",
     organizationSettings: "Organization settings",
-    sharedWithMe: "Shared with me"
+    projectCount_one: "{{count}} project",
+    projectCount_many: "{{count}} projects",
+    projectCount_other: "{{count}} projects",
+    projectCountError: "Count unavailable · Reopen to retry",
+    projectCountLoading: "Loading projects…",
+    sharedWithMe: "Shared with me",
+    yourWorkspaces: "Your workspaces"
   }
 } as const;
