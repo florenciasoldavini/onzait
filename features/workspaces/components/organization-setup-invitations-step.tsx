@@ -12,16 +12,18 @@ import { AppText } from "@/shared/ui/components/text";
 import { atomSpacing } from "@/shared/ui/components/theme";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 export function OrganizationSetupInvitationsStep({
   onComplete,
+  onPendingChange,
   organizationId,
   organizationName
 }: {
   onComplete: () => Promise<void>;
+  onPendingChange?: (pending: boolean) => void;
   organizationId: string;
   organizationName: string;
 }) {
@@ -38,6 +40,11 @@ export function OrganizationSetupInvitationsStep({
     mode: "onChange",
     resolver: zodResolver(validationSchema)
   });
+  const isBusy =
+    invite.isPending || form.formState.isSubmitting || isCompleting;
+  useEffect(() => {
+    onPendingChange?.(isBusy);
+  }, [isBusy, onPendingChange]);
   const submit = form.handleSubmit(async (values) => {
     setLastInvitedEmail(null);
     try {

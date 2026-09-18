@@ -5,6 +5,7 @@ import { useOrganizationAvatarUrl } from "@/features/workspaces/hooks/use-organi
 import { SelectMenu } from "@/shared/ui/components/select-menu";
 import { StoreIcon } from "@/shared/ui/icons";
 import { usePathname, useRouter } from "expo-router";
+import { useOrganizationCreation } from "@/features/workspaces/hooks/use-organization-creation";
 import { useTranslation } from "react-i18next";
 
 export function WorkspaceSwitcher({
@@ -17,6 +18,7 @@ export function WorkspaceSwitcher({
   const { canManageMembers } = useWorkspaceAccess();
   const { t } = useTranslation("features/workspaces");
   const router = useRouter();
+  const openOrganizationCreation = useOrganizationCreation();
   const pathname = usePathname();
   const isSharedSelected =
     pathname === "/shared" || pathname.startsWith("/shared/");
@@ -64,7 +66,7 @@ export function WorkspaceSwitcher({
           }}
           onCreate={() => {
             close();
-            router.push("/organizations/new" as never);
+            openOrganizationCreation();
           }}
         />
       )}
