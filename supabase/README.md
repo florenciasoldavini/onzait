@@ -152,9 +152,9 @@ Standard Webhooks verification is authoritative. Configure
 
 In Supabase Auth, set:
 
-- `Site URL`: `https://onzait.vercel.app`
+- `Site URL`: `https://www.onzait.com`
 - additional redirect URLs for local web: `http://localhost:8081/**` (adjust if Expo web is running on a different port)
-- additional redirect URLs for production web paths: `https://onzait.vercel.app/**`
+- production redirects: exact `/callback` and `/reset-password` URLs plus their query-bearing `\?**` variants for `https://www.onzait.com` and `https://onzait.com`; see [the hosted redirect checklist](../docs/pending-launch-setup.md)
 - additional redirect URLs for native app auth:
   - `onzait://callback`
   - `onzait://reset-password`

@@ -10,7 +10,7 @@ The current MVP foundation focuses on secure account access and project manageme
 
 > **Current status:** active MVP development. Projects V1 and the auth/profile foundation are implemented; task management and the project workspace modules shown as quick actions are not yet complete.
 
-[Hosted web build](https://onzait.vercel.app) · [Product roadmap](https://github.com/users/florenciasoldavini/projects/1) · Account creation or sign-in is required. This is the current deployed app, not a seeded or anonymous portfolio demo.
+[Hosted web build](https://www.onzait.com) · [Product roadmap](https://github.com/users/florenciasoldavini/projects/1) · Account creation or sign-in is required. This is the current deployed app, not a seeded or anonymous portfolio demo.
 
 > **Source license:** The source code is publicly viewable for portfolio evaluation only. No permission is granted for commercial use, copying, modification, or redistribution. See the [proprietary license](LICENSE).
 
@@ -152,7 +152,7 @@ Capture TODO:
 5. `auth-profile-cross-platform.png` — sign-in and profile/account-management states without personal data.
 6. `onzait-product-walkthrough.mp4` — short flow from sign-in to project creation, map discovery, edit, and confirmed deletion.
 
-The [hosted web build](https://onzait.vercel.app) was reachable when this README was updated, but it requires authentication and does not provide a seeded demo account. Reviewers should treat it as a web preview rather than a frictionless public demo until a safe demo path is added.
+The [hosted web build](https://www.onzait.com) was reachable when this README was updated, but it requires authentication and does not provide a seeded demo account. Reviewers should treat it as a web preview rather than a frictionless public demo until a safe demo path is added.
 
 ## Developer setup
 
@@ -219,7 +219,7 @@ See `.env.example` and `env-sync.config.json` for the full current list and depl
 ### Web
 
 - Host: Vercel
-- URL: `https://onzait.vercel.app`
+- URL: `https://www.onzait.com`
 - Build command: `npm run build`
 - Output directory: `dist`
 - Routing: clean URLs through `vercel.json`

@@ -105,9 +105,14 @@ export function createHandler(deps: Dependencies) {
     }
     let deliveryFailureCode = "INVITATION_DELIVERY_FAILED";
     try {
+      // Origin selects a destination only; authentication and organization permissions
+      // are still required above. Never reflect arbitrary origins into token links.
+      const siteUrl = request.headers.get("Origin") === "http://localhost:8081"
+        ? "http://localhost:8081"
+        : deps.siteUrl;
       const email = await buildOrganizationInvitationEmail({
         acceptUrl: `${
-          deps.siteUrl.replace(/\/+$/, "")
+          siteUrl.replace(/\/+$/, "")
         }/organization-invitations/accept#token=${
           encodeURIComponent(invitation.token)
         }`,

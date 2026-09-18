@@ -32,7 +32,7 @@ Last reviewed: 2026-07-31
 ## Current Platform Setup
 
 - Web is deployed on Vercel
-  - production URL: `https://onzait.vercel.app`
+  - production URL: `https://www.onzait.com` (`https://onzait.com` redirects to it)
 - Native build/distribution is wired through EAS
   - Expo owner/project: `@florenciasoldavini/onzait`
 - Database/auth is on Supabase

@@ -116,6 +116,52 @@ Deno.test("unauthenticated and malformed organization invitations cannot reserve
   assert(invalid.reservations.length === 0);
 });
 
+Deno.test("new invitations and resends use only the exact local development origin", async () => {
+  for (const action of ["invite", "resend"]) {
+    for (
+      const origin of [
+        "http://localhost:8081",
+        "https://www.onzait.com",
+        "https://attacker.example",
+        "http://localhost:8081.attacker.example",
+        // Deliberate user-info spoof, not an actual Basic Auth credential.
+        ["http://localhost:8081", "attacker.example"].join("@"),
+        "http://localhost:8082",
+        "http://localhost:8081/other",
+        "null",
+        undefined,
+      ]
+    ) {
+      const { handler, sends } = setup();
+      const req = request({
+        action,
+        organizationId,
+        invitationId: invitation.id,
+        email: "recipient@example.com",
+        roleCode: "member",
+        returnUrl: "https://attacker.example",
+      });
+      if (origin !== undefined) req.headers.set("Origin", origin);
+      assert((await handler(req)).status === 200);
+      const email = JSON.parse(String(sends[0].body));
+      const expectedOrigin = origin === "http://localhost:8081"
+        ? origin
+        : "https://onzait.example";
+      const link =
+        `${expectedOrigin}/organization-invitations/accept#token=${invitation.token}`;
+      assert(
+        email.html.includes(link),
+        `${action}: incorrect HTML destination`,
+      );
+      assert(
+        email.text.includes(link),
+        `${action}: incorrect text destination`,
+      );
+      assert(!email.html.includes("attacker.example"));
+    }
+  }
+});
+
 Deno.test("organization delivery failures retain the invitation and expose only a stable error", async () => {
   const { handler, marks } = setup({
     send: (() =>

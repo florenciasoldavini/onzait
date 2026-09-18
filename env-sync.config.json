@@ -35,7 +35,7 @@
     "EXPO_PUBLIC_SITE_URL": {
       "section": "Frontend / Public",
       "comment": "Public app base URL for auth redirects and hosted web links.",
-      "example": "https://onzait.vercel.app",
+      "example": "https://www.onzait.com",
       "vercel": {
         "environments": ["development", "preview", "production"]
       },
@@ -139,7 +139,7 @@
     },
     "EMAIL_FROM": {
       "comment": "Default sender for server-side product emails.",
-      "example": "Onzait <onboarding@resend.dev>",
+      "example": "Onzait <notifications@auth.onzait.com>",
       "vercel": {
         "environments": ["preview", "production"]
       }
@@ -153,7 +153,7 @@
     },
     "SITE_URL": {
       "comment": "Canonical app URL used in server-rendered product emails.",
-      "example": "https://onzait.vercel.app",
+      "example": "https://www.onzait.com",
       "vercel": {
         "environments": ["preview", "production"]
       }

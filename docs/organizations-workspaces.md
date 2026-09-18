@@ -82,3 +82,7 @@ The global **Shared with me** surface lists only direct external project members
 - Each send version has a distinct provider idempotency key and a ten-second provider timeout. Failed sends remain pending, with localized feedback and a resend action in organization settings.
 - App success appears only after provider acceptance and delivery-state persistence. If persistence fails after provider acceptance, the user is told to check the inbox before resending.
 - The same function, form feedback, and settings actions are shared by web, iOS, and Android. No native permission is required.
+
+### Local organization invitation links
+
+Organization invitation emails (new invitations and resends) use `http://localhost:8081/organization-invitations/accept` only when the authenticated request has the exact Origin `http://localhost:8081`. All other origins and native requests use the server-configured `SITE_URL`. Arbitrary client return URLs are ignored, and tokens remain in URL fragments. Local links must be opened on the computer running Expo; production links remain hosted. Existing emails are unchanged; resend to generate a local link.
