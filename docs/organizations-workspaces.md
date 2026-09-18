@@ -67,6 +67,7 @@ The global **Shared with me** surface lists only direct external project members
 
 - The schema permits many organizations per user and many workspaces per organization.
 - Product creation flows currently create one organization and one initial workspace at a time.
+- The workspace picker opens additional organization creation in a modal over the current page. Cancel discards the unsubmitted form; creation stays open through optional invitations, and finishing refreshes the workspace and opens Projects. Initial onboarding and the direct creation URL keep their page presentation.
 - Organization creation accepts an optional avatar before the optional member-invitation step. Organization settings separate general information from member management; expanded layouts use vertical tabs and compact layouts use segmented tabs.
 - Organization invitations are persisted, discoverable by verified email, and delivered through the trusted email workflow described below.
 - Ownership transfer and organization/workspace deletion are deferred.

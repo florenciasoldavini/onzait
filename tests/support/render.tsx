@@ -31,6 +31,7 @@ import {
   WorkspaceContext,
   type WorkspaceContextValue
 } from "@/features/workspaces/providers/workspace-context";
+import { OrganizationCreationContext } from "@/features/workspaces/providers/organization-creation-context";
 import { AppTopBarProvider } from "@/shared/ui/providers/app-topbar-provider";
 
 const defaultQueryOptions: DefaultOptions = {
@@ -158,7 +159,9 @@ function createAppTestWrapper({
                   <WorkspaceContext.Provider
                     value={{ ...defaultWorkspaceValue, ...workspace }}
                   >
-                    <AppTopBarProvider>{content}</AppTopBarProvider>
+                    <OrganizationCreationContext.Provider value={() => {}}>
+                      <AppTopBarProvider>{content}</AppTopBarProvider>
+                    </OrganizationCreationContext.Provider>
                   </WorkspaceContext.Provider>
                 </AuthContext.Provider>
               </QueryClientProvider>
