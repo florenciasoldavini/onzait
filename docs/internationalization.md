@@ -13,7 +13,7 @@ English resources for the active application on web, iOS, and Android. The
 public-auth shell and Profile header expose the language selector with the
 complete bilingual resource set present.
 
-Current welcome, project-invitation, signup-confirmation, verification-resend,
+Current welcome, organization-invitation, project-invitation, signup-confirmation, verification-resend,
 and password-recovery emails are bilingual. Email functions use a separate
 Deno-safe i18next instance and bundled resources under
 `supabase/functions/_shared/email`; they never import React application state or
@@ -144,7 +144,7 @@ Do not translate product data entered by users, proper names, stable database co
 - Format email dates with `es-AR` or `en-US` in UTC and state the time zone.
 - The welcome request carries the active app language and validates it before
   reserving `welcome_email_sent_at`.
-- Project invitations persist `language_code`; resend always reuses that
+- Project and organization invitations persist `language_code`; resend always reuses that
   language even if the sender later changes their UI language.
 - Invitation roles are translated from stable role codes, not database display
   labels.

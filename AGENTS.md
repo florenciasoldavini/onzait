@@ -32,7 +32,7 @@ Last reviewed: 2026-07-31
 ## Current Platform Setup
 
 - Web is deployed on Vercel
-  - production URL: `https://onzait.vercel.app`
+  - production URL: `https://www.onzait.com` (`https://onzait.com` redirects to it)
 - Native build/distribution is wired through EAS
   - Expo owner/project: `@florenciasoldavini/onzait`
 - Database/auth is on Supabase
@@ -53,7 +53,7 @@ Last reviewed: 2026-07-31
 
 - The active Spanish and English app and transactional-email localization contract lives in [docs/internationalization.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/internationalization.md:1).
 - Spanish is the unsupported-locale default, English is the missing-key fallback, and explicit app preference remains device-local.
-- Current welcome, project-invitation, signup-confirmation, and password-recovery emails follow the same validated `es | en` contract at their trusted function boundaries.
+- Current welcome, organization-invitation, project-invitation, signup-confirmation, and password-recovery emails follow the same validated `es | en` contract at their trusted function boundaries.
 - Persisted catalog values remain language-neutral; localized labels, descriptions, validation, feedback, formatting, and accessibility copy belong in the presentation layer.
 
 ## Auth Architecture
@@ -139,6 +139,8 @@ Last reviewed: 2026-07-31
 - [20260916161042_add_organization_invitation_onboarding_flow.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260916161042_add_organization_invitation_onboarding_flow.sql:1)
 - [20260916191300_manage_organization_invitations.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260916191300_manage_organization_invitations.sql:1)
 - [20260916193804_create_organization_avatar_storage.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260916193804_create_organization_avatar_storage.sql:1)
+
+- [20260917152600_add_organization_invitation_email_delivery.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260917152600_add_organization_invitation_email_delivery.sql:1)
 
 ### RLS Baseline
 

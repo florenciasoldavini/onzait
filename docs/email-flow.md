@@ -136,8 +136,8 @@ Add or update the Edge Function secrets in the Supabase dashboard or with the Su
 
 ```sh
 npx supabase secrets set RESEND_API_KEY="..."
-npx supabase secrets set EMAIL_FROM="Onzait <onboarding@resend.dev>"
-npx supabase secrets set SITE_URL="https://onzait.vercel.app"
+npx supabase secrets set EMAIL_FROM="Onzait <notifications@auth.onzait.com>"
+npx supabase secrets set SITE_URL="https://www.onzait.com"
 ```
 
 Apply `20260729193000_add_project_invitation_language.sql` before deploying the

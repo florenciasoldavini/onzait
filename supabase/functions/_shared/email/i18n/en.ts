@@ -5,6 +5,22 @@ const en = {
     utc: "UTC",
     wordmark: "onzait",
   },
+  organizationInvitation: {
+    "cta": "Review invitation",
+    "eyebrow": "Organization invitation",
+    "expires": "This invitation expires {{expiresAt}} (UTC).",
+    "footer":
+      "You are receiving this because {{inviterName}} invited this address to an Onzait organization.",
+    "heading": "Join {{organizationName}}",
+    "paragraph":
+      "{{inviterName}} invited you to join {{organizationName}} as {{roleName}}.",
+    "preview": "Join {{organizationName}} on Onzait.",
+    "roles": {
+      "admin": "Admin",
+      "member": "Member",
+    },
+    "subject": "You're invited to {{organizationName}}",
+  },
   invitation: {
     cta: "Review invitation",
     eyebrow: "Project invitation",

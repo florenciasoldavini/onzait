@@ -1,3 +1,4 @@
+import { organizationInvitationEmailMessage } from "@/features/workspaces/errors/organization-invitation-email-error";
 import {
   createOrganizationInvitationFormSchema,
   type OrganizationInvitationFormValues
@@ -9,7 +10,6 @@ import { TextField } from "@/shared/ui/components/input";
 import { SelectDropdownField } from "@/shared/ui/components/select-dropdown-field";
 import { AppText } from "@/shared/ui/components/text";
 import { atomSpacing } from "@/shared/ui/components/theme";
-import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -142,10 +142,7 @@ export function OrganizationInviteMemberDialog({
 
             {error ? (
               <AppText selectable tone="danger">
-                {getUserFacingErrorMessage(
-                  error,
-                  t(($) => $["features/workspaces"].members.inviteError)
-                )}
+                {organizationInvitationEmailMessage(error, t)}
               </AppText>
             ) : null}
 

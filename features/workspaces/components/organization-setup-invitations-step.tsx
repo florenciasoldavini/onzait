@@ -1,3 +1,4 @@
+import { organizationInvitationEmailMessage } from "@/features/workspaces/errors/organization-invitation-email-error";
 import { useInviteOrganizationMember } from "@/features/workspaces/hooks/use-organization-members";
 import {
   createOrganizationInvitationFormSchema,
@@ -9,7 +10,6 @@ import { TextField } from "@/shared/ui/components/input";
 import { SelectDropdownField } from "@/shared/ui/components/select-dropdown-field";
 import { AppText } from "@/shared/ui/components/text";
 import { atomSpacing } from "@/shared/ui/components/theme";
-import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { useMemo, useState } from "react";
@@ -39,15 +39,20 @@ export function OrganizationSetupInvitationsStep({
     resolver: zodResolver(validationSchema)
   });
   const submit = form.handleSubmit(async (values) => {
-    const result = await invite.mutateAsync(values);
-    if (result.status === "already_member") {
-      form.setError("email", {
-        message: t(($) => $["features/workspaces"].members.alreadyMember)
-      });
-      return;
+    setLastInvitedEmail(null);
+    try {
+      const result = await invite.mutateAsync(values);
+      if (result.status === "already_member") {
+        form.setError("email", {
+          message: t(($) => $["features/workspaces"].members.alreadyMember)
+        });
+        return;
+      }
+      setLastInvitedEmail(values.email);
+      form.reset({ email: "", roleCode: "member" });
+    } catch {
+      // Keep the form open; the mutation exposes a localized error below.
     }
-    setLastInvitedEmail(values.email);
-    form.reset({ email: "", roleCode: "member" });
   });
   const complete = async () => {
     setIsCompleting(true);
@@ -131,10 +136,7 @@ export function OrganizationSetupInvitationsStep({
       ) : null}
       {invite.error ? (
         <AppText tone="danger">
-          {getUserFacingErrorMessage(
-            invite.error,
-            t(($) => $["features/workspaces"].members.inviteError)
-          )}
+          {organizationInvitationEmailMessage(invite.error, t)}
         </AppText>
       ) : null}
 
