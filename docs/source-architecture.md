@@ -132,6 +132,8 @@ features/projects/
 
 Each domain contract belongs to the feature that will implement it. Planned contracts are preserved in their future owner, such as `features/workers/types/` or `features/materials/types/`, instead of a global model directory.
 
+The planned daily-report model and its embedded weather observation belong to `features/daily-reports/`. The editable attendance register belongs to `features/attendance/`, while report attendance snapshots belong to `features/daily-reports/` (see [attendance.md](./attendance.md)). Their contracts and future persistence rules are defined in [daily-reports.md](./daily-reports.md) and [daily-report-weather.md](./daily-report-weather.md).
+
 An active entity must have one canonical TypeScript contract. Zod schemas validate that contract from the same feature; emitted `.js`, `.d.ts`, and source-map copies must not be committed beside TypeScript source. TypeScript runs with `noEmit` for the Expo application.
 
 ## Adding A Feature
