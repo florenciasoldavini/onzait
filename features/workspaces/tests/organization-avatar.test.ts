@@ -4,7 +4,34 @@ import {
   isOrganizationAvatarPath
 } from "@/features/workspaces/utils/organization-avatar";
 
+jest.mock("expo-crypto", () => ({
+  randomUUID: jest.fn(() => "secure-avatar-id")
+}));
+
 describe("organization avatar storage", () => {
+  it("generates an avatar path when browser crypto is unavailable", () => {
+    const cryptoDescriptor = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      value: undefined
+    });
+
+    try {
+      expect(
+        buildOrganizationAvatarPath({
+          asset: { fileName: "studio.png" },
+          organizationId: "organization-1"
+        })
+      ).toBe("organizations/organization-1/avatar/secure-avatar-id.png");
+    } finally {
+      if (cryptoDescriptor) {
+        Object.defineProperty(globalThis, "crypto", cryptoDescriptor);
+      } else {
+        Reflect.deleteProperty(globalThis, "crypto");
+      }
+    }
+  });
+
   it("creates organization-scoped object paths", () => {
     expect(
       buildOrganizationAvatarPath({
