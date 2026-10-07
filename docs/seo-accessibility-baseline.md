@@ -79,6 +79,10 @@ Public pages should also be good share targets:
 - Open Graph image
 - Twitter/X card metadata if you add it
 
+The web-only Expo Router document in `app/+html.tsx` adds generic Onzait Open Graph and Twitter/X metadata to the static HTML export. The public image lives at `public/images/onzait-og.png` (1200 × 630 PNG) and is referenced through `https://www.onzait.com/images/onzait-og.png`. The social copy matches the English cover supplied for this asset. Private project details are never included.
+
+Verify the exported HTML and public image with `npm run build`. Native iOS and Android do not use this web document. Vercel publishes the image with the normal web deployment; social platforms may need their preview cache refreshed after deployment.
+
 ### SEO non-goals for now
 
 This baseline does not require:
