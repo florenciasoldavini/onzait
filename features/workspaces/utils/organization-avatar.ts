@@ -1,3 +1,5 @@
+import { randomUUID } from "expo-crypto";
+
 export type OrganizationAvatarAssetMetadata = {
   fileName?: string | null;
   mimeType?: string | null;
@@ -6,7 +8,7 @@ export type OrganizationAvatarAssetMetadata = {
 export function buildOrganizationAvatarPath({
   asset,
   organizationId,
-  uuid = createRandomId()
+  uuid = randomUUID()
 }: {
   asset: OrganizationAvatarAssetMetadata;
   organizationId: string;
@@ -58,9 +60,3 @@ function getAvatarExtension(asset: OrganizationAvatarAssetMetadata) {
   return "jpg";
 }
 
-function createRandomId() {
-  return (
-    globalThis.crypto?.randomUUID?.() ??
-    `${Date.now()}-${Math.random().toString(36).slice(2)}`
-  );
-}
