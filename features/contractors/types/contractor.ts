@@ -1,12 +1,28 @@
-export interface Contractor {
-  id: string;
-  user_id: string;
-  first_name: string;
-  last_name: string | null;
-  avatar: string | null;
-  phone_number: string | null;
-  email: string | null;
-  created_at: Date;
-  updated_at: Date | null;
-  deleted_at: Date | null;
+import type {
+  OwnedPersonContactRecord,
+  PersonContactFormValues,
+  PersonContactInput,
+  PersonContactSummary
+} from "@/shared/types/contact";
+
+export type ContractorSort =
+  | "created_asc"
+  | "created_desc"
+  | "name_asc"
+  | "name_desc";
+
+export type Contractor = OwnedPersonContactRecord;
+
+export type ContractorSummary = PersonContactSummary;
+
+export interface ContractorFilters {
+  workspaceId?: string;
+  query?: string;
+  sort?: ContractorSort;
 }
+
+export type ContractorFormValues = PersonContactFormValues;
+
+export type CreateContractorInput = PersonContactInput;
+
+export type UpdateContractorInput = Partial<CreateContractorInput>;

@@ -3,6 +3,9 @@ import { GluestackUIProvider } from "@/shared/ui/primitives/gluestack-ui-provide
 import { AnimatedSplash } from "@/shared/splash/animated-splash";
 import { useAppFonts } from "@/shared/hooks/use-app-fonts";
 import { AuthProvider } from "@/features/auth/providers/auth-provider";
+import { WorkspaceProvider } from "@/features/workspaces/providers/workspace-provider";
+import { LocalizationProvider } from "@/features/localization/providers/localization-provider";
+import { useLocalization } from "@/features/localization/hooks/use-localization";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { queryClient } from "@/infrastructure/query/client";
 import {
@@ -10,10 +13,12 @@ import {
   Sentry
 } from "@/infrastructure/monitoring/sentry";
 import "@/global.css";
+import "intl-pluralrules";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useNavigationContainerRef } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useStartupSplash } from "@/shared/splash/use-startup-splash";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 if (process.env.EXPO_OS !== "web") {
@@ -39,11 +44,15 @@ function RootLayout() {
   return (
     <GluestackUIProvider mode="light">
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <SafeAreaProvider>
-            <RootNavigator />
-          </SafeAreaProvider>
-        </AuthProvider>
+        <LocalizationProvider>
+          <AuthProvider>
+            <WorkspaceProvider>
+              <SafeAreaProvider>
+                <RootNavigator />
+              </SafeAreaProvider>
+            </WorkspaceProvider>
+          </AuthProvider>
+        </LocalizationProvider>
       </QueryClientProvider>
     </GluestackUIProvider>
   );
@@ -51,12 +60,12 @@ function RootLayout() {
 
 function RootNavigator() {
   const { isLoading, session } = useAuth();
+  const { isReady: localizationReady } = useLocalization();
   const navigationRef = useNavigationContainerRef();
-  const [splashDone, setSplashDone] = useState(false);
-
-  const handleSplashFinish = useCallback(() => {
-    setSplashDone(true);
-  }, []);
+  const { visible: showSplash, finish: handleSplashFinish } = useStartupSplash({
+    ready: !isLoading && localizationReady,
+    authenticated: Boolean(session)
+  });
 
   useEffect(() => {
     navigationIntegration.registerNavigationContainer(navigationRef);
@@ -64,7 +73,7 @@ function RootNavigator() {
 
   return (
     <>
-      {!isLoading ? (
+      {!isLoading && localizationReady ? (
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Protected guard={Boolean(session)}>
             <Stack.Screen name="(app)" options={{ headerShown: false }} />
@@ -72,10 +81,15 @@ function RootNavigator() {
           <Stack.Protected guard={!session}>
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           </Stack.Protected>
+          <Stack.Screen name="invitations/accept" />
+          <Stack.Screen name="organization-invitations/accept" />
         </Stack>
       ) : null}
-      {!splashDone ? (
-        <AnimatedSplash appReady={!isLoading} onFinish={handleSplashFinish} />
+      {showSplash ? (
+        <AnimatedSplash
+          appReady={!isLoading && localizationReady}
+          onFinish={handleSplashFinish}
+        />
       ) : null}
     </>
   );

@@ -4,6 +4,11 @@ import type {
   PROJECT_STATUSES,
   PROJECT_TYPES
 } from "@/features/projects/constants/project.constants";
+import type {
+  ResolvedAddress,
+  StaticMapPoint as LocationStaticMapPoint,
+  StaticMapViewport as LocationStaticMapViewport
+} from "@/features/locations/types/location";
 
 export type ProjectBuildingType = (typeof PROJECT_BUILDING_TYPES)[number];
 export type ProjectType = (typeof PROJECT_TYPES)[number];
@@ -18,6 +23,7 @@ export type ProjectSort =
 export interface Project {
   address: string;
   building_type: ProjectBuildingType;
+  client_id: string | null;
   cover_image_path: string | null;
   cover_image_url?: string | null;
   created_at: string;
@@ -31,13 +37,14 @@ export interface Project {
   latitude: number;
   longitude: number;
   name: string;
-  owner_id: string;
+  created_by: string;
   phase: ProjectPhase;
   progress_percentage: number;
   project_type: ProjectType;
   start_date: string | null;
   status: ProjectStatus;
   updated_at: string | null;
+  workspace_id: string;
 }
 
 export type ProjectSummary = Pick<
@@ -57,9 +64,16 @@ export type ProjectSummary = Pick<
   cover_image_url?: string | null;
 };
 
+export interface SharedProjectSummary extends ProjectSummary {
+  organization_id: string;
+  organization_name: string;
+  role_code: string;
+}
+
 export interface ProjectFilters {
   buildingType?: ProjectBuildingType | "all";
   buildingTypes?: ProjectBuildingType[];
+  clientId?: string;
   phase?: ProjectPhase | "all";
   phases?: ProjectPhase[];
   projectType?: ProjectType | "all";
@@ -70,12 +84,7 @@ export interface ProjectFilters {
   statuses?: ProjectStatus[];
 }
 
-export interface ResolvedProjectAddress {
-  address: string;
-  latitude: number;
-  longitude: number;
-  placeId: string;
-}
+export type ResolvedProjectAddress = ResolvedAddress;
 
 export interface ProjectCoverAsset {
   fileName?: string | null;
@@ -86,6 +95,7 @@ export interface ProjectCoverAsset {
 export interface ProjectFormValues {
   address: ResolvedProjectAddress | null;
   building_type: ProjectBuildingType;
+  client_id: string | null;
   coverAsset?: ProjectCoverAsset | null;
   description: string;
   end_date: string;
@@ -102,6 +112,7 @@ export interface ProjectFormValues {
 export interface CreateProjectInput {
   address: string;
   building_type: ProjectBuildingType;
+  client_id: string | null;
   description: string | null;
   end_date: string | null;
   estimated_end_date: string | null;
@@ -126,24 +137,5 @@ export interface ProjectSaveOutcome {
   project: Project;
 }
 
-export interface AddressSuggestion {
-  placeId: string;
-  text: string;
-}
-
-export interface StaticMapPreview {
-  attribution: string;
-  imageDataUrl: string;
-}
-
-export interface StaticMapPoint {
-  label?: string;
-  latitude: number;
-  longitude: number;
-}
-
-export interface StaticMapViewport {
-  centerLatitude: number;
-  centerLongitude: number;
-  zoom: number;
-}
+export type StaticMapPoint = LocationStaticMapPoint;
+export type StaticMapViewport = LocationStaticMapViewport;

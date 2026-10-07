@@ -387,7 +387,7 @@ const layout = {
   marginMobile: 20,
   gutterDefault: 24,
   navigationRailWidth: 88,
-  navigationSidebarWidth: 248
+  navigationSidebarWidth: 280
 };
 
 const border = {

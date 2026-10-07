@@ -35,15 +35,13 @@ export async function listProjectRows({
   filters,
   offset,
   pageSize,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: ProjectFilters;
-  userId: string;
-  userRole: "admin" | "user";
+  workspaceId: string;
 } & OffsetPageRequest) {
   const client = requireSupabase();
-  const plan = buildProjectListQueryPlan({ filters, userId, userRole });
+  const plan = buildProjectListQueryPlan({ filters, workspaceId });
   const range = getOffsetPageRange({ offset, pageSize });
   let query = client.from("projects").select(PROJECT_SUMMARY_COLUMNS);
 
@@ -69,10 +67,7 @@ export async function listProjectRows({
     throw toRepositoryError(error);
   }
 
-  return toPaginatedResult(
-    (data ?? []) as unknown as ProjectSummary[],
-    range
-  );
+  return toPaginatedResult((data ?? []) as unknown as ProjectSummary[], range);
 }
 
 export async function getProjectRow(projectId: string) {
@@ -91,24 +86,14 @@ export async function getProjectRow(projectId: string) {
   return data ? (data as Project) : null;
 }
 
-export async function insertProjectRow(input: CreateProjectInput) {
+export async function insertProjectRow(
+  input: CreateProjectInput,
+  workspaceId: string
+) {
   const client = requireSupabase();
-  const {
-    data: { user },
-    error: authError
-  } = await client.auth.getUser();
-
-  if (authError) {
-    throw toRepositoryError(authError);
-  }
-
-  if (!user) {
-    throw new UserFacingError("You must be signed in to save projects.");
-  }
-
   const { data, error } = await client
     .from("projects")
-    .insert({ ...input, owner_id: user.id })
+    .insert({ ...input, workspace_id: workspaceId })
     .select()
     .single();
 
@@ -182,6 +167,7 @@ export async function softDeleteProjectRow(projectId: string) {
   const { error } = await client
     .from("projects")
     .update({
+      client_id: null,
       deleted_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
@@ -191,4 +177,15 @@ export async function softDeleteProjectRow(projectId: string) {
   if (error) {
     throw toRepositoryError(error);
   }
+}
+
+export async function countWorkspaceProjectRows(workspaceId: string) {
+  const { count, error } = await requireSupabase()
+    .from("projects")
+    .select("id", { count: "exact", head: true })
+    .eq("workspace_id", workspaceId)
+    .is("deleted_at", null);
+  if (error) throw toRepositoryError(error);
+  if (count === null) throw new Error("Project count was not returned");
+  return count;
 }

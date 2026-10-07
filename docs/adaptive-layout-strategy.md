@@ -83,6 +83,8 @@ Navigation adaptation alone is insufficient. Feature screens must also change co
 | Floating New Project action                     | Floating or labeled action depending on space | Labeled New Project header action                                     |
 | Full list or full map                           | Full view or optional selection preview       | List/map split view where it materially improves the workflow         |
 
+Projects now expose icon-only list and map controls with localized accessible labels and web tooltips. Expanded web layouts (1280 px and above) also offer a split view: a scrollable, paginated project summary list beside the existing map. Split view fills the content area below the app top bar without page margins, panel gaps, or rounded outer frames; sort and filters share one row at the top of the list sidebar, while the view switcher floats at the top-right of the map. Map location and zoom controls sit at the bottom-right, above the attribution. Project creation uses a round floating button at the bottom-right of that pane, with scroll padding to keep the final row and pagination reachable. Row hover or keyboard focus highlights its pin; selecting a row or pin synchronizes selection, and a separate row action opens the project. Narrowing the browser falls back to the list while preserving search, filters, and the split-view preference. Expanded web map-only view also fills the content area, with sort and filters floating at the top-left and the view switcher at the top-right. Pagination remains available above the map; the map-only toolbar has no project creation button. Native iOS and Android retain list and map modes.
+
 The project cards and project table are alternate presentations of the same project collection. Search, sort, filters, loading, empty, and error state should be controlled once and supplied to the active presentation.
 
 ### Project Detail
@@ -175,3 +177,7 @@ Verification should cover navigation continuity, browser resizing or device rota
 - Rendering complete duplicate interfaces simultaneously and hiding one with styles.
 - Applying arbitrary per-screen breakpoints without a shared semantic layout contract.
 - Converting every card to a table merely because the expanded layout has more room.
+
+Tablet navigation uses an icon-only workspace selector and the account photo in the navigation rail, with initials when the image cannot load. Medium and expanded layouts share the search top bar. Project card widths account for the navigation rail before choosing columns.
+
+The animated startup intro waits for authentication to resolve and appears only on the first unauthenticated entry. Web records entry in session storage so refreshing the same tab does not replay it; native remembers entry for the current app runtime. Authenticated launches and later sign-outs skip the intro.

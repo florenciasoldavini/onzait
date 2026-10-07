@@ -74,9 +74,13 @@ export async function signInWithEmailPassword({
 
 export async function signUpWithEmailPassword({
   email,
+  language = "es",
+  next,
   password
 }: {
   email: string;
+  language?: "es" | "en";
+  next?: string;
   password: string;
 }) {
   return runAuthRequest(async () => {
@@ -84,7 +88,10 @@ export async function signUpWithEmailPassword({
       email,
       password,
       options: {
-        emailRedirectTo: getAuthRedirectUrl("callback")
+        emailRedirectTo: getAuthRedirectUrl(
+          "callback",
+          next ? { lang: language, next } : { lang: language }
+        )
       }
     });
 
@@ -96,16 +103,30 @@ export async function signUpWithEmailPassword({
   });
 }
 
-export function beginOAuthSignIn(provider: SupportedOAuthProvider) {
-  return runAuthRequest(() => startOAuthSignIn(provider));
+export function beginOAuthSignIn(
+  provider: SupportedOAuthProvider,
+  next?: string
+) {
+  return runAuthRequest(() => startOAuthSignIn(provider, next));
 }
 
-export function requestPasswordReset(email: string) {
-  return runAuthRequest(() => sendPasswordResetEmail(email));
+export function requestPasswordReset(
+  email: string,
+  language: "es" | "en" = "es"
+) {
+  return runAuthRequest(() => sendPasswordResetEmail(email, language));
 }
 
-export function resendVerificationEmail(email: string) {
-  return runAuthRequest(() => resendSignUpConfirmationEmail(email));
+export function resendVerificationEmail(
+  email: string,
+  language: "es" | "en" = "es",
+  next?: string
+) {
+  return runAuthRequest(() =>
+    next
+      ? resendSignUpConfirmationEmail(email, language, next)
+      : resendSignUpConfirmationEmail(email, language)
+  );
 }
 
 export function changePassword(password: string) {
@@ -149,12 +170,15 @@ export async function getCurrentAuthSession() {
 }
 
 export function observeAuthSession(
-  listener: (session: import("@supabase/supabase-js").Session | null) => void
+  listener: (
+    event: import("@supabase/supabase-js").AuthChangeEvent,
+    session: import("@supabase/supabase-js").Session | null
+  ) => void
 ) {
   const {
     data: { subscription }
-  } = requireAuthClient().onAuthStateChange((_event, session) => {
-    listener(session);
+  } = requireAuthClient().onAuthStateChange((event, session) => {
+    listener(event, session);
   });
 
   return () => subscription.unsubscribe();

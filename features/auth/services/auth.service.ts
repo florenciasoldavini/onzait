@@ -62,9 +62,13 @@ export type EmailSignUpResult =
 
 export async function signUpWithEmail({
   email,
+  language = "es",
+  next,
   password
 }: {
   email: string;
+  language?: "es" | "en";
+  next?: string;
   password: string;
 }): Promise<EmailSignUpResult> {
   const normalizedEmail = normalizeEmail(email);
@@ -72,6 +76,8 @@ export async function signUpWithEmail({
   try {
     const { session } = await signUpWithEmailPassword({
       email: normalizedEmail,
+      language,
+      next,
       password
     });
 
@@ -93,21 +99,37 @@ export async function signUpWithEmail({
   }
 }
 
-export function signInWithOAuth(provider: SupportedOAuthProvider) {
-  return beginOAuthSignIn(provider);
+export function signInWithOAuth({
+  next,
+  provider
+}: {
+  next?: string;
+  provider: SupportedOAuthProvider;
+}) {
+  return beginOAuthSignIn(provider, next);
 }
 
-export function sendPasswordReset(email: string) {
-  return requestPasswordReset(normalizeEmail(email));
+export function sendPasswordReset(email: string, language: "es" | "en" = "es") {
+  return requestPasswordReset(normalizeEmail(email), language);
 }
 
 export function updateAccountPassword(password: string) {
   return changePassword(password);
 }
 
-export async function resendEmailVerification(email: string) {
+export async function resendEmailVerification(
+  input: string | { email: string; next?: string },
+  language: "es" | "en" = "es"
+) {
+  const email = typeof input === "string" ? input : input.email;
+  const next = typeof input === "string" ? undefined : input.next;
   try {
-    await resendVerificationEmail(normalizeEmail(email));
+    const normalizedEmail = normalizeEmail(email);
+    if (next) {
+      await resendVerificationEmail(normalizedEmail, language, next);
+    } else {
+      await resendVerificationEmail(normalizedEmail, language);
+    }
     return { status: "sent" } as const;
   } catch (error) {
     if (

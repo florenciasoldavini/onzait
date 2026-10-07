@@ -1,20 +1,14 @@
+import { ProjectsMapView } from "@/features/projects/components/projects-map-lazy";
+import { ProjectsSplitView } from "@/features/projects/components/projects-split-view";
 import { AppButton } from "@/shared/ui/components/button";
-import { AppCard } from "@/shared/ui/components/card";
 import { EmptyState } from "@/shared/ui/components/empty-state";
-import { TextField } from "@/shared/ui/components/input";
-import { MultiSelectField } from "@/shared/ui/components/multi-select-field";
+import { InlineErrorState } from "@/shared/ui/components/inline-error-state";
+import { SearchField } from "@/shared/ui/components/input";
 import { NavScreenHeader } from "@/shared/ui/components/nav-screen-header";
 import { Screen } from "@/shared/ui/components/screen";
 import { SelectMenu } from "@/shared/ui/components/select-menu";
 import { SegmentedTabs } from "@/shared/ui/components/tabs";
-import { AppText } from "@/shared/ui/components/text";
-import { TransitionView } from "@/shared/ui/components/transition-view";
-import {
-  atomLayout,
-  atomPalette,
-  atomSpacing
-} from "@/shared/ui/components/theme";
-import { ProjectCard } from "@/features/projects/components/project-card";
+import { atomLayout } from "@/shared/ui/components/theme";
 import { ProjectCardSkeleton } from "@/features/projects/components/project-card-skeleton";
 import {
   ProjectsTable,
@@ -22,99 +16,53 @@ import {
 } from "@/features/projects/components/projects-table";
 import { useLayoutMode } from "@/shared/hooks/use-layout-mode";
 import {
-  PROJECT_BUILDING_TYPES,
-  PROJECT_BUILDING_TYPE_LABELS,
-  PROJECT_PHASES,
-  PROJECT_PHASE_LABELS,
-  PROJECT_STATUSES,
-  PROJECT_STATUS_LABELS,
-  PROJECT_TYPES,
-  PROJECT_TYPE_LABELS
-} from "@/features/projects/constants/project.constants";
+  getActiveFilterCount,
+  getProjectGridMetrics,
+  initialProjectFilters,
+  type ProjectFilterState,
+  type ProjectsViewMode
+} from "@/features/projects/components/projects-screen/projects-screen.config";
+import { projectsScreenStyles as styles } from "@/features/projects/components/projects-screen/projects-screen.styles";
+import {
+  ProjectFiltersModal,
+  ProjectListItem,
+  ProjectRowSeparator,
+  ProjectsPaginationFooter
+} from "@/features/projects/components/projects-screen/projects-screen-support";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import type {
-  ProjectBuildingType,
-  ProjectFilters,
-  ProjectPhase,
   ProjectSort,
-  ProjectStatus,
-  ProjectSummary,
-  ProjectType
+  ProjectSummary
 } from "@/features/projects/types/project.types";
 import {
   FilterIcon,
+  GridIcon,
+  MapPinIcon,
+  SplitViewIcon,
   FolderPlusIcon,
   RefreshIcon,
-  SearchIcon,
   SortIcon
 } from "@/shared/ui/icons";
 import { useRouter } from "expo-router";
 import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
-import { Suspense, lazy, memo, useCallback, useMemo, useState } from "react";
+import { useAppTopBarSearch } from "@/shared/hooks/use-app-topbar";
+import { Suspense, useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   FlatList,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
+  Platform,
   View,
   useWindowDimensions,
-  type ListRenderItemInfo,
-  type ViewStyle
+  type ListRenderItemInfo
 } from "react-native";
-
-const ProjectsMapView = lazy(async () => {
-  const module = await import(
-    "@/features/projects/components/projects-map-view"
-  );
-
-  return { default: module.ProjectsMapView };
-});
-
-type ProjectFilterState = Required<
-  Pick<ProjectFilters, "buildingTypes" | "phases" | "projectTypes" | "statuses">
->;
-type ProjectsViewMode = "list" | "map";
-
-const initialProjectFilters: ProjectFilterState = {
-  buildingTypes: [],
-  phases: [],
-  projectTypes: [],
-  statuses: []
-};
-
-const projectSortOptions = [
-  { label: "Newest", value: "created_desc" },
-  { label: "Oldest", value: "created_asc" },
-  { label: "A-Z", value: "name_asc" },
-  { label: "Z-A", value: "name_desc" }
-] satisfies { label: string; value: ProjectSort }[];
-const projectViewOptions = [
-  { label: "List", value: "list" },
-  { label: "Map", value: "map" }
-] satisfies { label: string; value: ProjectsViewMode }[];
-
-const statusFilterOptions = createFilterOptions<ProjectStatus>(
-  PROJECT_STATUSES,
-  PROJECT_STATUS_LABELS
-);
-const phaseFilterOptions = createFilterOptions<ProjectPhase>(
-  PROJECT_PHASES,
-  PROJECT_PHASE_LABELS
-);
-const projectTypeFilterOptions = createFilterOptions<ProjectType>(
-  PROJECT_TYPES,
-  PROJECT_TYPE_LABELS
-);
-const buildingTypeFilterOptions = createFilterOptions<ProjectBuildingType>(
-  PROJECT_BUILDING_TYPES,
-  PROJECT_BUILDING_TYPE_LABELS
-);
 
 export default function ProjectsScreen() {
   const router = useRouter();
+  const { t } = useTranslation("features/projects");
+  const { t: tShared } = useTranslation("shared");
   const { width } = useWindowDimensions();
   const { isCompact, isExpanded } = useLayoutMode();
+  const canUseSplitView = Platform.OS === "web" && isExpanded;
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<ProjectSort>("created_desc");
   const [viewMode, setViewMode] = useState<ProjectsViewMode>("list");
@@ -122,6 +70,67 @@ export default function ProjectsScreen() {
     initialProjectFilters
   );
   const [filtersVisible, setFiltersVisible] = useState(false);
+  const searchPlaceholder = t(
+    ($) => $["features/projects"].list.searchPlaceholder
+  );
+  const topBarSearch = useMemo(
+    () =>
+      !isCompact
+        ? {
+            onChangeText: setQuery,
+            placeholder: searchPlaceholder,
+            value: query
+          }
+        : null,
+    [isCompact, query, searchPlaceholder]
+  );
+  useAppTopBarSearch(topBarSearch);
+  const projectSortOptions = useMemo(
+    () =>
+      [
+        {
+          label: t(($) => $["features/projects"].sort.newest),
+          value: "created_desc"
+        },
+        {
+          label: t(($) => $["features/projects"].sort.oldest),
+          value: "created_asc"
+        },
+        {
+          label: t(($) => $["features/projects"].sort.ascending),
+          value: "name_asc"
+        },
+        {
+          label: t(($) => $["features/projects"].sort.descending),
+          value: "name_desc"
+        }
+      ] satisfies { label: string; value: ProjectSort }[],
+    [t]
+  );
+  const projectViewOptions = useMemo(
+    () => [
+      {
+        label: t(($) => $["features/projects"].gallery.list),
+        icon: GridIcon,
+        value: "list" as const
+      },
+      ...(canUseSplitView
+        ? [
+            {
+              label: t(($) => $["features/projects"].gallery.split),
+              icon: SplitViewIcon,
+              value: "split" as const
+            }
+          ]
+        : []),
+      {
+        label: t(($) => $["features/projects"].gallery.map),
+        icon: MapPinIcon,
+        value: "map" as const
+      }
+    ],
+    [canUseSplitView, t]
+  );
   const projectsQuery = useProjects({
     ...filters,
     query,
@@ -135,8 +144,24 @@ export default function ProjectsScreen() {
   const activeFilterCount = getActiveFilterCount(filters);
   const hasSearchOrFilters =
     query.trim().length > 0 || activeFilterCount > 0 || sort !== "created_desc";
-  const projectGrid = useMemo(() => getProjectGridMetrics(width), [width]);
-  const isMapMode = viewMode === "map";
+  const projectGrid = useMemo(
+    () =>
+      getProjectGridMetrics(
+        width -
+          (isCompact
+            ? 0
+            : isExpanded
+              ? atomLayout.navigationSidebarWidth
+              : atomLayout.navigationRailWidth)
+      ),
+    [width, isCompact, isExpanded]
+  );
+  const activeViewMode =
+    viewMode === "split" && !canUseSplitView ? "list" : viewMode;
+  const isSplitMode = activeViewMode === "split";
+  const isMapMode = activeViewMode === "map" || isSplitMode;
+  const isFullMapMode = activeViewMode === "map" && canUseSplitView;
+  const isEdgeToEdge = isSplitMode || isFullMapMode;
   const mapScreenBottomPadding =
     width >= atomLayout.breakpointDesktop
       ? atomLayout.marginDesktop
@@ -184,6 +209,51 @@ export default function ProjectsScreen() {
     }));
   };
 
+  const projectControls = (
+    <View style={styles.controlsRow}>
+      <SelectMenu
+        accessibilityLabel={t(($) => $["features/projects"].accessibility.sort)}
+        icon={SortIcon}
+        labelPrefix={t(($) => $["features/projects"].sort.label)}
+        onChange={setSort}
+        options={projectSortOptions}
+        value={sort}
+      />
+      <View style={styles.filterControl}>
+        <AppButton
+          color="neutral"
+          fullWidth={false}
+          icon={FilterIcon}
+          size="sm"
+          variant="bordered"
+          onPress={() => setFiltersVisible(true)}
+        >
+          {activeFilterCount > 0
+            ? t(($) => $["features/projects"].filters.activeCount, {
+                activeCount: activeFilterCount
+              })
+            : t(($) => $["features/projects"].filters.label)}
+        </AppButton>
+      </View>
+    </View>
+  );
+  const projectViewTabs = (
+    <View
+      style={[
+        styles.viewTabs,
+        isExpanded && !isSplitMode ? styles.viewTabsExpanded : undefined
+      ]}
+    >
+      <SegmentedTabs
+        iconOnly
+        onChange={setViewMode}
+        options={projectViewOptions}
+        selectedTone="accent"
+        value={activeViewMode}
+      />
+    </View>
+  );
+
   const projectsHeader = (
     <View style={styles.listHeader}>
       <NavScreenHeader
@@ -196,58 +266,29 @@ export default function ProjectsScreen() {
               onPress={() => router.push("/projects/new" as never)}
               size="sm"
             >
-              New project
+              {t(($) => $["features/projects"].actions.new)}
             </AppButton>
           ) : null
         }
-        title="Projects"
+        title={t(($) => $["features/projects"].list.title)}
       />
 
       <View
         style={[styles.toolbar, isExpanded ? styles.toolbarExpanded : null]}
       >
-        <View style={isExpanded ? styles.searchExpanded : styles.searchFluid}>
-          <TextField
-            leftIcon={SearchIcon}
-            onChangeText={setQuery}
-            placeholder="Search projects"
-            value={query}
-          />
-        </View>
-
-        <View style={styles.controlsRow}>
-          <SelectMenu
-            accessibilityLabel="Sort projects"
-            icon={SortIcon}
-            labelPrefix="Sort"
-            onChange={setSort}
-            options={projectSortOptions}
-            value={sort}
-          />
-          <View style={styles.filterControl}>
-            <AppButton
-              color="neutral"
-              fullWidth={false}
-              icon={FilterIcon}
-              size="sm"
-              variant="bordered"
-              onPress={() => setFiltersVisible(true)}
-            >
-              {activeFilterCount > 0
-                ? `Filters (${activeFilterCount})`
-                : "Filters"}
-            </AppButton>
+        {isCompact ? (
+          <View style={styles.searchFluid}>
+            <SearchField
+              onChangeText={setQuery}
+              placeholder={searchPlaceholder}
+              value={query}
+            />
           </View>
-        </View>
+        ) : null}
 
-        <View style={isExpanded ? styles.viewTabsExpanded : undefined}>
-          <SegmentedTabs
-            onChange={setViewMode}
-            options={projectViewOptions}
-            selectedTone="accent"
-            value={viewMode}
-          />
-        </View>
+        {projectControls}
+
+        {projectViewTabs}
       </View>
     </View>
   );
@@ -261,19 +302,19 @@ export default function ProjectsScreen() {
       ))}
     </View>
   ) : projectsQuery.isError ? (
-    <EmptyState
+    <InlineErrorState
       action={{
         icon: RefreshIcon,
-        label: "Retry",
+        label: tShared(($) => $.shared.actions.retry),
         onPress: () => {
           void projectsQuery.refetch();
         }
       }}
       description={getUserFacingErrorMessage(
         projectsQuery.error,
-        "We couldn't load your projects. Check your connection and try again."
+        t(($) => $["features/projects"].errors.listLoad)
       )}
-      title="Projects unavailable"
+      title={t(($) => $["features/projects"].errors.listUnavailable)}
     />
   ) : (
     <EmptyState
@@ -281,22 +322,26 @@ export default function ProjectsScreen() {
         hasSearchOrFilters
           ? {
               icon: RefreshIcon,
-              label: "Reset view",
+              label: t(($) => $["features/projects"].actions.reset),
               onPress: resetProjectView
             }
           : {
               icon: FolderPlusIcon,
-              label: "New Project",
+              label: t(($) => $["features/projects"].actions.newEmpty),
               onPress: () => router.push("/projects/new" as never)
             }
       }
       description={
         hasSearchOrFilters
-          ? "Adjust the search, sort, or filters to widen the project list."
-          : "Create your first project to start organizing job-site work."
+          ? t(($) => $["features/projects"].list.filteredDescription)
+          : t(($) => $["features/projects"].list.emptyDescription)
       }
       icon={hasSearchOrFilters ? FilterIcon : FolderPlusIcon}
-      title={hasSearchOrFilters ? "No matching projects" : "No projects yet"}
+      title={
+        hasSearchOrFilters
+          ? t(($) => $["features/projects"].list.filteredTitle)
+          : t(($) => $["features/projects"].list.emptyTitle)
+      }
     />
   );
 
@@ -312,18 +357,25 @@ export default function ProjectsScreen() {
   return (
     <Screen
       contentContainerStyle={
-        isMapMode
-          ? [
-              styles.mapScreenContainer,
-              { paddingBottom: mapScreenBottomPadding }
-            ]
-          : undefined
+        isEdgeToEdge
+          ? styles.splitScreenContainer
+          : isMapMode
+            ? [
+                styles.mapScreenContainer,
+                { paddingBottom: mapScreenBottomPadding }
+              ]
+            : undefined
       }
-      contentStyle={styles.screenContent}
+      contentStyle={[
+        styles.screenContent,
+        isEdgeToEdge ? styles.splitScreenContent : null
+      ]}
       floatingAction={
         hasProjects && !isMapMode && isCompact ? (
           <AppButton
-            accessibilityLabel="New project"
+            accessibilityLabel={t(
+              ($) => $["features/projects"].accessibility.newProject
+            )}
             icon={FolderPlusIcon}
             layout="icon"
             onPress={() => router.push("/projects/new" as never)}
@@ -334,7 +386,55 @@ export default function ProjectsScreen() {
       }
       scrollable={false}
     >
-      {isMapMode ? (
+      {isSplitMode ? (
+        <ProjectsSplitView
+          onOpenProject={openProject}
+          projects={projectsQuery.isError ? [] : projects}
+          paginationFooter={paginationFooter}
+          emptyContent={
+            projectsQuery.isLoading ? <ProjectsTableSkeleton /> : emptyContent
+          }
+          floatingAction={
+            <AppButton
+              accessibilityLabel={t(
+                ($) => $["features/projects"].accessibility.newProject
+              )}
+              fullWidth={false}
+              icon={FolderPlusIcon}
+              layout="icon"
+              onPress={() => router.push("/projects/new" as never)}
+              shape="pill"
+              size="iconLg"
+            />
+          }
+          sidebarHeader={
+            <View style={styles.splitSidebarHeader}>{projectControls}</View>
+          }
+          viewSwitcher={projectViewTabs}
+        />
+      ) : isFullMapMode ? (
+        <View style={styles.mapScreenStack}>
+          <Suspense fallback={<ProjectCardSkeleton />}>
+            <ProjectsMapView
+              edgeToEdge
+              fillAvailableSpace
+              showMapWhenEmpty
+              onOpenProject={(project) => openProject(project.id)}
+              projects={projectsQuery.isError ? [] : projects}
+            />
+          </Suspense>
+          <View style={styles.mapFloatingControls}>{projectControls}</View>
+          <View style={styles.mapFloatingViewSwitcher}>{projectViewTabs}</View>
+          {projectsQuery.isLoading || projectsQuery.isError || !hasProjects ? (
+            <View style={styles.mapFloatingFeedback}>
+              {projectsQuery.isLoading ? <ProjectCardSkeleton /> : emptyContent}
+            </View>
+          ) : null}
+          {projectsQuery.hasNextPage ? (
+            <View style={styles.mapFloatingPagination}>{paginationFooter}</View>
+          ) : null}
+        </View>
+      ) : isMapMode ? (
         <View style={styles.mapScreenStack}>
           {projectsHeader}
           {hasProjects ? (
@@ -410,315 +510,3 @@ export default function ProjectsScreen() {
     </Screen>
   );
 }
-
-const ProjectListItem = memo(function ProjectListItem({
-  index,
-  onPress,
-  project,
-  style
-}: {
-  index: number;
-  onPress: (projectId: string) => void;
-  project: ProjectSummary;
-  style: ViewStyle;
-}) {
-  return (
-    <TransitionView
-      animateEnter
-      animateExit
-      animateLayout
-      animationDelay={Math.min(index, 6) * 36}
-      style={style}
-    >
-      <ProjectCard onPress={() => onPress(project.id)} project={project} />
-    </TransitionView>
-  );
-});
-
-function ProjectsPaginationFooter({
-  hasNextPage,
-  isError,
-  isLoading,
-  onLoadMore
-}: {
-  hasNextPage: boolean;
-  isError: boolean;
-  isLoading: boolean;
-  onLoadMore: () => void;
-}) {
-  if (!hasNextPage && !isError) {
-    return null;
-  }
-
-  return (
-    <View style={styles.paginationFooter}>
-      <AppButton
-        color="neutral"
-        loading={isLoading}
-        onPress={onLoadMore}
-        size="sm"
-        variant="bordered"
-      >
-        {isError ? "Retry loading projects" : "Load more projects"}
-      </AppButton>
-    </View>
-  );
-}
-
-function ProjectRowSeparator() {
-  return <View style={styles.projectRowSeparator} />;
-}
-
-function ProjectFiltersModal({
-  filters,
-  onChangeFilter,
-  onClose,
-  onReset,
-  visible
-}: {
-  filters: ProjectFilterState;
-  onChangeFilter: <TKey extends keyof ProjectFilterState>(
-    key: TKey,
-    value: ProjectFilterState[TKey]
-  ) => void;
-  onClose: () => void;
-  onReset: () => void;
-  visible: boolean;
-}) {
-  return (
-    <Modal
-      animationType="fade"
-      onRequestClose={onClose}
-      transparent
-      visible={visible}
-    >
-      <View style={styles.modalRoot}>
-        <Pressable
-          accessibilityLabel="Close project filters"
-          onPress={onClose}
-          style={StyleSheet.absoluteFill}
-        />
-        <View pointerEvents="none" style={styles.modalBackdrop} />
-        <TransitionView animateEnter style={styles.modalContent}>
-          <AppCard padding="md" style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <AppText variant="formLabel">Project filters</AppText>
-            </View>
-
-            <ScrollView
-              contentContainerStyle={styles.modalBody}
-              showsVerticalScrollIndicator={false}
-            >
-              <MultiSelectField
-                label="Status"
-                onChange={(value) => onChangeFilter("statuses", value)}
-                options={statusFilterOptions}
-                value={filters.statuses}
-              />
-              <MultiSelectField
-                label="Phase"
-                onChange={(value) => onChangeFilter("phases", value)}
-                options={phaseFilterOptions}
-                value={filters.phases}
-              />
-              <MultiSelectField
-                label="Project type"
-                onChange={(value) => onChangeFilter("projectTypes", value)}
-                options={projectTypeFilterOptions}
-                value={filters.projectTypes}
-              />
-              <MultiSelectField
-                label="Building type"
-                onChange={(value) => onChangeFilter("buildingTypes", value)}
-                options={buildingTypeFilterOptions}
-                value={filters.buildingTypes}
-              />
-            </ScrollView>
-
-            <View style={styles.modalFooter}>
-              <View style={styles.modalFooterAction}>
-                <AppButton
-                  color="neutral"
-                  onPress={onReset}
-                  size="md"
-                  variant="bordered"
-                >
-                  Clear
-                </AppButton>
-              </View>
-              <View style={styles.modalFooterAction}>
-                <AppButton onPress={onClose} size="md">
-                  Done
-                </AppButton>
-              </View>
-            </View>
-          </AppCard>
-        </TransitionView>
-      </View>
-    </Modal>
-  );
-}
-
-function getProjectGridMetrics(screenWidth: number) {
-  const horizontalPadding =
-    screenWidth >= atomLayout.breakpointDesktop
-      ? atomLayout.marginDesktop
-      : screenWidth >= atomLayout.breakpointTablet
-        ? atomLayout.marginTablet
-        : atomLayout.marginMobile;
-  const availableWidth = Math.max(
-    0,
-    Math.min(screenWidth, atomLayout.maxWidthContent) - horizontalPadding * 2
-  );
-  const gap = atomSpacing[4];
-  const columns =
-    availableWidth >= 1080
-      ? 4
-      : availableWidth >= 900
-        ? 3
-        : availableWidth >= atomLayout.breakpointTablet
-          ? 2
-          : 1;
-  const itemWidth =
-    columns === 1
-      ? ("100%" as const)
-      : (availableWidth - gap * (columns - 1)) / columns;
-
-  return {
-    columns,
-    containerStyle: {
-      alignItems: "stretch" as const,
-      flexDirection: columns === 1 ? ("column" as const) : ("row" as const),
-      flexWrap: "wrap" as const,
-      gap
-    } satisfies ViewStyle,
-    itemStyle: {
-      flexGrow: 0,
-      flexShrink: 0,
-      width: itemWidth
-    } satisfies ViewStyle
-  };
-}
-
-function createFilterOptions<TValue extends string>(
-  values: readonly TValue[],
-  labels: Record<TValue, string>
-) {
-  return values.map((value) => ({
-    label: labels[value],
-    value
-  }));
-}
-
-function getActiveFilterCount(filters: ProjectFilterState) {
-  return Object.values(filters).reduce(
-    (total, selectedValues) => total + selectedValues.length,
-    0
-  );
-}
-
-const styles = StyleSheet.create({
-  controlsRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: atomSpacing[2]
-  },
-  filterControl: {
-    flexShrink: 0
-  },
-  listHeader: {
-    gap: atomSpacing[6],
-    marginBottom: atomSpacing[6]
-  },
-  mapBody: {
-    flex: 1,
-    gap: atomSpacing[4],
-    minHeight: 0
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(20, 22, 28, 0.18)"
-  },
-  modalBody: {
-    gap: atomSpacing[5],
-    paddingBottom: atomSpacing[1]
-  },
-  modalCard: {
-    borderColor: atomPalette.borderSubtle,
-    maxHeight: "86%",
-    width: "100%"
-  },
-  modalContent: {
-    maxWidth: 560,
-    width: "100%"
-  },
-  modalFooter: {
-    flexDirection: "row",
-    gap: atomSpacing[3],
-    paddingTop: atomSpacing[5]
-  },
-  modalFooterAction: {
-    flex: 1
-  },
-  modalHeader: {
-    borderBottomColor: atomPalette.borderSubtle,
-    borderBottomWidth: 1,
-    marginBottom: atomSpacing[5],
-    paddingBottom: atomSpacing[4]
-  },
-  modalRoot: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-    padding: atomSpacing[4]
-  },
-  mapScreenContainer: {
-    paddingBottom: atomSpacing[5]
-  },
-  mapScreenStack: {
-    flex: 1,
-    minHeight: 0
-  },
-  expandedList: {
-    flex: 1,
-    gap: atomSpacing[4],
-    minHeight: 0
-  },
-  paginationFooter: {
-    alignItems: "center",
-    paddingVertical: atomSpacing[5]
-  },
-  projectListContent: {
-    flexGrow: 1,
-    paddingBottom: atomSpacing[6]
-  },
-  projectRow: {
-    gap: atomSpacing[4]
-  },
-  projectRowSeparator: {
-    height: atomSpacing[4]
-  },
-  screenContent: {
-    flex: 1,
-    minWidth: 0
-  },
-  searchExpanded: {
-    flex: 1,
-    maxWidth: 420,
-    minWidth: 280
-  },
-  searchFluid: {
-    width: "100%"
-  },
-  toolbar: {
-    gap: atomSpacing[3]
-  },
-  toolbarExpanded: {
-    alignItems: "center",
-    flexDirection: "row"
-  },
-  viewTabsExpanded: {
-    marginLeft: "auto",
-    width: 220
-  }
-});

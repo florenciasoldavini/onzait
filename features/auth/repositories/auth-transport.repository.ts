@@ -3,8 +3,14 @@ import {
   getOAuthProviderLabel,
   type SupportedOAuthProvider
 } from "@/features/auth/utils/auth-callback";
-import { getSupabaseErrorMessage, supabase } from "@/infrastructure/supabase/client";
-import { UserFacingError, toUserFacingError } from "@/shared/utils/user-facing-errors";
+import {
+  getSupabaseErrorMessage,
+  supabase
+} from "@/infrastructure/supabase/client";
+import {
+  UserFacingError,
+  toUserFacingError
+} from "@/shared/utils/user-facing-errors";
 import type { Session } from "@supabase/supabase-js";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as Linking from "expo-linking";
@@ -171,12 +177,18 @@ export async function completeAuthSessionFromUrl(
   return { session: null, type: authType };
 }
 
-export async function startOAuthSignIn(provider: SupportedOAuthProvider) {
+export async function startOAuthSignIn(
+  provider: SupportedOAuthProvider,
+  next?: string
+) {
   if (!supabase) {
     throw new Error(getSupabaseErrorMessage("Supabase is not configured."));
   }
 
-  const redirectTo = getAuthRedirectUrl("callback");
+  const redirectTo = getAuthRedirectUrl(
+    "callback",
+    next ? { next } : undefined
+  );
   const providerLabel = getOAuthProviderLabel(provider);
 
   if (Platform.OS === "web") {
@@ -292,13 +304,16 @@ export async function startOAuthIdentityLink(provider: SupportedOAuthProvider) {
   return completeAuthSessionFromUrl(result.url);
 }
 
-export async function sendPasswordResetEmail(email: string) {
+export async function sendPasswordResetEmail(
+  email: string,
+  language: "es" | "en"
+) {
   if (!supabase) {
     throw new Error(getSupabaseErrorMessage("Supabase is not configured."));
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: getAuthRedirectUrl("reset-password")
+    redirectTo: getAuthRedirectUrl("reset-password", { lang: language })
   });
 
   if (error) {
@@ -306,7 +321,11 @@ export async function sendPasswordResetEmail(email: string) {
   }
 }
 
-export async function resendSignUpConfirmationEmail(email: string) {
+export async function resendSignUpConfirmationEmail(
+  email: string,
+  language: "es" | "en",
+  next?: string
+) {
   if (!supabase) {
     throw new Error(getSupabaseErrorMessage("Supabase is not configured."));
   }
@@ -315,7 +334,10 @@ export async function resendSignUpConfirmationEmail(email: string) {
     type: "signup",
     email,
     options: {
-      emailRedirectTo: getAuthRedirectUrl("callback")
+      emailRedirectTo: getAuthRedirectUrl(
+        "callback",
+        next ? { lang: language, next } : { lang: language }
+      )
     }
   });
 

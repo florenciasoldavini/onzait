@@ -9,66 +9,50 @@ import {
   updateAuthenticatedUserProfile,
   type EditableUserProfile
 } from "@/features/auth/services/auth-session.service";
+import { AuthContext } from "@/features/auth/providers/auth-context";
 import type { ProfileAvatarAsset } from "@/features/profile/services/profile.service";
 import { Sentry } from "@/infrastructure/monitoring/sentry";
 import { getUserFacingErrorMessage } from "@/shared/utils/user-facing-errors";
 import type { User } from "@/features/auth/types/auth.types";
 import type { Session } from "@supabase/supabase-js";
-import { createContext, useCallback, useEffect, useRef, useState } from "react";
-
-interface AuthContextType {
-  authError: string | null;
-  createUser: (
-    session: Session,
-    profile?: Partial<User>
-  ) => Promise<User | null>;
-  isLoading: boolean;
-  logOut: () => Promise<void>;
-  session: Session | null;
-  updateUserProfile: (
-    profile: Partial<EditableUserProfile>,
-    avatarAsset?: ProfileAvatarAsset | null
-  ) => Promise<User | null>;
-  user: User | null;
-}
-
-const defaultAuthError = hasAuthSessionSupport()
-  ? null
-  : "The app is not connected to its data service. Try again later.";
-
-export const AuthContext = createContext<AuthContextType>({
-  authError: defaultAuthError,
-  createUser: async () => null,
-  isLoading: true,
-  logOut: async () => {},
-  session: null,
-  updateUserProfile: async () => null,
-  user: null
-});
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocalization } from "@/features/localization/hooks/use-localization";
+import { useTranslation } from "react-i18next";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const { language } = useLocalization();
+  const { t } = useTranslation("features/auth");
+  const defaultAuthError = hasAuthSessionSupport()
+    ? null
+    : t(($) => $["features/auth"].errors.dataService);
   const [authError, setAuthError] = useState<string | null>(defaultAuthError);
   const [isLoading, setIsLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const authTransitionRef = useRef(0);
+  const sessionUserIdRef = useRef<string | null>(null);
 
-  const setAuthenticatedUser = useCallback((nextUser: User) => {
-    setUser(nextUser);
-    setAuthError(null);
+  const setAuthenticatedUser = useCallback(
+    (nextUser: User) => {
+      setUser(nextUser);
+      setAuthError(null);
 
-    void deliverWelcomeEmailIfNeeded(nextUser).then((welcomedUser) => {
-      setUser((currentUser) =>
-        currentUser?.id === welcomedUser.id &&
-        welcomedUser.welcome_email_sent_at
-          ? {
-              ...currentUser,
-              welcome_email_sent_at: welcomedUser.welcome_email_sent_at
-            }
-          : currentUser
+      void deliverWelcomeEmailIfNeeded(nextUser, language).then(
+        (welcomedUser) => {
+          setUser((currentUser) =>
+            currentUser?.id === welcomedUser.id &&
+            welcomedUser.welcome_email_sent_at
+              ? {
+                  ...currentUser,
+                  welcome_email_sent_at: welcomedUser.welcome_email_sent_at
+                }
+              : currentUser
+          );
+        }
       );
-    });
-  }, []);
+    },
+    [language]
+  );
 
   const createUser = async (
     nextSession: Session,
@@ -82,7 +66,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAuthError(
         getUserFacingErrorMessage(
           error,
-          "We couldn't finish setting up your account. Sign out and back in, then try again."
+          t(($) => $["features/auth"].errors.accountSetup)
         )
       );
       return null;
@@ -111,7 +95,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAuthError(
         getUserFacingErrorMessage(
           error,
-          "We couldn't update your profile. Check your connection and try again."
+          t(($) => $["features/auth"].errors.profileUpdate)
         )
       );
       throw error;
@@ -121,6 +105,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const hydrateUser = useCallback(
     async (nextSession: Session | null) => {
       const transition = ++authTransitionRef.current;
+      sessionUserIdRef.current = nextSession?.user.id ?? null;
       setSession(nextSession);
 
       if (!nextSession) {
@@ -140,7 +125,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setAuthError(
             getUserFacingErrorMessage(
               error,
-              "We couldn't load your account. Check your connection and try again."
+              t(($) => $["features/auth"].errors.accountLoad)
             )
           );
           setUser(null);
@@ -154,6 +139,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await logOutCurrentSession();
       authTransitionRef.current += 1;
+      sessionUserIdRef.current = null;
       setSession(null);
       setUser(null);
       setAuthError(null);
@@ -161,7 +147,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAuthError(
         getUserFacingErrorMessage(
           error,
-          "We couldn't sign you out. Check your connection and try again."
+          t(($) => $["features/auth"].errors.signOut)
         )
       );
     }
@@ -207,7 +193,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setAuthError(
             getUserFacingErrorMessage(
               error,
-              "We couldn't restore your session. Sign in and try again."
+              t(($) => $["features/auth"].errors.sessionRestore)
             )
           );
           setSession(null);
@@ -216,7 +202,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       });
 
-    const unsubscribe = subscribeToAuthSession((nextSession) => {
+    const unsubscribe = subscribeToAuthSession((event, nextSession) => {
+      const nextUserId = nextSession?.user.id ?? null;
+      const isSameAuthenticatedUser =
+        Boolean(nextUserId) && nextUserId === sessionUserIdRef.current;
+
+      if (
+        (event === "TOKEN_REFRESHED" && nextSession) ||
+        (event === "SIGNED_IN" && isSameAuthenticatedUser)
+      ) {
+        sessionUserIdRef.current = nextUserId;
+        setSession(nextSession);
+        return;
+      }
+
       void finishHydration(nextSession);
     });
 

@@ -1,5 +1,5 @@
 import type { ProjectFilters } from "@/features/projects/types/project.types";
-import { normalizeProjectFilters } from "@/features/projects/schemas/project.schemas";
+import { normalizeProjectFilters } from "@/features/projects/schemas/project.schema";
 
 export interface ProjectListQueryPlan {
   filters: {
@@ -12,20 +12,23 @@ export interface ProjectListQueryPlan {
 
 export function buildProjectListQueryPlan({
   filters,
-  userId,
-  userRole
+  workspaceId
 }: {
   filters?: ProjectFilters;
-  userId: string;
-  userRole: "admin" | "user";
+  workspaceId: string;
 }): ProjectListQueryPlan {
   const normalized = normalizeProjectFilters(filters);
   const queryFilters: ProjectListQueryPlan["filters"] = [
-    { column: "deleted_at", operator: "is", value: null }
+    { column: "deleted_at", operator: "is", value: null },
+    { column: "workspace_id", operator: "eq", value: workspaceId }
   ];
 
-  if (userRole !== "admin") {
-    queryFilters.push({ column: "owner_id", operator: "eq", value: userId });
+  if (normalized.clientId) {
+    queryFilters.push({
+      column: "client_id",
+      operator: "eq",
+      value: normalized.clientId
+    });
   }
 
   if (normalized.statuses) {

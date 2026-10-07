@@ -1,15 +1,42 @@
-import { Client } from "@/features/clients/types/client";
-import { z } from "zod";
+import type {
+  ClientFilters,
+  ClientSort
+} from "@/features/clients/types/client";
+import {
+  createPersonContactFormSchema,
+  personContactFormSchema,
+  personContactRecordSchema
+} from "@/shared/schemas/contact";
+import {
+  getPersonDisplayName,
+  getPersonInitials,
+  normalizeNullableText,
+  toPersonContactInput
+} from "@/shared/utils/contact";
 
-export const ClientSchema: z.ZodType<Client> = z.object({
-  id: z.string(),
-  user_id: z.string(),
-  first_name: z.string(),
-  last_name: z.string().nullable(),
-  avatar: z.string().nullable(),
-  email: z.string().nullable(),
-  phone_number: z.string().nullable(),
-  created_at: z.date(),
-  updated_at: z.date().nullable(),
-  deleted_at: z.date().nullable()
-});
+export const ClientSchema = personContactRecordSchema;
+export const createClientFormSchema = createPersonContactFormSchema;
+export const clientFormSchema = personContactFormSchema;
+export const toClientInput = toPersonContactInput;
+export const getClientDisplayName = getPersonDisplayName;
+export const getClientInitials = getPersonInitials;
+
+export function normalizeClientFilters(filters: ClientFilters = {}) {
+  return {
+    workspaceId: normalizeNullableText(filters.workspaceId ?? ""),
+    query: normalizeNullableText(filters.query ?? ""),
+    sort: normalizeClientSort(filters.sort)
+  };
+}
+
+function normalizeClientSort(sort: ClientFilters["sort"]): ClientSort {
+  switch (sort) {
+    case "created_asc":
+    case "name_asc":
+    case "name_desc":
+      return sort;
+    case "created_desc":
+    default:
+      return "created_desc";
+  }
+}

@@ -1,10 +1,6 @@
 import { useAuth } from "@/features/auth/hooks/use-auth";
-import {
-  autocompleteProjectAddress,
-  getProjectAddressMapPreview,
-  getProjectsMapPreview,
-  resolveProjectAddress
-} from "@/features/projects/services/address.service";
+import { useWorkspace } from "@/features/workspaces/hooks/use-workspace";
+import { getProjectsMapPreview } from "@/features/projects/services/projects-map.service";
 import {
   createProjectWithOptionalCover,
   getProject,
@@ -21,8 +17,11 @@ import type {
   StaticMapViewport,
   UpdateProjectInput
 } from "@/features/projects/types/project.types";
-import { normalizeProjectFilters } from "@/features/projects/schemas/project.schemas";
-import { DEFAULT_PAGE_SIZE, type PaginatedResult } from "@/shared/utils/pagination";
+import { normalizeProjectFilters } from "@/features/projects/schemas/project.schema";
+import {
+  DEFAULT_PAGE_SIZE,
+  type PaginatedResult
+} from "@/shared/utils/pagination";
 import { UserFacingError } from "@/shared/utils/user-facing-errors";
 import {
   type InfiniteData,
@@ -37,6 +36,7 @@ const projectsKey = ["projects"] as const;
 
 export function useProjects(filters: ProjectFilters) {
   const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
   const debouncedQuery = useDebouncedValue(filters.query ?? "", 350);
   const requestFilters = useMemo(
     () => ({ ...filters, query: debouncedQuery }),
@@ -54,7 +54,7 @@ export function useProjects(filters: ProjectFilters) {
     readonly unknown[],
     number
   >({
-    enabled: Boolean(user),
+    enabled: Boolean(user && activeWorkspaceId),
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
@@ -62,10 +62,9 @@ export function useProjects(filters: ProjectFilters) {
         filters: requestFilters,
         offset: pageParam,
         pageSize: DEFAULT_PAGE_SIZE,
-        userId: user!.id,
-        userRole: user!.role
+        workspaceId: activeWorkspaceId!
       }),
-    queryKey: [...projectsKey, user?.id, user?.role, normalizedFilters]
+    queryKey: [...projectsKey, activeWorkspaceId, normalizedFilters]
   });
 }
 
@@ -80,6 +79,7 @@ export function useProject(projectId?: string) {
 export function useCreateProject() {
   const queryClient = useQueryClient();
   const { createUser, session, user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
 
   return useMutation({
     mutationFn: async ({
@@ -101,7 +101,15 @@ export function useCreateProject() {
         );
       }
 
-      return createProjectWithOptionalCover({ coverAsset, input });
+      if (!activeWorkspaceId) {
+        throw new UserFacingError("Select a workspace before saving projects.");
+      }
+
+      return createProjectWithOptionalCover({
+        coverAsset,
+        input,
+        workspaceId: activeWorkspaceId
+      });
     },
     onSuccess: async ({ project }) => {
       queryClient.setQueryData([...projectsKey, "detail", project.id], project);
@@ -136,58 +144,6 @@ export function useSoftDeleteProject() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: projectsKey });
     }
-  });
-}
-
-export function useAddressAutocomplete(
-  input: string,
-  sessionToken: string,
-  enabled = true
-) {
-  const debouncedInput = useDebouncedValue(input, 350);
-
-  return useQuery({
-    enabled:
-      enabled && debouncedInput.trim().length >= 3 && sessionToken.length > 0,
-    queryFn: () =>
-      autocompleteProjectAddress({
-        input: debouncedInput.trim(),
-        sessionToken
-      }),
-    queryKey: ["address-autocomplete", debouncedInput.trim(), sessionToken],
-    staleTime: 30_000
-  });
-}
-
-export function useResolveAddress() {
-  return useMutation({
-    mutationFn: ({
-      placeId,
-      sessionToken
-    }: {
-      placeId: string;
-      sessionToken: string;
-    }) => resolveProjectAddress({ placeId, sessionToken })
-  });
-}
-
-export function useAddressMapPreview({
-  latitude,
-  longitude
-}: {
-  latitude?: number;
-  longitude?: number;
-}) {
-  return useQuery({
-    enabled: typeof latitude === "number" && typeof longitude === "number",
-    queryFn: () =>
-      getProjectAddressMapPreview({
-        latitude: latitude!,
-        longitude: longitude!
-      }),
-    queryKey: ["address-map-preview", latitude, longitude],
-    retry: 1,
-    staleTime: 30 * 60_000
   });
 }
 

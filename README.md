@@ -10,7 +10,7 @@ The current MVP foundation focuses on secure account access and project manageme
 
 > **Current status:** active MVP development. Projects V1 and the auth/profile foundation are implemented; task management and the project workspace modules shown as quick actions are not yet complete.
 
-[Hosted web build](https://onzait.vercel.app) · [Product roadmap](https://github.com/users/florenciasoldavini/projects/1) · Account creation or sign-in is required. This is the current deployed app, not a seeded or anonymous portfolio demo.
+[Hosted web build](https://www.onzait.com) · [Product roadmap](https://github.com/users/florenciasoldavini/projects/1) · Account creation or sign-in is required. This is the current deployed app, not a seeded or anonymous portfolio demo.
 
 > **Source license:** The source code is publicly viewable for portfolio evaluation only. No permission is granted for commercial use, copying, modification, or redistribution. See the [proprietary license](LICENSE).
 
@@ -23,6 +23,7 @@ The current MVP foundation focuses on secure account access and project manageme
 - **Projects V1:** create, view, edit, search, filter, sort, and soft-delete projects with explicit delete confirmation.
 - **Project context:** status, phase, dates, building/project type, progress, description, cover image, and a Google-selected address with stored coordinates.
 - **List and map discovery:** responsive project cards plus web/native map implementations, project markers, previews, and optional live user location.
+- **Project photos:** private project galleries, camera/library batch review, automatic HEIC conversion, operational categories, independent marketing classification, EXIF capture context, metadata editing, and confirmed soft deletion.
 - **Secure data access:** owner-scoped project access for normal users, admin-wide access through database policies, private project-cover storage, and repository-level filtering of soft-deleted records.
 - **Trusted Maps workflows:** address autocomplete, place resolution, and static previews run through Supabase Edge Functions with authentication, validation, rate limiting, and durable monthly usage caps before provider calls.
 - **Reusable UI foundation:** shared design tokens and primitives for typography, fields, buttons, cards, navigation, skeletons, empty states, toasts, and responsive layouts.
@@ -31,7 +32,7 @@ The current MVP foundation focuses on secure account access and project manageme
 ### In progress or intentionally deferred
 
 - **Tasks:** the Tasks tab is a styled placeholder on this branch; task persistence and CRUD are not presented here as complete.
-- **Project workspace modules:** Documentation, Incident Log, To-do List, and Daily Report cards on project detail are future affordances and do not navigate to working modules yet.
+- **Project workspace modules:** Photos is implemented separately from Documentation. Documentation, Incident Log, To-do List, and Daily Report remain future affordances.
 - **Multi-user collaboration:** project participation, invitations, and participant-based access are deferred; Projects V1 currently uses owner/admin access.
 - **Portfolio media:** no product screenshots or walkthrough video are committed yet. The capture plan is documented below.
 - **Launch polish:** custom domain, branded auth/email configuration, and related launch setup remain tracked in `docs/pending-launch-setup.md`.
@@ -91,7 +92,7 @@ There is intentionally no separate application server today. A dedicated API or 
 The repository currently configures:
 
 - strict TypeScript checking and Expo ESLint for the app, plus native Deno typecheck and lint for Edge Functions;
-- Vitest unit tests for project validation/query planning, Maps response and error handling, rate limiting, and profile avatar paths;
+- Jest unit tests for project validation/query planning, Maps response and error handling, rate limiting, and profile avatar paths;
 - pgTAP tests for Projects RLS/storage policies and Google Maps usage caps;
 - GitHub Actions checks for environment-documentation drift, app TypeScript/lint, Edge Function typecheck/lint/tests, unit tests, frontend production export, and high/critical dependency vulnerabilities introduced by pull requests;
 - monthly grouped Dependabot version updates for the app, with routine update PRs targeting `development`;
@@ -105,23 +106,36 @@ This is an engineering baseline, not a claim of formal accessibility certificati
 
 ```bash
 npm run env:check
+npm run i18n:check
 npx tsc --noEmit
 npm run lint
 npm test
+npm run test:coverage
+npm run test:e2e:web
 npm run build
 npm run functions:verify
 ```
 
+`npm run test:coverage` is diagnostic and does not currently enforce a CI threshold. Test layers, naming, ownership, and change-based expectations are defined in [`docs/testing-strategy.md`](docs/testing-strategy.md).
+
+`npm run i18n:check` verifies hard-coded copy, extraction drift, resource
+completeness, plural variants, and interpolation parity for bundled app
+resources. Use `npm run i18n:extract` after intentionally changing typed
+translation selectors.
+
+`npm test` runs the complete Jest/Expo application suite. Pass a test path to `npm test -- <path>` for a focused local run.
+
+`npm run test:e2e:web` builds a production web export and runs the Playwright smoke suite in desktop and mobile Chromium. Install its local browser once with `npx playwright install chromium`. Native smoke automation uses `npm run test:e2e:native` with Maestro and an installed development build.
+
 ### Database and local security checks
 
-These remain local/manual because they are not safely configured in GitHub Actions yet:
+GitGuardian remains local/manual:
 
 ```bash
-npx supabase test db
 ggshield secret scan pre-commit
 ```
 
-`npx supabase test db` requires a running local Supabase stack and Docker-compatible CI setup. This repository does not currently include the `supabase/config.toml` needed to bootstrap that stack in GitHub Actions. To add reliable SQL CI, first commit and validate the local Supabase configuration, then start the stack and run the pgTAP suite in a dedicated job.
+`npx supabase test db` requires a running local Supabase stack for local development. CI starts a clean local Postgres instance and runs the pgTAP suite on pull requests and pushes to `development` or `main`.
 
 GitGuardian is configured as a local pre-commit hook. Automated GitGuardian scanning would require adding a `GITGUARDIAN_API_KEY` repository secret, so CI does not currently include a step that would fail without that credential.
 
@@ -138,7 +152,7 @@ Capture TODO:
 5. `auth-profile-cross-platform.png` — sign-in and profile/account-management states without personal data.
 6. `onzait-product-walkthrough.mp4` — short flow from sign-in to project creation, map discovery, edit, and confirmed deletion.
 
-The [hosted web build](https://onzait.vercel.app) was reachable when this README was updated, but it requires authentication and does not provide a seeded demo account. Reviewers should treat it as a web preview rather than a frictionless public demo until a safe demo path is added.
+The [hosted web build](https://www.onzait.com) was reachable when this README was updated, but it requires authentication and does not provide a seeded demo account. Reviewers should treat it as a web preview rather than a frictionless public demo until a safe demo path is added.
 
 ## Developer setup
 
@@ -205,7 +219,7 @@ See `.env.example` and `env-sync.config.json` for the full current list and depl
 ### Web
 
 - Host: Vercel
-- URL: `https://onzait.vercel.app`
+- URL: `https://www.onzait.com`
 - Build command: `npm run build`
 - Output directory: `dist`
 - Routing: clean URLs through `vercel.json`

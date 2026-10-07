@@ -18,7 +18,9 @@ import { Sentry } from "@/infrastructure/monitoring/sentry";
 import { UserFacingError } from "@/shared/utils/user-facing-errors";
 import { sendWelcomeToOnzaitEmail } from "@/features/auth/services/welcome-email.service";
 import type { User } from "@/features/auth/types/auth.types";
-import type { Session } from "@supabase/supabase-js";
+import type { SupportedLanguage } from "@/features/localization/types/language";
+import { defaultLanguage } from "@/features/localization/types/language";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 export type EditableUserProfile = Pick<
   User,
@@ -162,7 +164,7 @@ export function loadCurrentAuthSession() {
 }
 
 export function subscribeToAuthSession(
-  listener: (session: Session | null) => void
+  listener: (event: AuthChangeEvent, session: Session | null) => void
 ) {
   return observeAuthSession(listener);
 }
@@ -250,7 +252,10 @@ export function updateAuthenticatedUserProfile({
   });
 }
 
-export async function deliverWelcomeEmailIfNeeded(user: User) {
+export async function deliverWelcomeEmailIfNeeded(
+  user: User,
+  language: SupportedLanguage = defaultLanguage
+) {
   if (user.welcome_email_sent_at || welcomeEmailAttempts.has(user.id)) {
     return user;
   }
@@ -258,7 +263,10 @@ export async function deliverWelcomeEmailIfNeeded(user: User) {
   welcomeEmailAttempts.add(user.id);
 
   try {
-    const result = await sendWelcomeToOnzaitEmail({ name: user.first_name });
+    const result = await sendWelcomeToOnzaitEmail({
+      language,
+      name: user.first_name
+    });
     const sentAt = result?.welcome_email_sent_at;
 
     return sentAt ? { ...user, welcome_email_sent_at: new Date(sentAt) } : user;

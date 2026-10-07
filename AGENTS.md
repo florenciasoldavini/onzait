@@ -3,7 +3,7 @@
 Purpose: architecture snapshot, product decisions, and implementation guardrails for contributors and agents
 Source of truth for: current auth architecture, platform decisions, naming rules, and high-level project constraints
 Update when: auth flow, platform ownership, schema strategy, CI expectations, or product naming decisions change
-Last reviewed: 2026-07-21
+Last reviewed: 2026-07-31
 
 ## Project Snapshot
 
@@ -32,7 +32,7 @@ Last reviewed: 2026-07-21
 ## Current Platform Setup
 
 - Web is deployed on Vercel
-  - production URL: `https://onzait.vercel.app`
+  - production URL: `https://www.onzait.com` (`https://onzait.com` redirects to it)
 - Native build/distribution is wired through EAS
   - Expo owner/project: `@florenciasoldavini/onzait`
 - Database/auth is on Supabase
@@ -48,6 +48,13 @@ Last reviewed: 2026-07-21
 - Native builds support portrait and landscape rather than locking orientation. Tablet landscape and iPad multitasking layouts are required product surfaces, and installed web apps must not request a fixed orientation.
 - Compact-height landscape layouts must keep primary content and actions reachable. Screens that can overflow vertically must remain scrollable before, during, and after keyboard interaction.
 - The approved responsive-to-adaptive UI direction, including compact, medium, and expanded layout classes, lives in [docs/adaptive-layout-strategy.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/adaptive-layout-strategy.md:1).
+
+## Internationalization
+
+- The active Spanish and English app and transactional-email localization contract lives in [docs/internationalization.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/internationalization.md:1).
+- Spanish is the unsupported-locale default, English is the missing-key fallback, and explicit app preference remains device-local.
+- Current welcome, organization-invitation, project-invitation, signup-confirmation, and password-recovery emails follow the same validated `es | en` contract at their trusted function boundaries.
+- Persisted catalog values remain language-neutral; localized labels, descriptions, validation, feedback, formatting, and accessibility copy belong in the presentation layer.
 
 ## Auth Architecture
 
@@ -116,23 +123,150 @@ Last reviewed: 2026-07-21
 - [20260510090001_create_users_bootstrap.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260510090001_create_users_bootstrap.sql:1)
 - [20260510090002_enable_users_rls.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260510090002_enable_users_rls.sql:1)
 - [20260706191340_add_welcome_email_sent_at_to_users.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260706191340_add_welcome_email_sent_at_to_users.sql:1)
+- [20260725191048_create_trade_categories_catalog.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260725191048_create_trade_categories_catalog.sql:1)
+- [20260726205600_create_clients_catalog.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260726205600_create_clients_catalog.sql:1)
+- [20260727150428_restrict_clients_table_grants.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260727150428_restrict_clients_table_grants.sql:1)
+- [20260727152922_allow_client_soft_delete_updates.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260727152922_allow_client_soft_delete_updates.sql:1)
+- [20260727154854_create_contractors_catalog.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260727154854_create_contractors_catalog.sql:1)
+- [20260727173645_create_workers_catalog.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260727173645_create_workers_catalog.sql:1)
+- [20260727181524_align_directory_active_select_policies.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260727181524_align_directory_active_select_policies.sql:1)
+- [20260727181533_create_suppliers_catalog.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260727181533_create_suppliers_catalog.sql:1)
+- [20260727191057_allow_directory_soft_delete_updates.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260727191057_allow_directory_soft_delete_updates.sql:1)
+- [20260727213244_create_project_photos_feature.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260727213244_create_project_photos_feature.sql:1)
+- [20260730151708_create_project_documents_feature.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260730151708_create_project_documents_feature.sql:1)
+- [20260731160045_create_notification_inbox_persistence.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260731160045_create_notification_inbox_persistence.sql:1)
+- [20260916143902_add_organization_workspaces.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260916143902_add_organization_workspaces.sql:1)
+- [20260916161042_add_organization_invitation_onboarding_flow.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260916161042_add_organization_invitation_onboarding_flow.sql:1)
+- [20260916191300_manage_organization_invitations.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260916191300_manage_organization_invitations.sql:1)
+- [20260916193804_create_organization_avatar_storage.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260916193804_create_organization_avatar_storage.sql:1)
+
+- [20260917152600_add_organization_invitation_email_delivery.sql](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/supabase/migrations/20260917152600_add_organization_invitation_email_delivery.sql:1)
 
 ### RLS Baseline
 
-- `public.users` is the auth profile table and `public.projects` is the first product feature table
-- Feature tables must default to owner-scoped access for normal users and admin-wide access for `users.role = 'admin'`
+- `public.users` is the auth profile table. Organizations own operational data, while workspaces group the data shown in the application.
+- Workspace-scoped feature tables store `workspace_id`; `created_by` is immutable audit metadata and is never an ownership or authorization key.
+- Normal access derives from active organization membership or explicit project collaboration, while global `users.role = 'admin'` retains support access.
 - Admin users should see all non-deleted rows for feature tables unless a feature documents a narrower rule
-- Normal users should see only their own rows unless a feature explicitly introduces participant access
+- Normal users see rows in organizations they belong to, plus projects and project-scoped data shared with them directly.
 - All get/list reads must filter out rows where `deleted_at` is not null
+- Owner/admin `SELECT` policies may retain access to archived owner-scoped rows when PostgreSQL requires that visibility for direct RLS-protected soft-deletion updates; archived-row exclusion remains mandatory in every product get/list query
 - Policies are anchored to `auth.uid()` plus trusted database role checks, not client-only role checks
 - Insert policies must prevent clients from assigning privileged ownership, membership, or role values
 - Update policies must preserve ownership/role invariants and use both `USING` and `WITH CHECK` where ownership could change
+- System reference catalogs are an explicit exception to owner-scoped feature data: authenticated clients may read active catalog rows, but catalog writes remain unavailable to client roles
 
 ### Migration Gotcha
 
 - Supabase migration filenames must use unique full timestamps
 - Do not create multiple migration files that collapse to the same parsed version prefix
 - The earlier `20260509_...` naming caused a remote `schema_migrations` collision
+
+### Trade Categories Catalog
+
+- `public.trade_categories` is the only trade-related catalog for now; there is no `public.trades` table or trade entity
+- the catalog contains the ten fixed construction expertise categories
+- add or retire catalog entries through tracked database migrations
+- authenticated users may read non-deleted trade categories but cannot create, edit, or delete catalog rows
+- catalog records store only a stable language-neutral code; localized names, descriptions, and display order belong in the presentation/i18n layer
+- obsolete entries should be soft-deleted so future worker history can retain valid references
+- worker expertise will link workers directly to trade categories when the workers feature defines its persisted ownership model; do not create that junction without a foreign key to the canonical workers table
+
+### Clients Catalog
+
+- clients are manager-owned contact records and do not have Supabase Auth identities or app login access
+- each project may reference one optional active client, while one client may be linked to multiple projects
+- a project and its client must have the same owner; database triggers enforce this relationship and reject archived clients
+- normal users can manage only their own clients, while admins may read and update all active client records
+- deleting a client means soft deletion after explicit confirmation; linked active projects are atomically unlinked
+- client catalog, picker, and linked-project queries must remain paginated and exclude soft-deleted records
+
+### Contractors Catalog
+
+- contractors are manager-owned contact records and do not have Supabase Auth identities or app login access
+- contractor records contain a required first name plus optional last name, phone number, and email; initials are presentation-only and there is no contractor avatar storage
+- normal users can manage only their own contractors, while admins may read and update all active contractor records
+- deleting a contractor means soft deletion after explicit confirmation
+- contractor lists must remain paginated and exclude soft-deleted records
+- worker assignment, trade expertise, project relationships, import/export, and duplicate detection remain deferred
+- clients and contractors share the Directory navigation destination but retain separate feature ownership, persistence, queries, and forms
+
+### Workers Catalog
+
+- workers are manager-owned contact records and do not have Supabase Auth identities or app login access
+- worker records contain a required first name plus optional last name, phone number, and email; worker avatars are deferred
+- a worker may reference one optional active contractor owned by the same manager; archiving that contractor automatically unlinks the worker without deleting them
+- a worker may reference zero or more active entries from the canonical `trade_categories` catalog to describe the work they usually perform
+- worker contact and relationship changes are saved atomically through RLS-protected security-invoker database functions
+- normal users can manage only their own workers, while admins may read and update all active worker records without transferring ownership or linking records across owners
+- deleting a worker means soft deletion after explicit confirmation; worker lists remain paginated and exclude soft-deleted records
+- project assignments, payment contracts, imports, duplicate detection, and worker login identities remain deferred
+- clients, contractors, and workers share the Directory navigation destination but retain separate feature ownership, persistence, queries, and forms
+
+### Suppliers Catalog
+
+- suppliers are manager-owned business records and do not have Supabase Auth identities or app login access
+- supplier name is required; contact name, phone number, email, website, Google-selected address, and notes are optional
+- supplier addresses persist the formatted address, Google place ID, latitude, and longitude as one atomic optional bundle
+- normal users can manage only their own suppliers, while admins may read and update all active supplier records without transferring ownership
+- deleting a supplier means soft deletion after explicit confirmation; supplier lists remain paginated and exclude soft-deleted records
+- opening hours, multiple contacts, material categories, project relationships, purchasing, tax identifiers, imports, duplicate detection, and supplier avatars remain deferred
+- clients, contractors, workers, and suppliers share the Directory navigation destination but retain separate feature ownership, persistence, queries, and forms
+
+### Project Photos
+
+- project photos are private, project-owned operational records; normal users manage only photos in their own active projects and admins may manage all active project photos
+- each photo keeps one operational category plus an independent marketing flag; marketing classification does not publish the photo or imply consent
+- uploads normalize selected images to JPEG full and thumbnail variants and never retain the original file
+- Apple HEIC/HEIF input is converted automatically, including on web
+- capture time and optional coordinates come only from existing photo EXIF in this version; the app does not request device location for photo upload
+- generated JPEG objects contain no retained EXIF, while selected EXIF coordinates remain in the RLS-protected database row for future project-assignment assistance
+- photo rows are soft-deleted before Storage cleanup; active row references are required for Storage reads
+- the complete product, privacy, processing, and deferred-scope contract lives in [docs/project-photos.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/project-photos.md:1)
+
+### Project Documents
+
+- project documents are private, project-scoped records containing one immutable PDF, JPEG, or PNG file up to 25 MiB
+- all active participants may list, open, and download active documents; only owners, managers, and global admins receive `project.documents.write`
+- document object paths are immutable, signed URLs expire after five minutes, bucket listing is denied, and Storage reads require a matching active row
+- editing changes only display name and category; deletion soft-deletes the row before Storage cleanup
+- the complete product, authorization, upload, download, and deferred-scope contract lives in [docs/project-documents.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/project-documents.md:1)
+
+### Project Collaboration
+
+- project roles, capabilities, and role-to-capability mappings are database catalogs changed through tracked migrations
+- `owner` is derived from the project's owning organization; organization members inherit access and assignable project roles are only direct external memberships using validated stable string codes
+- users who already inherit access from the owning organization must not receive a direct project membership
+- every project RLS policy and collaboration mutation must authorize through the central database capability engine
+- application UI must use `useProjectAccess(projectId).can(permission)` and must not branch on project role names
+- global admins receive every project capability without acquiring membership
+- invitation tokens are stored only as SHA-256 hashes, expire after seven days, and use URL fragments in email links
+- project cover, photo, and document signed URLs expire after five minutes
+- the complete authorization and invitation contract lives in [docs/project-collaboration.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/project-collaboration.md:1)
+
+### Organizations and Workspaces
+
+- organizations are the sole owners of operational data; workspaces are display and grouping contexts belonging to one organization
+- users join organizations, not workspaces, and may join many organizations
+- the schema permits many workspaces per organization, while the MVP creates one initial workspace atomically with each organization
+- organization ownership is separate from the assignable `admin | member` roles; the owner must retain an active admin membership
+- active workspace is a local UI preference and never replaces database authorization
+- workspaces have no archive state; `deleted_at` is deletion and a future reversible archive must use a separate field
+- organization and workspace image columns use the shared name `avatar`
+- organization avatars live in the public `organization-avatars` bucket because they are organization identity marks rather than private operational files; only organization owners, admins, and global admins may upload, replace, or delete objects under that organization's scoped path
+- the complete contract lives in [docs/organizations-workspaces.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/organizations-workspaces.md:1)
+
+### Notifications
+
+- notification persistence, recipient/admin RLS, keyset pagination, read state, and scheduled retention are implemented; producers, UI, preferences, device registration, and delivery remain planned
+- clients receive read-only active-row access and recipient-scoped read RPCs; they cannot create, reassign, archive, or delete notification records
+- global admins may inspect all active notifications for support but cannot change another recipient's read state
+- trusted event persistence is idempotent by source identity and suppresses actor-equals-recipient events without leaving an event row
+- the initial inbox covers selected explicit Project Collaboration events through stable versioned event and category codes; it must never expose raw database events directly
+- in-app notifications are required on web, iOS, and Android, while native push is an optional per-category companion channel and browser push remains deferred
+- push payloads contain only a notification identifier and schema version; protected inbox details are fetched after authenticated open
+- notifications remain visible for 90 days, are archived for 30 additional days, and are then permanently purged; source-domain events remain authoritative history
+- the complete planned event, recipient, destination, privacy, preference, localization, and retention contract lives in [docs/notifications.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/notifications.md:1)
 
 ## User Model Decisions
 
@@ -162,6 +296,9 @@ Last reviewed: 2026-07-21
 - `npm run sync:env -- --dry-run`
 - `ggshield secret scan pre-commit`
 - `npm test`
+- `npm run test:coverage`
+- `npm run test:e2e:web`
+- `npm run test:e2e:native`
 - `npm run test:watch`
 - `npx supabase test db`
 
@@ -173,6 +310,7 @@ Last reviewed: 2026-07-21
   - `npm run lint`
   - `npm run build`
   - `npm test`
+  - `npm run test:e2e:web`
   - `npm run functions:verify`
   - `supabase db start` followed by `supabase test db`
   - pull requests targeting `development` or `main` are reviewed for newly introduced high- or critical-severity dependency vulnerabilities
@@ -185,16 +323,22 @@ Last reviewed: 2026-07-21
 - `npm run build`
 - `npm run lint`
 - `npm test`
+- `npm run test:e2e:web`
 - `npm run functions:verify`
 - `npx supabase test db`
 
 ## Feature Implementation Rules
 
-- Every feature must include appropriate tests for the work: unit tests for reusable logic, database/RLS tests for Supabase access rules, and flow/UI tests for user-critical behavior.
+- Every feature must include the tests required by [docs/testing-strategy.md](/Users/florenciasoldavini/Documents/Projects/OnSite/on-site/docs/testing-strategy.md:1). New and changed suites follow its ownership and naming rules. User-critical UI changes require rendered behavior tests where the harness can represent the interaction plus explicit manual verification for affected platform behavior; pure helper tests do not count as screen coverage.
 - Every feature must explicitly account for web, iOS, and Android behavior. If the correct implementation differs by platform, use platform-specific files or adapters while keeping the business logic shared.
 - When adding a new project rule or product constraint, scan existing features, docs, env config, and tests for places where the rule already applies. Refactor, document follow-up work, or clearly call out any existing gap instead of applying the rule only to future code.
 - Every async surface must handle loading explicitly with an appropriate spinner, skeleton, disabled state, optimistic state, or other clear indicator.
+- Loading UI must represent active work that can settle. Dynamic record routes validate required UUID parameters with the shared route-parameter utility before enabling queries; missing or malformed identifiers render finite invalid-link feedback and must never leave a spinner or skeleton active indefinitely.
 - Every error visible to a user must use clear, actionable product language. Never render raw provider, database, HTTP, SDK, or exception messages. Branch on stable error codes or structured status fields, preserve the technical cause for trusted diagnostics, use an action-specific fallback for unknown failures, distinguish query failures from empty/not-found results, provide safe retry actions, and explain denied device permissions instead of stopping silently. Follow `docs/error-handling.md`.
+- Dynamic record screens use the shared `RouteStateBoundary` for invalid-params, loading, load-error, not-found, forbidden, and successful-content precedence. Keep fetching and capability hooks outside the boundary, and use child content components when the successful screen requires guaranteed data. UI authorization must guard direct URL navigation as well as links and buttons, while RLS and database capability assertions remain authoritative.
+- Route failures and empty collections are separate concepts and components. `RouteFeedback` replaces an unusable full page and must not compose `EmptyState`; `InlineErrorState` reports a failed subordinate query while the usable page shell remains; `EmptyState` is reserved for an authorized, successfully loaded collection or section with zero rows while relevant controls remain visible.
+- Every non-layout `app/` file default-exports an explicit named `<Purpose>Route` wrapper; direct screen exports and default re-exports are prohibited. Routes own all Expo Router path/query parameter and URL-fragment reading and normalize those values before passing typed props to feature screens. Feature screens may navigate with `useRouter`, but must not call `useLocalSearchParams`. Follow the complete convention in `docs/source-architecture.md`.
+- Screens coordinate the lifecycle of an entire page: page-level queries and permissions, navigation outcomes, the full-page route-state boundary, and composition of successful content. A screen module contains one screen component; secondary components, pure helpers, and style sheets belong in a colocated component family or feature utilities. Keep the page lifecycle visible instead of moving it into an opaque controller hook. Follow `docs/source-architecture.md`.
 - Every request that lists or "gets all" records from an entity must be paginated at the repository/transport boundary. Unbounded collection reads are prohibited, including map, export, admin, and background workflows. Use a bounded default and maximum page size, deterministic ordering with a stable unique tie-breaker, summary-only columns for list screens, and virtualized or progressively rendered collection UI. Single-record lookups are exempt.
 - Every destructive action that deletes persistent project or account data must require an explicit confirmation modal before the mutation runs. The modal must identify what will be deleted, provide distinct Cancel and danger-styled Delete actions, prevent repeat submission while pending, and keep mutation errors visible without closing.
 - Production submit forms must use `react-hook-form` with a Zod schema resolver. Keep form values, validation errors, validity, submission state, and edit dirty-state in the form controller rather than duplicating them with local `useState`.

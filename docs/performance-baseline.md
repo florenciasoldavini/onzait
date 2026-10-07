@@ -88,7 +88,7 @@ Examples:
 
 ## Lists and dense collections
 
-Projects, tasks, activity streams, and photos should be built for scale from the start.
+Projects, tasks, activity streams, photos, and documents should be built for scale from the start.
 
 Baseline rules:
 
@@ -106,6 +106,7 @@ High-priority list surfaces:
 - project task list
 - activity or update timeline
 - photo list or gallery
+- project document catalog
 
 ## Rendering discipline
 
@@ -144,6 +145,25 @@ Recommended behavior:
 - visible upload progress
 - recoverable failure states for slow or interrupted uploads
 
+Current project-photo limits:
+
+- review batches contain at most 20 photos
+- normalization and upload use at most two concurrent workers
+- full JPEGs use a maximum 3,200-pixel long edge and iteratively reduce quality until at most 6 MiB
+- thumbnail JPEGs use a maximum 640-pixel long edge
+- gallery queries use deterministic 24-item pages ordered by capture time and UUID
+- galleries render through a virtualized adaptive grid and load signed thumbnails; full images load only on detail screens
+- HEIC/HEIF conversion is dynamically imported on web so the decoder is not part of the initial route graph
+
+Current project-document limits:
+
+- catalog queries use deterministic 25-row pages ordered by creation time and UUID
+- the responsive catalog uses a virtualized list and summary-only columns
+- search is debounced and applied at the repository query boundary
+- signed URLs are created only for explicit Open or Download actions, never for every list row
+- native downloads use temporary app-cache files and remove them after the share/save flow when safe
+- v1 uploads are foreground-only, one file at a time, and use indeterminate progress
+
 ## Web performance
 
 Because the app is also usable on web, bundle size and first load matter.
@@ -157,19 +177,24 @@ Baseline rules:
 
 Current enforced export budgets:
 
-- initial JavaScript: at most 3,500,000 raw bytes and 900,000 gzip bytes
+- initial JavaScript: at most 3,600,000 raw bytes and 920,000 gzip bytes
 - initial CSS: at most 100,000 raw bytes
 - authenticated feature screens and heavy optional integrations should use route or interaction-level code splitting when it reduces the initial graph
 
-Current production-export baseline after icon, font, Sentry Replay, and web animation delivery optimization:
+Current production-export baseline after project documents were added:
 
-- initial JavaScript: 3,025,683 raw bytes, 771,987 gzip bytes, and 609,087 Brotli bytes
+- initial JavaScript: 3,491.0 KiB raw and 886.2 KiB gzip
 - web uses Google-hosted Geist and JetBrains Mono from `global.css`; iOS and Android load the tracked local TTF files through the platform-specific app-font hook
 - web must not register or preload the native TTF assets
 - screens and components import named app icons and icon types only from `@/shared/ui/icons`; the central registry alone imports Lucide's individual ESM icon modules so Metro does not bundle the complete catalog
+- Spanish and English resources are intentionally bundled for offline,
+  synchronous language switching; the raw budget includes both complete locale
+  trees while the gzip budget remains unchanged
 - Sentry Session Replay is excluded from Metro's web graph because the product does not enable replay; core error and performance monitoring remain enabled
 - web animation adapters use React Native Animated or CSS transitions while iOS and Android retain Reanimated and Worklets
 - route modules should import shared components from their owning files instead of the aggregate `@/shared/ui/components` barrel when the barrel would promote optional component dependencies into the initial web graph
+- the browser-only HEIC decoder remains a separate interaction-loaded chunk and must not enter the iOS or Android Hermes bundles
+- the 920,000-byte gzip budget is a temporary allowance for the documents feature while [GitHub issue #81](https://github.com/florenciasoldavini/onzait/issues/81) tracks a general route/bundle optimization and restoration of the 900,000-byte ceiling
 
 Run `npm run build` followed by `npm run bundle:check` after changing shared dependencies, route imports, NativeWind content paths, or font loading.
 

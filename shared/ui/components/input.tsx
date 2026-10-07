@@ -9,7 +9,9 @@ import { FocusGlow } from "@/shared/ui/components/focus-glow";
 import { FormField } from "@/shared/ui/forms";
 import {
   ClosedEyeIcon,
+  CloseIcon,
   OpenEyeIcon,
+  SearchIcon,
   appIconSizes,
   type AppIconComponent,
   type AppIconSize
@@ -30,6 +32,7 @@ import {
   type ReactNode
 } from "react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Platform,
   Pressable,
@@ -295,6 +298,77 @@ export function TextField({
         </Input>
       </View>
     </FormField>
+  );
+}
+
+export function SearchField({
+  clearAccessibilityLabel,
+  leftIcon = SearchIcon,
+  onChangeText,
+  onClear,
+  rightSlot,
+  value,
+  ...props
+}: Omit<TextFieldProps, "leftIcon" | "onChangeText" | "value"> & {
+  clearAccessibilityLabel?: string;
+  leftIcon?: AppIconComponent;
+  onChangeText: (value: string) => void;
+  onClear?: () => void;
+  value: string;
+}) {
+  const { t } = useTranslation("shared");
+  const resolvedClearAccessibilityLabel =
+    clearAccessibilityLabel ?? t(($) => $.shared.accessibility.clearSearch);
+  const hasValue = value.length > 0;
+
+  return (
+    <TextField
+      {...props}
+      leftIcon={leftIcon}
+      onChangeText={onChangeText}
+      returnKeyType="search"
+      rightSlot={
+        hasValue || rightSlot ? (
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              gap: atomSpacing[2]
+            }}
+          >
+            {rightSlot}
+            {hasValue ? (
+              <Pressable
+                accessibilityLabel={resolvedClearAccessibilityLabel}
+                accessibilityRole="button"
+                hitSlop={8}
+                onPress={() => {
+                  onChangeText("");
+                  onClear?.();
+                }}
+                style={({ pressed }) => ({
+                  alignItems: "center",
+                  borderRadius: atomSpacing[4],
+                  height: atomSpacing[8],
+                  justifyContent: "center",
+                  opacity: pressed ? 0.56 : 1,
+                  width: atomSpacing[8],
+                  ...(Platform.OS === "web"
+                    ? ({ cursor: "pointer" } as unknown as ViewStyle)
+                    : null)
+                })}
+              >
+                <CloseIcon
+                  color={atomPalette.textMuted}
+                  size={appIconSizes.sm}
+                />
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null
+      }
+      value={value}
+    />
   );
 }
 
@@ -592,9 +666,15 @@ export function PasswordVisibilityToggle({
   onPress: () => void;
   visible: boolean;
 }) {
+  const { t } = useTranslation("shared");
+
   return (
     <Pressable
-      accessibilityLabel={visible ? "Hide password" : "Show password"}
+      accessibilityLabel={
+        visible
+          ? t(($) => $.shared.accessibility.hidePassword)
+          : t(($) => $.shared.accessibility.showPassword)
+      }
       onPress={onPress}
       style={
         Platform.OS === "web"

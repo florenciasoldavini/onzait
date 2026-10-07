@@ -5,7 +5,6 @@ import {
   getSupportedOAuthProvider,
   isIdentityProviderLinked
 } from "@/features/auth/utils/auth-callback";
-import { describe, expect, it } from "vitest";
 
 describe("auth callback intent", () => {
   it("recognizes an app-generated identity-link callback", () => {
@@ -56,6 +55,12 @@ describe("post-auth redirects", () => {
 
   it("allows safe app paths and rejects external redirects", () => {
     expect(getPostAuthRedirectPath(null, "/profile")).toBe("/profile");
+    expect(
+      getPostAuthRedirectPath(
+        null,
+        "/invitations/accept?intent=accept#token=private-token"
+      )
+    ).toBe("/invitations/accept?intent=accept#token=private-token");
     expect(getPostAuthRedirectPath(null, "//example.com/account")).toBe("/");
     expect(getPostAuthRedirectPath(null, "https://example.com/account")).toBe(
       "/"

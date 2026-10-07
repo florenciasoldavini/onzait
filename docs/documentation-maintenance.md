@@ -3,7 +3,7 @@
 Purpose: lightweight rules for keeping project documentation current
 Source of truth for: documentation ownership, update triggers, and doc review workflow
 Update when: doc ownership changes, PR process changes, or new documentation categories are introduced
-Last reviewed: 2026-07-16
+Last reviewed: 2026-07-31
 
 ## Core rule
 
@@ -42,6 +42,18 @@ When a new project rule is added, scan existing code, docs, env config, and test
   - Active design-system rules
   - Token and primitive source map
   - Reusable interaction-state decisions
+- `docs/testing-strategy.md`
+  - Automated test layers and ownership
+  - Test-file naming and design rules
+  - Change-based coverage expectations and testing gaps
+- `docs/internationalization.md`
+  - Supported app and transactional-email languages and locale-selection policy
+  - i18next architecture, translation ownership, authoring, and verification rules
+  - Active versus deferred localization scope
+- `docs/notifications.md`
+  - Approved notification events, recipients, categories, and destinations
+  - Inbox, push, content-safety, preference, localization, and retention rules
+  - Active versus planned notification behavior
 
 ## Update triggers
 
@@ -70,6 +82,12 @@ Update env documentation when:
 - `.env.example` needs regeneration
 - `.env.local` needs a local placeholder for a newly required value
 
+Update `docs/email-flow.md` when:
+
+- a transactional email type, supported email language, provider, or builder changes
+- Send Email Hook signing, idempotency, timeout, or activation requirements change
+- email deployment order or required server secrets change
+
 Update `supabase/README.md` when:
 
 - a new migration is added
@@ -84,6 +102,29 @@ Update `docs/onzait-design-system.md` when:
 - a design-system primitive changes
 - a component state pattern changes
 - a screen-level design decision should become reusable
+
+Update `docs/testing-strategy.md` when:
+
+- a test runner or test harness changes
+- test-file location or naming conventions change
+- a test layer is introduced, removed, or materially redefined
+- CI test enforcement or coverage thresholds change
+- automated or manual platform-verification expectations change
+
+Update `docs/internationalization.md` when:
+
+- supported languages or fallback behavior changes
+- locale detection or preference persistence changes
+- resource loading, namespace ownership, or translation tooling changes
+- formatting, authoring, security, or localization verification rules change
+- a planned localization capability becomes active or its deferred scope changes
+
+Update `docs/notifications.md` when:
+
+- a notification producer, event, category, recipient rule, or destination changes
+- inbox or delivery-channel behavior changes
+- notification preferences, localization, content-safety, or retention rules change
+- planned notification capabilities become implemented or deferred scope changes
 
 Update `docs/CONTRIBUTING.md` when:
 

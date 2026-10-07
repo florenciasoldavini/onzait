@@ -1,12 +1,28 @@
-export interface Client {
-  id: string;
-  user_id: string;
-  first_name: string;
-  last_name: string | null;
-  avatar: string | null;
-  email: string | null;
-  phone_number: string | null;
-  created_at: Date;
-  updated_at: Date | null;
-  deleted_at: Date | null;
+import type {
+  OwnedPersonContactRecord,
+  PersonContactFormValues,
+  PersonContactInput,
+  PersonContactSummary
+} from "@/shared/types/contact";
+
+export type ClientSort =
+  | "created_asc"
+  | "created_desc"
+  | "name_asc"
+  | "name_desc";
+
+export type Client = OwnedPersonContactRecord;
+
+export type ClientSummary = PersonContactSummary;
+
+export interface ClientFilters {
+  workspaceId?: string;
+  query?: string;
+  sort?: ClientSort;
 }
+
+export type ClientFormValues = PersonContactFormValues;
+
+export type CreateClientInput = PersonContactInput;
+
+export type UpdateClientInput = Partial<CreateClientInput>;

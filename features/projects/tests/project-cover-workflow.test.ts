@@ -1,44 +1,59 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
 import {
   createProjectWithOptionalCover,
   updateProjectWithOptionalCover,
   uploadProjectCover
 } from "@/features/projects/services/projects.service";
 
-const mocks = vi.hoisted(() => ({
-  captureException: vi.fn(),
-  getProjectRow: vi.fn(),
-  insertProjectRow: vi.fn(),
-  removeProjectCoverObject: vi.fn(),
-  replaceProjectCoverPath: vi.fn(),
-  updateProjectRow: vi.fn(),
-  uploadProjectCoverObject: vi.fn()
+const mocks = {
+  captureException: jest.fn(),
+  getProjectRow: jest.fn(),
+  insertProjectRow: jest.fn(),
+  removeProjectCoverObject: jest.fn(),
+  replaceProjectCoverPath: jest.fn(),
+  updateProjectRow: jest.fn(),
+  uploadProjectCoverObject: jest.fn()
+};
+
+jest.mock("@/features/projects/repositories/project-covers.repository", () => ({
+  createProjectCoverSignedUrl: jest.fn(),
+  get removeProjectCoverObject() {
+    return mocks.removeProjectCoverObject;
+  },
+  get uploadProjectCoverObject() {
+    return mocks.uploadProjectCoverObject;
+  }
 }));
 
-vi.mock("@/features/projects/repositories/project-covers.repository", () => ({
-  createProjectCoverSignedUrl: vi.fn(),
-  removeProjectCoverObject: mocks.removeProjectCoverObject,
-  uploadProjectCoverObject: mocks.uploadProjectCoverObject
+jest.mock("@/features/projects/repositories/projects.repository", () => ({
+  get getProjectRow() {
+    return mocks.getProjectRow;
+  },
+  get insertProjectRow() {
+    return mocks.insertProjectRow;
+  },
+  listProjectRows: jest.fn(),
+  get replaceProjectCoverPath() {
+    return mocks.replaceProjectCoverPath;
+  },
+  softDeleteProjectRow: jest.fn(),
+  get updateProjectRow() {
+    return mocks.updateProjectRow;
+  }
 }));
 
-vi.mock("@/features/projects/repositories/projects.repository", () => ({
-  getProjectRow: mocks.getProjectRow,
-  insertProjectRow: mocks.insertProjectRow,
-  listProjectRows: vi.fn(),
-  replaceProjectCoverPath: mocks.replaceProjectCoverPath,
-  softDeleteProjectRow: vi.fn(),
-  updateProjectRow: mocks.updateProjectRow
-}));
-
-vi.mock("@/infrastructure/monitoring/sentry", () => ({
-  Sentry: { captureException: mocks.captureException }
+jest.mock("@/infrastructure/monitoring/sentry", () => ({
+  Sentry: {
+    get captureException() {
+      return mocks.captureException;
+    }
+  }
 }));
 
 const asset = { uri: "file:///cover.jpg" };
 const createInput = {
   address: "Main Street 1",
   building_type: "residential" as const,
+  client_id: null,
   description: null,
   end_date: null,
   estimated_end_date: "2026-08-01",
@@ -56,6 +71,7 @@ const createInput = {
 const project = {
   address: "Main Street 1",
   building_type: "residential" as const,
+  client_id: null,
   cover_image_path: null,
   created_at: "2026-07-21T12:00:00.000Z",
   deleted_at: null,
@@ -68,7 +84,8 @@ const project = {
   latitude: -34.6,
   longitude: -58.4,
   name: "Project name",
-  owner_id: "user-id",
+  created_by: "user-id",
+  workspace_id: "workspace-1",
   phase: "concept" as const,
   progress_percentage: 0,
   project_type: "new_build" as const,
@@ -79,7 +96,7 @@ const project = {
 
 describe("project cover replacement", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     mocks.getProjectRow.mockResolvedValue({
       cover_image_path: "projects/project-id/cover/old.jpg",
       id: "project-id"
@@ -126,7 +143,7 @@ describe("project cover replacement", () => {
     await expect(
       uploadProjectCover({ asset, projectId: "project-id" })
     ).resolves.toBe("projects/project-id/cover/new.jpg");
-    expect(mocks.captureException).toHaveBeenCalledOnce();
+    expect(mocks.captureException).toHaveBeenCalledTimes(1);
   });
 
   it("does not upload when the project is unavailable", async () => {
@@ -143,7 +160,7 @@ describe("project cover replacement", () => {
 
 describe("project save with an optional cover", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     mocks.insertProjectRow.mockResolvedValue(project);
     mocks.updateProjectRow.mockResolvedValue(project);
     mocks.getProjectRow.mockResolvedValue(project);
@@ -154,11 +171,15 @@ describe("project save with an optional cover", () => {
 
   it("reports partial success when a new project is saved but its cover fails", async () => {
     await expect(
-      createProjectWithOptionalCover({ coverAsset: asset, input: createInput })
+      createProjectWithOptionalCover({
+        coverAsset: asset,
+        input: createInput,
+        workspaceId: "workspace-1"
+      })
     ).resolves.toEqual({ coverStatus: "failed", project });
 
-    expect(mocks.insertProjectRow).toHaveBeenCalledOnce();
-    expect(mocks.captureException).toHaveBeenCalledOnce();
+    expect(mocks.insertProjectRow).toHaveBeenCalledTimes(1);
+    expect(mocks.captureException).toHaveBeenCalledTimes(1);
   });
 
   it("reports partial success when an edited project is saved but its cover fails", async () => {
@@ -170,15 +191,19 @@ describe("project save with an optional cover", () => {
       })
     ).resolves.toEqual({ coverStatus: "failed", project });
 
-    expect(mocks.updateProjectRow).toHaveBeenCalledOnce();
-    expect(mocks.captureException).toHaveBeenCalledOnce();
+    expect(mocks.updateProjectRow).toHaveBeenCalledTimes(1);
+    expect(mocks.captureException).toHaveBeenCalledTimes(1);
   });
 
   it("still rejects when the project record itself cannot be created", async () => {
     mocks.insertProjectRow.mockRejectedValue(new Error("database unavailable"));
 
     await expect(
-      createProjectWithOptionalCover({ coverAsset: asset, input: createInput })
+      createProjectWithOptionalCover({
+        coverAsset: asset,
+        input: createInput,
+        workspaceId: "workspace-1"
+      })
     ).rejects.toThrow("database unavailable");
     expect(mocks.uploadProjectCoverObject).not.toHaveBeenCalled();
   });
